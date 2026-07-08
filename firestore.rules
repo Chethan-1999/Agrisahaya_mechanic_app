@@ -1,0 +1,34 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isBootstrapAdmin(adminId) {
+      return isSignedIn()
+        && request.auth.uid == adminId
+        && request.auth.token.email == '55chethan159@gmail.com';
+    }
+
+    match /admins/{adminId} {
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == adminId);
+      allow create, update: if isBootstrapAdmin(adminId) || isAdmin();
+      allow delete: if false;
+    }
+
+    match /mechanics/{mechanicId} {
+      allow read, create, update: if true;
+      allow delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
