@@ -1,4 +1,5 @@
 import type { MechanicForm } from '../types';
+import { isIndianState } from './indianStates';
 
 export type ValidationErrors = Partial<Record<keyof MechanicForm | 'otp', string>>;
 
@@ -29,6 +30,12 @@ export function validateMechanicForm(form: MechanicForm, otpVerified: boolean): 
 
   if (!form.district.trim()) {
     errors.district = 'District is required';
+  }
+
+  if (!form.state.trim()) {
+    errors.state = 'State is required';
+  } else if (!isIndianState(form.state)) {
+    errors.state = 'Select a valid Indian state';
   }
 
   if (form.experience.trim() && Number.isNaN(Number(form.experience))) {
