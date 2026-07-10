@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useId, useMemo, useState, type FormEvent } from 'react';
 
 import { firebaseConfigured } from './firebase';
+import agrisahayLogo from '../image.png';
 import { loginAdmin, logoutAdmin } from './services/adminAuth';
 import { createMechanic, deleteMechanic, findMechanicByPhone, getMechanic, listMechanics, updateMechanic } from './services/mechanics';
 import { canVerifyOtp, createOtpCode } from './services/otp';
 import type { AdminProfile, AppSession, Mechanic, MechanicForm } from './types';
 import { emptyMechanicForm } from './types';
+import { indianStates } from './utils/indianStates';
 import { hasErrors, isValidPhone, validateMechanicForm, type ValidationErrors } from './utils/validation';
 
 type Page =
@@ -239,13 +241,7 @@ function Landing({ darkMode, onAdmin, onMechanicLogin, onMechanicSignup, onToggl
         <label className="theme-toggle"><span>{darkMode ? 'Dark' : 'Light'} mode</span><span className="switch"><input checked={darkMode} onChange={(event) => onToggleDarkMode(event.target.checked)} type="checkbox" /><span /></span></label>
       </div>
       <section className="hero-panel">
-        <div aria-label="Mechanic Directory logo" className="hero-mark" role="img">
-          <svg className="logo-icon" fill="none" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
-            <path className="logo-gear-ring" d="M48 16 54 21 61.8 20.6 64.4 28 71.2 31.8 69.8 39.5 74 46 69.8 52.5 71.2 60.2 64.4 64 61.8 71.4 54 71 48 76 42 71 34.2 71.4 31.6 64 24.8 60.2 26.2 52.5 22 46 26.2 39.5 24.8 31.8 31.6 28 34.2 20.6 42 21 48 16Z" />
-            <circle className="logo-gear-center" cx="48" cy="46" r="13" />
-            <path className="logo-wrench" d="M64 28 41 51m0 0-6-6-12 12 6 6 12-12Zm23-23 9-9a10 10 0 0 1-12 12Z" />
-          </svg>
-        </div>
+        <img alt="Agrisahay logo" className="hero-logo" src={agrisahayLogo} />
         <p className="eyebrow">Village and district service network</p>
         <h1>Mechanic Directory</h1>
         <p>Maintain a clean, centralized database of mechanics, profiles, and admin-managed records.</p>
@@ -512,11 +508,11 @@ function MechanicFields({ disabled = false, errors = {}, form, onChange }: { dis
   return (
     <fieldset className="form-grid fields-grid" disabled={disabled}>
       <Input error={errors.fullName} label="Full Name" onChange={(value) => onChange('fullName', value)} value={form.fullName} />
-      <Input label="Village" error={errors.village} onChange={(value) => onChange('village', value)} value={form.village} />
+      <StateSelect error={errors.state} label="State" onChange={(value) => onChange('state', value)} value={form.state} />
       <Input label="District" error={errors.district} onChange={(value) => onChange('district', value)} value={form.district} />
-      <Input label="State" onChange={(value) => onChange('state', value)} value={form.state} />
-      <Input label="Pincode" onChange={(value) => onChange('pincode', value)} value={form.pincode} />
+      <Input label="Village" error={errors.village} onChange={(value) => onChange('village', value)} value={form.village} />
       <Input label="Address" onChange={(value) => onChange('address', value)} value={form.address} />
+      <Input label="Pincode" onChange={(value) => onChange('pincode', value)} value={form.pincode} />
       <Input label="Age" onChange={(value) => onChange('age', value)} value={form.age} />
       <Input label="Years of Experience" error={errors.experience} onChange={(value) => onChange('experience', value)} value={form.experience} />
     </fieldset>
@@ -525,6 +521,29 @@ function MechanicFields({ disabled = false, errors = {}, form, onChange }: { dis
 
 function Input({ error, label, onChange, type = 'text', value }: { error?: string; label: string; onChange: (value: string) => void; type?: string; value: string }) {
   return <label className="field"><span>{label}</span><input className={error ? 'invalid' : ''} onChange={(event) => onChange(event.target.value)} type={type} value={value} />{error && <small>{error}</small>}</label>;
+}
+
+function StateSelect({ error, label, onChange, value }: { error?: string; label: string; onChange: (value: string) => void; value: string }) {
+  const inputId = useId();
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState(value);
+  const filteredStates = useMemo(() => indianStates.filter((state) => state.toLowerCase().includes(search.trim().toLowerCase())), [search]);
+
+  useEffect(() => setSearch(value), [value]);
+
+  function updateSearch(nextSearch: string) {
+    setSearch(nextSearch);
+    onChange(nextSearch);
+    setOpen(true);
+  }
+
+  function selectState(state: string) {
+    setSearch(state);
+    onChange(state);
+    setOpen(false);
+  }
+
+  return <div className="field state-select"><label htmlFor={inputId}>{label}</label><input autoComplete="off" className={error ? 'invalid' : ''} id={inputId} onBlur={() => window.setTimeout(() => setOpen(false), 120)} onChange={(event) => updateSearch(event.target.value)} onFocus={() => setOpen(true)} placeholder="Search and select state" value={search} />{open && <div className="state-options">{filteredStates.length > 0 ? filteredStates.map((state) => <button key={state} onMouseDown={(event) => event.preventDefault()} onClick={() => selectState(state)} type="button">{state}</button>) : <span>No state found</span>}</div>}{error && <small>{error}</small>}</div>;
 }
 
 function Select({ label, onChange, options, value }: { label: string; onChange: (value: string) => void; options: Array<[string, string]>; value: string }) {
