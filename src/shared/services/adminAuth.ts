@@ -2,22 +2,23 @@ import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
 import { auth, db } from '../firebase';
+import type { AdminAuthMessages } from '../i18n';
 import type { AdminProfile } from '../types';
 
-export async function loginAdmin(email: string, password: string): Promise<AdminProfile> {
+export async function loginAdmin(email: string, password: string, messages?: AdminAuthMessages): Promise<AdminProfile> {
   let credentials;
 
   try {
     credentials = await signInWithEmailAndPassword(auth, email.trim(), password);
   } catch (error) {
-    throw new Error(getAdminLoginErrorMessage(error));
+    throw new Error(getAdminLoginErrorMessage(error, messages));
   }
 
   const profileSnapshot = await getDoc(doc(db, 'admins', credentials.user.uid));
 
   if (!profileSnapshot.exists()) {
     await signOut(auth);
-    throw new Error('This account is not configured as an admin.');
+    throw new Error(messages?.adminAccountNotConfigured ?? 'This account is not configured as an admin.');
   }
 
   const data = profileSnapshot.data();
@@ -34,20 +35,20 @@ export async function logoutAdmin() {
   await signOut(auth);
 }
 
-function getAdminLoginErrorMessage(error: unknown) {
+function getAdminLoginErrorMessage(error: unknown, messages?: AdminAuthMessages) {
   const code = typeof error === 'object' && error && 'code' in error ? String(error.code) : '';
 
   if (code === 'auth/configuration-not-found') {
-    return 'Firebase Authentication is not enabled. Enable Authentication and Email/Password sign-in in Firebase Console.';
+    return messages?.firebaseAuthNotEnabled ?? 'Firebase Authentication is not enabled. Enable Authentication and Email/Password sign-in in Firebase Console.';
   }
 
   if (code === 'auth/invalid-credential' || code === 'auth/user-not-found' || code === 'auth/wrong-password') {
-    return 'Admin email or password is incorrect, or this admin user has not been created in Firebase Authentication.';
+    return messages?.adminCredentialsInvalid ?? 'Admin email or password is incorrect, or this admin user has not been created in Firebase Authentication.';
   }
 
   if (error instanceof Error) {
     return error.message;
   }
 
-  return 'Admin login failed.';
+  return messages?.adminLoginFailed ?? 'Admin login failed.';
 }

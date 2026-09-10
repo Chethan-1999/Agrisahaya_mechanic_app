@@ -1,13 +1,14 @@
 # Mechanic Directory
 
-Modern Expo mobile app for maintaining a centralized database of mechanics across villages and districts.
+Modern web app for maintaining a centralized database of mechanics across villages and districts, with shared logic prepared for a future mobile app.
 
 ## Stack
 
-- Expo + React Native
+- Vite + React for the web app
 - TypeScript
 - Firebase Authentication for admin login
 - Cloud Firestore for mechanic records and admin profiles
+- Shared app logic under `src/shared` for later mobile reuse
 
 ## Features
 
@@ -25,7 +26,7 @@ Modern Expo mobile app for maintaining a centralized database of mechanics acros
 
 ## Run Locally
 
-Node.js 20.19.4 or newer is recommended for Expo SDK 57.
+Node.js 20.19.4 or newer is recommended.
 
 ```powershell
 npm install
@@ -33,11 +34,9 @@ npm run typecheck
 npm start
 ```
 
-After `npm start`, scan the QR code with Expo Go.
-
 ## Firebase Setup
 
-Your Firebase app config lives in `src/firebase.ts`.
+Your Firebase app config lives in `src/shared/firebase.ts`.
 
 Enable these Firebase products:
 

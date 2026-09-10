@@ -19,6 +19,32 @@ export type Mechanic = MechanicForm & {
   updatedAt: string;
 };
 
+export type JobForm = {
+  customerName: string;
+  phoneNumber: string;
+  equipment: string;
+  issue: string;
+  district: string;
+  additionalNotes: string;
+};
+
+export type Job = JobForm & {
+  id: string;
+  jobId: string;
+  assignedMechanicId: string;
+  assignedMechanicName: string;
+  assignedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CommunityPost = {
+  id: string;
+  message: string;
+  authorName: string;
+  createdAt: string;
+};
+
 export type AdminProfile = {
   id: string;
   name: string;
@@ -29,13 +55,15 @@ export type AdminProfile = {
 export type ScreenName =
   | 'landing'
   | 'mechanicAuth'
-  | 'mechanicDashboard'
+  | 'mechanicJobs'
+  | 'mechanicCommunity'
   | 'mechanicProfile'
   | 'mechanicEditProfile'
   | 'adminLogin'
   | 'adminDashboard'
   | 'adminMechanics'
-  | 'adminSettings'
+  | 'adminJobs'
+  | 'adminCommunity'
   | 'adminMechanicDetails'
   | 'adminEditMechanic';
 
@@ -54,4 +82,13 @@ export const emptyMechanicForm: MechanicForm = {
   address: '',
   age: '',
   experience: '',
+};
+
+export const emptyJobForm: JobForm = {
+  customerName: '',
+  phoneNumber: '',
+  equipment: '',
+  issue: '',
+  district: '',
+  additionalNotes: '',
 };
