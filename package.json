@@ -3,7 +3,14 @@
   "version": "1.0.0",
   "main": "src/main.tsx",
   "dependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/cli": "^8.5.1",
+    "@capacitor/core": "^8.5.1",
+    "@capacitor/local-notifications": "^8.3.1",
+    "@capacitor/push-notifications": "^8.1.2",
     "@expo/vector-icons": "^15.1.1",
+    "capacitor-native-biometric": "^4.2.2",
     "expo": "^57.0.4",
     "expo-font": "~57.0.0",
     "expo-status-bar": "~57.0.0",
@@ -15,6 +22,7 @@
     "@types/react": "~19.2.2",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
+    "firebase-tools": "^15.30.0",
     "qrcode-terminal": "^0.12.0",
     "react-dom": "^19.2.3",
     "typescript": "~6.0.3",
@@ -27,7 +35,11 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "expo:start": "expo start",
-    "expo:android": "expo start --android"
+    "expo:android": "expo start --android",
+    "dev:local": "node scripts/local-dev.mjs"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   },
   "private": true
 }
