@@ -6,26 +6,42 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    function isBootstrapAdmin(adminId) {
-      return isSignedIn()
-        && request.auth.uid == adminId
-        && request.auth.token.email == '55chethan159@gmail.com';
+    // Every write below is denied on purpose: signup, approval, profile
+    // changes, and every job transition happen inside a Cloud Function via
+    // the Admin SDK, which isn't subject to these rules at all. See
+    // Blueprint §10 — reads are the only thing the client does directly.
+
+    match /technicians/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if false;
     }
 
-    match /admins/{adminId} {
-      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == adminId);
-      allow create, update: if isBootstrapAdmin(adminId) || isAdmin();
-      allow delete: if false;
+    match /profileUpdateRequests/{id} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.technicianId == request.auth.uid);
+      allow write: if false;
     }
 
-    match /mechanics/{mechanicId} {
-      allow read, create, update: if true;
-      allow delete: if isAdmin();
+    match /jobs/{id} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.technicianId == request.auth.uid);
+      allow write: if false;
     }
+
+    match /admins/{id} {
+      allow read: if isAdmin() || isOwner(id);
+      allow write: if false; // provisioned by scripts/create-admin.ts, not the client
+    }
+
+    // No otpRequests/pendingSignups collections — phone verification is
+    // Firebase's own Phone Auth now, not a hand-rolled OTP store. See
+    // services/otp/ on the client and functions/src/signupFunctions.ts.
 
     match /{document=**} {
       allow read, write: if false;
