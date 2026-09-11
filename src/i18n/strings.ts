@@ -89,7 +89,29 @@ export type StringKey =
   | 'requestSubmittedToast'
   | 'giveReasonError'
   | 'changeAtLeastOneError'
-  | 'languageLabel';
+  | 'languageLabel'
+  | 'pin'
+  | 'newPinLabel'
+  | 'confirmPinLabel'
+  | 'currentPinLabel'
+  | 'setPinTitle'
+  | 'setPinHint'
+  | 'setPinButton'
+  | 'pinMismatchError'
+  | 'pinFormatError'
+  | 'forgotPinLink'
+  | 'pinLockedMessage'
+  | 'pinNotSetMessage'
+  | 'wrongPinError'
+  | 'changePinNav'
+  | 'changePinTitle'
+  | 'changePinButton'
+  | 'pinChangedToast'
+  | 'pinChangeCapError'
+  | 'enableBiometricPrompt'
+  | 'enableBiometricYes'
+  | 'enableBiometricNo'
+  | 'useFingerprintButton';
 
 const en: Record<StringKey, string> = {
   technicianLogin: 'Technician Login',
@@ -161,6 +183,28 @@ const en: Record<StringKey, string> = {
   giveReasonError: 'Tell admin why you are requesting this change.',
   changeAtLeastOneError: 'Change at least one field first.',
   languageLabel: 'Language',
+  pin: 'PIN',
+  newPinLabel: 'New PIN',
+  confirmPinLabel: 'Confirm PIN',
+  currentPinLabel: 'Current PIN',
+  setPinTitle: 'Set Your PIN',
+  setPinHint: "Choose a 4-digit PIN. You'll use it to log in from now on.",
+  setPinButton: 'Save PIN',
+  pinMismatchError: "PINs don't match.",
+  pinFormatError: 'PIN must be exactly 4 digits.',
+  forgotPinLink: 'Forgot PIN? Verify by OTP',
+  pinLockedMessage: 'Too many wrong attempts. Verify your phone number to reset your PIN.',
+  pinNotSetMessage: 'No PIN set yet. Verify your phone number to create one.',
+  wrongPinError: 'Incorrect PIN.',
+  changePinNav: 'Change PIN',
+  changePinTitle: 'Change PIN',
+  changePinButton: 'Update PIN',
+  pinChangedToast: 'PIN updated.',
+  pinChangeCapError: 'You can only change your PIN 3 times every 30 days.',
+  enableBiometricPrompt: 'Use your fingerprint or face to log in faster next time?',
+  enableBiometricYes: 'Enable',
+  enableBiometricNo: 'Not now',
+  useFingerprintButton: 'Use fingerprint',
 };
 
 const hi: Record<StringKey, string> = {
@@ -233,6 +277,28 @@ const hi: Record<StringKey, string> = {
   giveReasonError: 'एडमिन को बताएं कि आप यह बदलाव क्यों चाहते हैं।',
   changeAtLeastOneError: 'पहले कम से कम एक जानकारी बदलें।',
   languageLabel: 'भाषा',
+  pin: 'पिन',
+  newPinLabel: 'नया पिन',
+  confirmPinLabel: 'पिन दोबारा डालें',
+  currentPinLabel: 'मौजूदा पिन',
+  setPinTitle: 'अपना पिन सेट करें',
+  setPinHint: 'एक 4 अंकों का पिन चुनें। अब से लॉगिन करने के लिए इसका उपयोग करेंगे।',
+  setPinButton: 'पिन सेव करें',
+  pinMismatchError: 'पिन मेल नहीं खा रहे हैं।',
+  pinFormatError: 'पिन ठीक 4 अंकों का होना चाहिए।',
+  forgotPinLink: 'पिन भूल गए? ओटीपी से सत्यापित करें',
+  pinLockedMessage: 'बहुत बार गलत प्रयास हुए। अपना पिन रीसेट करने के लिए मोबाइल नंबर सत्यापित करें।',
+  pinNotSetMessage: 'अभी तक कोई पिन सेट नहीं है। पिन बनाने के लिए मोबाइल नंबर सत्यापित करें।',
+  wrongPinError: 'गलत पिन।',
+  changePinNav: 'पिन बदलें',
+  changePinTitle: 'पिन बदलें',
+  changePinButton: 'पिन अपडेट करें',
+  pinChangedToast: 'पिन अपडेट हो गया।',
+  pinChangeCapError: 'आप हर 30 दिनों में केवल 3 बार पिन बदल सकते हैं।',
+  enableBiometricPrompt: 'अगली बार तेज़ी से लॉगिन करने के लिए फिंगरप्रिंट या फेस का उपयोग करें?',
+  enableBiometricYes: 'चालू करें',
+  enableBiometricNo: 'अभी नहीं',
+  useFingerprintButton: 'फिंगरप्रिंट का उपयोग करें',
 };
 
 const kn: Record<StringKey, string> = {
@@ -305,6 +371,28 @@ const kn: Record<StringKey, string> = {
   giveReasonError: 'ಈ ಬದಲಾವಣೆಯನ್ನು ಏಕೆ ಕೋರುತ್ತಿದ್ದೀರಿ ಎಂದು ಅಡ್ಮಿನ್‌ಗೆ ತಿಳಿಸಿ.',
   changeAtLeastOneError: 'ಮೊದಲು ಕನಿಷ್ಠ ಒಂದು ವಿವರವನ್ನು ಬದಲಾಯಿಸಿ.',
   languageLabel: 'ಭಾಷೆ',
+  pin: 'ಪಿನ್',
+  newPinLabel: 'ಹೊಸ ಪಿನ್',
+  confirmPinLabel: 'ಪಿನ್ ಅನ್ನು ಖಚಿತಪಡಿಸಿ',
+  currentPinLabel: 'ಪ್ರಸ್ತುತ ಪಿನ್',
+  setPinTitle: 'ನಿಮ್ಮ ಪಿನ್ ಹೊಂದಿಸಿ',
+  setPinHint: '4 ಅಂಕಿಗಳ ಪಿನ್ ಆಯ್ಕೆಮಾಡಿ. ಇನ್ನು ಮುಂದೆ ಲಾಗಿನ್ ಮಾಡಲು ಇದನ್ನು ಬಳಸುತ್ತೀರಿ.',
+  setPinButton: 'ಪಿನ್ ಉಳಿಸಿ',
+  pinMismatchError: 'ಪಿನ್‌ಗಳು ಹೊಂದಿಕೆಯಾಗುತ್ತಿಲ್ಲ.',
+  pinFormatError: 'ಪಿನ್ ನಿಖರವಾಗಿ 4 ಅಂಕಿಗಳಾಗಿರಬೇಕು.',
+  forgotPinLink: 'ಪಿನ್ ಮರೆತಿರಾ? ಒಟಿಪಿ ಮೂಲಕ ಪರಿಶೀಲಿಸಿ',
+  pinLockedMessage: 'ಹಲವಾರು ಬಾರಿ ತಪ್ಪಾದ ಪ್ರಯತ್ನಗಳು. ಪಿನ್ ಮರುಹೊಂದಿಸಲು ನಿಮ್ಮ ಫೋನ್ ಸಂಖ್ಯೆಯನ್ನು ಪರಿಶೀಲಿಸಿ.',
+  pinNotSetMessage: 'ಇನ್ನೂ ಯಾವುದೇ ಪಿನ್ ಹೊಂದಿಸಿಲ್ಲ. ಪಿನ್ ರಚಿಸಲು ನಿಮ್ಮ ಫೋನ್ ಸಂಖ್ಯೆಯನ್ನು ಪರಿಶೀಲಿಸಿ.',
+  wrongPinError: 'ತಪ್ಪಾದ ಪಿನ್.',
+  changePinNav: 'ಪಿನ್ ಬದಲಾಯಿಸಿ',
+  changePinTitle: 'ಪಿನ್ ಬದಲಾಯಿಸಿ',
+  changePinButton: 'ಪಿನ್ ನವೀಕರಿಸಿ',
+  pinChangedToast: 'ಪಿನ್ ನವೀಕರಿಸಲಾಗಿದೆ.',
+  pinChangeCapError: 'ನೀವು ಪ್ರತಿ 30 ದಿನಗಳಿಗೆ ಕೇವಲ 3 ಬಾರಿ ಮಾತ್ರ ಪಿನ್ ಬದಲಾಯಿಸಬಹುದು.',
+  enableBiometricPrompt: 'ಮುಂದಿನ ಬಾರಿ ವೇಗವಾಗಿ ಲಾಗಿನ್ ಮಾಡಲು ಫಿಂಗರ್‌ಪ್ರಿಂಟ್ ಅಥವಾ ಫೇಸ್ ಬಳಸುವುದೇ?',
+  enableBiometricYes: 'ಸಕ್ರಿಯಗೊಳಿಸಿ',
+  enableBiometricNo: 'ಈಗ ಬೇಡ',
+  useFingerprintButton: 'ಫಿಂಗರ್‌ಪ್ರಿಂಟ್ ಬಳಸಿ',
 };
 
 const ta: Record<StringKey, string> = {
@@ -377,6 +465,28 @@ const ta: Record<StringKey, string> = {
   giveReasonError: 'இந்த மாற்றத்தை ஏன் கோருகிறீர்கள் என்பதை நிர்வாகிக்கு தெரிவிக்கவும்.',
   changeAtLeastOneError: 'முதலில் குறைந்தது ஒரு விவரத்தையாவது மாற்றவும்.',
   languageLabel: 'மொழி',
+  pin: 'பின்',
+  newPinLabel: 'புதிய பின்',
+  confirmPinLabel: 'பின்னை உறுதிப்படுத்தவும்',
+  currentPinLabel: 'தற்போதைய பின்',
+  setPinTitle: 'உங்கள் பின்னை அமைக்கவும்',
+  setPinHint: '4 இலக்க பின்னைத் தேர்ந்தெடுக்கவும். இனி லாகின் செய்ய இதைப் பயன்படுத்துவீர்கள்.',
+  setPinButton: 'பின்னை சேமி',
+  pinMismatchError: 'பின்கள் பொருந்தவில்லை.',
+  pinFormatError: 'பின் சரியாக 4 இலக்கங்களாக இருக்க வேண்டும்.',
+  forgotPinLink: 'பின் மறந்துவிட்டீர்களா? ஓடிபி மூலம் சரிபார்க்கவும்',
+  pinLockedMessage: 'பல முறை தவறான முயற்சிகள். பின்னை மீட்டமைக்க உங்கள் மொபைல் எண்ணை சரிபார்க்கவும்.',
+  pinNotSetMessage: 'இன்னும் பின் அமைக்கப்படவில்லை. பின்னை உருவாக்க உங்கள் மொபைல் எண்ணை சரிபார்க்கவும்.',
+  wrongPinError: 'தவறான பின்.',
+  changePinNav: 'பின்னை மாற்று',
+  changePinTitle: 'பின்னை மாற்று',
+  changePinButton: 'பின்னை புதுப்பி',
+  pinChangedToast: 'பின் புதுப்பிக்கப்பட்டது.',
+  pinChangeCapError: 'ஒவ்வொரு 30 நாட்களுக்கும் 3 முறை மட்டுமே பின்னை மாற்ற முடியும்.',
+  enableBiometricPrompt: 'அடுத்த முறை வேகமாக லாகின் செய்ய கைரேகை அல்லது முகத்தை பயன்படுத்தவா?',
+  enableBiometricYes: 'இயக்கு',
+  enableBiometricNo: 'இப்போது வேண்டாம்',
+  useFingerprintButton: 'கைரேகையைப் பயன்படுத்து',
 };
 
 const te: Record<StringKey, string> = {
@@ -449,6 +559,28 @@ const te: Record<StringKey, string> = {
   giveReasonError: 'మీరు ఈ మార్పును ఎందుకు అభ్యర్థిస్తున్నారో అడ్మిన్‌కు తెలియజేయండి.',
   changeAtLeastOneError: 'ముందుగా కనీసం ఒక వివరాన్ని మార్చండి.',
   languageLabel: 'భాష',
+  pin: 'పిన్',
+  newPinLabel: 'కొత్త పిన్',
+  confirmPinLabel: 'పిన్‌ను నిర్ధారించండి',
+  currentPinLabel: 'ప్రస్తుత పిన్',
+  setPinTitle: 'మీ పిన్‌ను సెట్ చేయండి',
+  setPinHint: '4 అంకెల పిన్‌ను ఎంచుకోండి. ఇక నుండి లాగిన్ చేయడానికి దీన్ని ఉపయోగిస్తారు.',
+  setPinButton: 'పిన్ సేవ్ చేయండి',
+  pinMismatchError: 'పిన్‌లు సరిపోలడం లేదు.',
+  pinFormatError: 'పిన్ ఖచ్చితంగా 4 అంకెలు ఉండాలి.',
+  forgotPinLink: 'పిన్ మర్చిపోయారా? ఓటీపీ ద్వారా ధృవీకరించండి',
+  pinLockedMessage: 'చాలాసార్లు తప్పు ప్రయత్నాలు. పిన్‌ను రీసెట్ చేయడానికి మీ ఫోన్ నంబర్‌ను ధృవీకరించండి.',
+  pinNotSetMessage: 'ఇంకా పిన్ సెట్ చేయలేదు. పిన్ సృష్టించడానికి మీ ఫోన్ నంబర్‌ను ధృవీకరించండి.',
+  wrongPinError: 'తప్పు పిన్.',
+  changePinNav: 'పిన్ మార్చండి',
+  changePinTitle: 'పిన్ మార్చండి',
+  changePinButton: 'పిన్ నవీకరించండి',
+  pinChangedToast: 'పిన్ నవీకరించబడింది.',
+  pinChangeCapError: 'మీరు ప్రతి 30 రోజులకు 3 సార్లు మాత్రమే పిన్ మార్చవచ్చు.',
+  enableBiometricPrompt: 'తదుపరిసారి వేగంగా లాగిన్ చేయడానికి వేలిముద్ర లేదా ముఖాన్ని ఉపయోగించాలా?',
+  enableBiometricYes: 'ప్రారంభించండి',
+  enableBiometricNo: 'ఇప్పుడు వద్దు',
+  useFingerprintButton: 'వేలిముద్రను ఉపయోగించండి',
 };
 
 const ml: Record<StringKey, string> = {
@@ -521,6 +653,28 @@ const ml: Record<StringKey, string> = {
   giveReasonError: 'ഈ മാറ്റം എന്തിനാണ് അഭ്യർത്ഥിക്കുന്നതെന്ന് അഡ്മിനെ അറിയിക്കുക.',
   changeAtLeastOneError: 'ആദ്യം ഒരു വിവരമെങ്കിലും മാറ്റുക.',
   languageLabel: 'ഭാഷ',
+  pin: 'പിൻ',
+  newPinLabel: 'പുതിയ പിൻ',
+  confirmPinLabel: 'പിൻ സ്ഥിരീകരിക്കുക',
+  currentPinLabel: 'നിലവിലെ പിൻ',
+  setPinTitle: 'നിങ്ങളുടെ പിൻ സജ്ജമാക്കുക',
+  setPinHint: '4 അക്ക പിൻ തിരഞ്ഞെടുക്കുക. ഇനി മുതൽ ലോഗിൻ ചെയ്യാൻ ഇത് ഉപയോഗിക്കും.',
+  setPinButton: 'പിൻ സേവ് ചെയ്യുക',
+  pinMismatchError: 'പിന്നുകൾ പൊരുത്തപ്പെടുന്നില്ല.',
+  pinFormatError: 'പിൻ കൃത്യമായി 4 അക്കങ്ങൾ ആയിരിക്കണം.',
+  forgotPinLink: 'പിൻ മറന്നോ? ഒടിപി വഴി പരിശോധിക്കുക',
+  pinLockedMessage: 'വളരെയധികം തെറ്റായ ശ്രമങ്ങൾ. പിൻ പുനഃക്രമീകരിക്കാൻ നിങ്ങളുടെ ഫോൺ നമ്പർ പരിശോധിക്കുക.',
+  pinNotSetMessage: 'ഇതുവരെ പിൻ സജ്ജമാക്കിയിട്ടില്ല. പിൻ ഉണ്ടാക്കാൻ നിങ്ങളുടെ ഫോൺ നമ്പർ പരിശോധിക്കുക.',
+  wrongPinError: 'തെറ്റായ പിൻ.',
+  changePinNav: 'പിൻ മാറ്റുക',
+  changePinTitle: 'പിൻ മാറ്റുക',
+  changePinButton: 'പിൻ അപ്ഡേറ്റ് ചെയ്യുക',
+  pinChangedToast: 'പിൻ അപ്ഡേറ്റ് ചെയ്തു.',
+  pinChangeCapError: 'ഓരോ 30 ദിവസത്തിലും 3 തവണ മാത്രമേ പിൻ മാറ്റാൻ കഴിയൂ.',
+  enableBiometricPrompt: 'അടുത്ത തവണ വേഗത്തിൽ ലോഗിൻ ചെയ്യാൻ വിരലടയാളമോ മുഖമോ ഉപയോഗിക്കണോ?',
+  enableBiometricYes: 'സജീവമാക്കുക',
+  enableBiometricNo: 'ഇപ്പോൾ വേണ്ട',
+  useFingerprintButton: 'വിരലടയാളം ഉപയോഗിക്കുക',
 };
 
 export const strings: Record<LanguageCode, Record<StringKey, string>> = { en, hi, kn, ta, te, ml };

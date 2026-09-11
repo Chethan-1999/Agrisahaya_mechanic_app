@@ -2,13 +2,13 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
-import { Input, LanguageSelector, Metric, Select, formatDate, getErrorMessage, type Toast } from './components/ui';
+import { Input, LanguageSelector, Metric, PinInput, Select, formatDate, getErrorMessage, type Toast } from './components/ui';
 import { auth, db, firebaseConfigured } from './firebase';
 import { usePhoneOtp } from './hooks/usePhoneOtp';
 import { useI18n } from './i18n/I18nContext';
 import { loginAdmin } from './services/adminAuth';
 import { completeSignup } from './services/auth';
-import { unlockWithBiometrics } from './services/biometric';
+import { enableBiometricPin, isBiometricAvailable, isBiometricPinEnabled, tryBiometricPinLogin, unlockWithBiometrics } from './services/biometric';
 import {
   adminUpdateProfile,
   getMechanic,
@@ -17,11 +17,13 @@ import {
   setTechnicianStatus,
 } from './services/mechanics';
 import { initNotifications } from './services/notifications';
+import { changePin, getPinErrorInfo, loginWithPin, setPin } from './services/pin';
 import type { AdminProfile, AppSession, Mechanic, MechanicForm } from './types';
 import { emptyMechanicForm } from './types';
 import { hasErrors, validateProfileForm, type ValidationErrors } from './utils/validation';
 import { AdminJobBoard } from './screens/AdminJobBoard';
 import { AdminProfileRequests } from './screens/AdminProfileRequests';
+import { ChangePin } from './screens/ChangePin';
 import { RequestProfileChange } from './screens/RequestProfileChange';
 import { TechnicianJobs } from './screens/TechnicianJobs';
 
@@ -33,6 +35,7 @@ type Page =
   | 'mechanicProfile'
   | 'mechanicJobs'
   | 'mechanicRequestChange'
+  | 'mechanicChangePin'
   | 'adminLogin'
   | 'adminDashboard'
   | 'adminMechanics'
@@ -289,6 +292,7 @@ export default function App() {
       {session?.role === 'mechanic' && currentMechanic && page === 'mechanicDashboard' && (
         <MechanicDashboard
           mechanic={currentMechanic}
+          onChangePin={() => setPage('mechanicChangePin')}
           onJobs={() => setPage('mechanicJobs')}
           onLogout={logout}
           onProfile={() => setPage('mechanicProfile')}
@@ -323,6 +327,10 @@ export default function App() {
           setToast={setToast}
           withLoading={withLoading}
         />
+      )}
+
+      {session?.role === 'mechanic' && currentMechanic && page === 'mechanicChangePin' && (
+        <ChangePin onBack={() => setPage('mechanicDashboard')} setToast={setToast} withLoading={withLoading} />
       )}
 
       {session?.role === 'admin' && page.startsWith('admin') && (
@@ -448,9 +456,109 @@ function AuthLayout({ children, onBack, title }: { children: React.ReactNode; on
   );
 }
 
+/**
+ * Day-to-day login is phone + PIN (loginWithPin), not a fresh OTP every time.
+ * OTP only re-enters the picture as the "forgot PIN" / locked-account
+ * recovery path (see ForgotPinFlow below) — the exact same flow signup uses,
+ * reused rather than duplicated.
+ */
 function MechanicLogin({ onLogin, onPending, setToast, withLoading }: { onLogin: (mechanicId: string) => void; onPending: (mechanicId: string) => void; setToast: (toast: Toast) => void; withLoading: (action: () => Promise<void>) => Promise<void> }) {
   const { t } = useI18n();
+  const [mode, setMode] = useState<'pin' | 'forgotOtp'>('pin');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [pin, setPinValue] = useState('');
+  const canUseBiometric = useMemo(() => isBiometricPinEnabled(), []);
+
+  async function afterSignIn() {
+    const uid = auth.currentUser?.uid;
+    if (!uid) throw new Error('Sign-in failed. Try again.');
+    const technician = await getMechanic(uid);
+    if (!technician) {
+      await signOut(auth);
+      throw new Error(t('noAccountFound'));
+    }
+    if (technician.status === 'active') {
+      onLogin(uid);
+    } else {
+      onPending(uid);
+    }
+  }
+
+  /** Routes a failed loginWithPin call to either a retryable toast or the OTP-recovery flow. */
+  async function handlePinLoginError(err: unknown): Promise<void> {
+    const { reason, remainingAttempts } = getPinErrorInfo(err);
+
+    if (reason === 'PIN_NOT_SET' || reason === 'LOCKED') {
+      setMode('forgotOtp');
+      setToast({ kind: 'error', text: reason === 'LOCKED' ? t('pinLockedMessage') : t('pinNotSetMessage') });
+      return;
+    }
+
+    if (reason === 'WRONG_PIN') {
+      const suffix = typeof remainingAttempts === 'number' ? ` (${remainingAttempts})` : '';
+      throw new Error(`${t('wrongPinError')}${suffix}`);
+    }
+
+    throw err;
+  }
+
+  async function submitPin(event: FormEvent) {
+    event.preventDefault();
+    await withLoading(async () => {
+      try {
+        await loginWithPin(phoneNumber, pin);
+      } catch (err) {
+        await handlePinLoginError(err);
+        return;
+      }
+      await afterSignIn();
+    });
+  }
+
+  async function useFingerprint() {
+    await withLoading(async () => {
+      const stored = await tryBiometricPinLogin();
+      if (!stored) return;
+
+      setPhoneNumber(stored.phoneNumber);
+      setPinValue(stored.pin);
+
+      try {
+        await loginWithPin(stored.phoneNumber, stored.pin);
+      } catch (err) {
+        await handlePinLoginError(err);
+        return;
+      }
+      await afterSignIn();
+    });
+  }
+
+  if (mode === 'forgotOtp') {
+    return <ForgotPinFlow onDone={afterSignIn} setToast={setToast} withLoading={withLoading} />;
+  }
+
+  return (
+    <form className="form-grid" onSubmit={(event) => void submitPin(event)}>
+      <Input label={t('mobileNumber')} onChange={setPhoneNumber} value={phoneNumber} />
+      <PinInput label={t('pin')} onChange={setPinValue} value={pin} />
+      <button className="primary" type="submit">{t('loginButton')}</button>
+      {canUseBiometric && (
+        <button className="secondary" onClick={() => void useFingerprint()} type="button">
+          {t('useFingerprintButton')}
+        </button>
+      )}
+      <button className="text-button" onClick={() => setMode('forgotOtp')} type="button">
+        {t('forgotPinLink')}
+      </button>
+    </form>
+  );
+}
+
+/** Forgot/locked PIN recovery: the same phone-OTP flow signup uses, ending in the same PIN-set step. */
+function ForgotPinFlow({ onDone, setToast, withLoading }: { onDone: () => Promise<void>; setToast: (toast: Toast) => void; withLoading: (action: () => Promise<void>) => Promise<void> }) {
+  const { t } = useI18n();
   const { confirmOtp, devHint, otp, phoneNumber, sendOtp, session, setOtp, setPhoneNumber } = usePhoneOtp();
+  const [verified, setVerified] = useState(false);
 
   async function send() {
     await withLoading(async () => {
@@ -463,7 +571,7 @@ function MechanicLogin({ onLogin, onPending, setToast, withLoading }: { onLogin:
     });
   }
 
-  async function submit(event: FormEvent) {
+  async function verify(event: FormEvent) {
     event.preventDefault();
     if (!session) {
       setToast({ kind: 'error', text: t('sendCodeFirst') });
@@ -478,19 +586,82 @@ function MechanicLogin({ onLogin, onPending, setToast, withLoading }: { onLogin:
         await signOut(auth);
         throw new Error(t('noAccountFound'));
       }
-      if (technician.status === 'active') {
-        onLogin(uid);
+      setVerified(true);
+    });
+  }
+
+  if (verified) {
+    return <SetPinStep onDone={onDone} phoneNumber={phoneNumber} setToast={setToast} withLoading={withLoading} />;
+  }
+
+  return (
+    <form className="form-grid" onSubmit={(event) => void verify(event)}>
+      <Input label={t('mobileNumber')} onChange={setPhoneNumber} value={phoneNumber} />
+      <div className="otp-row"><Input label={t('otp')} onChange={setOtp} value={otp} /><button className="secondary" onClick={() => void send()} type="button">{t('sendOtp')}</button></div>
+      <button className="primary" type="submit">{t('verifyButton')}</button>
+    </form>
+  );
+}
+
+/**
+ * Sets/resets the PIN (used right after signup, and again after a
+ * forgot-PIN OTP recovery), then optionally offers to enroll the biometric
+ * shortcut on this device. Shared by MechanicSignup and ForgotPinFlow so the
+ * "two PinInputs → setPin → optional biometric offer" sequence exists once.
+ */
+function SetPinStep({ onDone, phoneNumber, setToast, withLoading }: { onDone: () => Promise<void>; phoneNumber: string; setToast: (toast: Toast) => void; withLoading: (action: () => Promise<void>) => Promise<void> }) {
+  const { t } = useI18n();
+  const [pin, setPinValue] = useState('');
+  const [confirmPinValue, setConfirmPinValue] = useState('');
+  const [offerBiometric, setOfferBiometric] = useState(false);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!/^\d{4}$/.test(pin)) {
+      setToast({ kind: 'error', text: t('pinFormatError') });
+      return;
+    }
+    if (pin !== confirmPinValue) {
+      setToast({ kind: 'error', text: t('pinMismatchError') });
+      return;
+    }
+    await withLoading(async () => {
+      await setPin(pin);
+      if (await isBiometricAvailable()) {
+        setOfferBiometric(true);
       } else {
-        onPending(uid);
+        await onDone();
       }
     });
   }
 
+  async function respondToBiometricOffer(enable: boolean) {
+    await withLoading(async () => {
+      if (enable) {
+        await enableBiometricPin(phoneNumber, pin);
+      }
+      await onDone();
+    });
+  }
+
+  if (offerBiometric) {
+    return (
+      <div className="form-grid">
+        <p className="muted">{t('enableBiometricPrompt')}</p>
+        <div className="button-row">
+          <button className="primary" onClick={() => void respondToBiometricOffer(true)} type="button">{t('enableBiometricYes')}</button>
+          <button className="secondary" onClick={() => void respondToBiometricOffer(false)} type="button">{t('enableBiometricNo')}</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form className="form-grid" onSubmit={(event) => void submit(event)}>
-      <Input label={t('mobileNumber')} onChange={setPhoneNumber} value={phoneNumber} />
-      <div className="otp-row"><Input label={t('otp')} onChange={setOtp} value={otp} /><button className="secondary" onClick={() => void send()} type="button">{t('sendOtp')}</button></div>
-      <button className="primary" type="submit">{t('loginButton')}</button>
+      <p className="success-text">{t('setPinHint')}</p>
+      <PinInput label={t('newPinLabel')} onChange={setPinValue} value={pin} />
+      <PinInput label={t('confirmPinLabel')} onChange={setConfirmPinValue} value={confirmPinValue} />
+      <button className="primary" type="submit">{t('setPinButton')}</button>
     </form>
   );
 }
@@ -498,9 +669,10 @@ function MechanicLogin({ onLogin, onPending, setToast, withLoading }: { onLogin:
 function MechanicSignup({ onRegistered, setToast, withLoading }: { onRegistered: (mechanicId: string) => void; setToast: (toast: Toast) => void; withLoading: (action: () => Promise<void>) => Promise<void> }) {
   const { t } = useI18n();
   const { confirmOtp, devHint, otp, phoneNumber, sendOtp, session, setOtp, setPhoneNumber } = usePhoneOtp();
-  const [step, setStep] = useState<'verify' | 'profile'>('verify');
+  const [step, setStep] = useState<'verify' | 'profile' | 'setPin'>('verify');
   const [form, setForm] = useState<MechanicForm>(emptyMechanicForm);
   const [errors, setErrors] = useState<ValidationErrors>({});
+  const [registeredUid, setRegisteredUid] = useState<string | null>(null);
 
   function updateField(key: keyof MechanicForm, value: string) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -548,7 +720,8 @@ function MechanicSignup({ onRegistered, setToast, withLoading }: { onRegistered:
       await completeSignup(profile);
       const uid = auth.currentUser?.uid;
       if (!uid) throw new Error('Registration failed. Try again.');
-      onRegistered(uid);
+      setRegisteredUid(uid);
+      setStep('setPin');
     });
   }
 
@@ -559,6 +732,17 @@ function MechanicSignup({ onRegistered, setToast, withLoading }: { onRegistered:
         <div className="otp-row"><Input label={t('otp')} onChange={setOtp} value={otp} /><button className="secondary" onClick={() => void send()} type="button">{t('sendOtp')}</button></div>
         <button className="primary" type="submit">{t('verifyButton')}</button>
       </form>
+    );
+  }
+
+  if (step === 'setPin' && registeredUid) {
+    return (
+      <SetPinStep
+        onDone={async () => onRegistered(registeredUid)}
+        phoneNumber={phoneNumber}
+        setToast={setToast}
+        withLoading={withLoading}
+      />
     );
   }
 
@@ -608,7 +792,7 @@ function MechanicPending({ mechanic, onLogout }: { mechanic: Mechanic | null; on
   );
 }
 
-function MechanicDashboard({ mechanic, onJobs, onLogout, onProfile, onRequestChange }: { mechanic: Mechanic; onJobs: () => void; onLogout: () => void; onProfile: () => void; onRequestChange: () => void }) {
+function MechanicDashboard({ mechanic, onChangePin, onJobs, onLogout, onProfile, onRequestChange }: { mechanic: Mechanic; onChangePin: () => void; onJobs: () => void; onLogout: () => void; onProfile: () => void; onRequestChange: () => void }) {
   const { t } = useI18n();
 
   return (
@@ -622,6 +806,7 @@ function MechanicDashboard({ mechanic, onJobs, onLogout, onProfile, onRequestCha
           <button className="primary" onClick={onJobs}>{t('jobsNav')}</button>
           <button className="secondary" onClick={onProfile}>{t('profileNav')}</button>
           <button className="secondary" onClick={onRequestChange}>{t('requestChangeNav')}</button>
+          <button className="secondary" onClick={onChangePin}>{t('changePinNav')}</button>
           <button className="danger" onClick={onLogout}>{t('logout')}</button>
         </div>
       </section>

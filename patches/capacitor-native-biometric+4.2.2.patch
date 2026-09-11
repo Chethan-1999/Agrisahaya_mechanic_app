@@ -1,0 +1,23 @@
+diff --git a/node_modules/capacitor-native-biometric/android/src/main/java/com/epicshaggy/biometric/NativeBiometric.java b/node_modules/capacitor-native-biometric/android/src/main/java/com/epicshaggy/biometric/NativeBiometric.java
+index 16e42b2..1742780 100644
+--- a/node_modules/capacitor-native-biometric/android/src/main/java/com/epicshaggy/biometric/NativeBiometric.java
++++ b/node_modules/capacitor-native-biometric/android/src/main/java/com/epicshaggy/biometric/NativeBiometric.java
+@@ -302,7 +302,17 @@ public class NativeBiometric extends Plugin {
+             KeyGenParameterSpec.Builder paramBuilder = new KeyGenParameterSpec.Builder(KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+                     .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                     .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+-                    .setRandomizedEncryptionRequired(false);
++                    .setRandomizedEncryptionRequired(false)
++                    // AgriSahaya patch (patches/capacitor-native-biometric+*.patch): invalidate this
++                    // key the moment device biometric enrollment changes, so a stale
++                    // biometric-unlock shortcut can't survive a new fingerprint being added.
++                    // setInvalidatedByBiometricEnrollment is a no-op unless
++                    // setUserAuthenticationRequired is also true; the validity-duration window
++                    // lets the existing verifyIdentity()-then-getCredentials()/setCredentials()
++                    // call sequence keep working without needing a CryptoObject-bound BiometricPrompt.
++                    .setUserAuthenticationRequired(true)
++                    .setInvalidatedByBiometricEnrollment(true)
++                    .setUserAuthenticationValidityDurationSeconds(30);
+ 
+             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                 paramBuilder.setUnlockedDeviceRequired(true);

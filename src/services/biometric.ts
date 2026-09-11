@@ -41,3 +41,72 @@ export async function unlockWithBiometrics(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Biometric-shortcut for PIN login — NOT a separate auth path. A successful
+ * fingerprint/face prompt here only decrypts a phone+PIN pair stored on this
+ * device (via the plugin's own Keystore-backed setCredentials/getCredentials);
+ * whatever comes back still has to pass through loginWithPin on the server
+ * like manual entry does. See patches/capacitor-native-biometric+4.2.2.patch —
+ * the underlying Keystore key is patched to invalidate itself the moment the
+ * device's enrolled biometrics change, so a stale shortcut can't survive a
+ * new fingerprint being added; any failure here (including that invalidation)
+ * is treated as "shortcut is gone" and torn down, never surfaced as a retryable error.
+ */
+const PIN_CREDENTIAL_SERVER = 'agrisahaya-pin';
+const BIOMETRIC_PIN_FLAG = 'agrisahaya.biometricPinEnabled';
+
+export function isBiometricPinEnabled(): boolean {
+  try {
+    return localStorage.getItem(BIOMETRIC_PIN_FLAG) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export async function enableBiometricPin(phoneNumber: string, pin: string): Promise<void> {
+  await NativeBiometric.setCredentials({ username: phoneNumber, password: pin, server: PIN_CREDENTIAL_SERVER });
+  try {
+    localStorage.setItem(BIOMETRIC_PIN_FLAG, '1');
+  } catch {
+    // localStorage unavailable — the credential is still stored natively, just without the local flag.
+  }
+}
+
+export async function disableBiometricPin(): Promise<void> {
+  try {
+    await NativeBiometric.deleteCredentials({ server: PIN_CREDENTIAL_SERVER });
+  } catch {
+    // already gone
+  }
+  try {
+    localStorage.removeItem(BIOMETRIC_PIN_FLAG);
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Returns the stored phone+PIN after a successful biometric prompt, or null
+ * if unavailable/cancelled/not enrolled. Any credential-retrieval failure —
+ * including the device's biometrics having changed since the credential was
+ * stored — clears the local shortcut entirely, so the caller falls back to
+ * manual PIN entry (or full OTP recovery) rather than retrying a broken shortcut.
+ */
+export async function tryBiometricPinLogin(): Promise<{ phoneNumber: string; pin: string } | null> {
+  if (!Capacitor.isNativePlatform() || !isBiometricPinEnabled()) return null;
+
+  try {
+    await NativeBiometric.verifyIdentity({
+      reason: 'Sign in to AgriSahaya',
+      title: 'Unlock',
+      useFallback: true,
+      maxAttempts: 3,
+    });
+    const { username, password } = await NativeBiometric.getCredentials({ server: PIN_CREDENTIAL_SERVER });
+    return { phoneNumber: username, pin: password };
+  } catch {
+    await disableBiometricPin();
+    return null;
+  }
+}

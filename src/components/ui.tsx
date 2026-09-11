@@ -42,6 +42,27 @@ export function Input({ error, label, onChange, type = 'text', value }: { error?
   return <label className="field"><span>{label}</span><input className={error ? 'invalid' : ''} onChange={(event) => onChange(event.target.value)} type={type} value={value} />{error && <small>{error}</small>}</label>;
 }
 
+const PIN_LENGTH = 4;
+
+/** 4-digit numeric PIN entry, reused everywhere a technician sets or enters their login PIN. */
+export function PinInput({ error, label, onChange, value }: { error?: string; label: string; onChange: (value: string) => void; value: string }) {
+  return (
+    <label className="field">
+      <span>{label}</span>
+      <input
+        className={error ? 'invalid' : ''}
+        inputMode="numeric"
+        maxLength={PIN_LENGTH}
+        onChange={(event) => onChange(event.target.value.replace(/\D/g, '').slice(0, PIN_LENGTH))}
+        pattern="[0-9]*"
+        type="password"
+        value={value}
+      />
+      {error && <small>{error}</small>}
+    </label>
+  );
+}
+
 export function Textarea({ error, label, onChange, value }: { error?: string; label: string; onChange: (value: string) => void; value: string }) {
   return <label className="field"><span>{label}</span><textarea className={error ? 'invalid' : ''} onChange={(event) => onChange(event.target.value)} rows={3} value={value} />{error && <small>{error}</small>}</label>;
 }

@@ -23,6 +23,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
     "firebase-tools": "^15.30.0",
+    "patch-package": "^8.0.1",
     "qrcode-terminal": "^0.12.0",
     "react-dom": "^19.2.3",
     "typescript": "~6.0.3",
@@ -36,7 +37,8 @@
     "typecheck": "tsc --noEmit",
     "expo:start": "expo start",
     "expo:android": "expo start --android",
-    "dev:local": "node scripts/local-dev.mjs"
+    "dev:local": "node scripts/local-dev.mjs",
+    "postinstall": "patch-package"
   },
   "engines": {
     "node": ">=22.0.0"
