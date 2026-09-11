@@ -2,7 +2,7 @@ import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 
 import { db, functions } from '../firebase';
-import type { Job, JobStatus } from '../types';
+import type { Job, JobHistoryEntry, JobStatus } from '../types';
 
 const collectionName = 'jobs';
 
@@ -17,6 +17,9 @@ const toJob = (id: string, data: Record<string, unknown>): Job => ({
   createdBy: String(data.createdBy ?? ''),
   cancelledBy: (data.cancelledBy as string | null) ?? null,
   cancelReason: (data.cancelReason as string | null) ?? null,
+  acceptedAt: (data.acceptedAt as string | null) ?? null,
+  completedAt: (data.completedAt as string | null) ?? null,
+  history: (data.history as JobHistoryEntry[] | undefined) ?? [],
 });
 
 /** A technician's own jobs, oldest first — list order doubles as the "Task N" ordinal. */

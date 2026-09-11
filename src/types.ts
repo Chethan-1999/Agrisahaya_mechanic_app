@@ -32,6 +32,13 @@ export type Mechanic = MechanicForm & {
 
 export type JobStatus = 'open' | 'assigned' | 'accepted' | 'declined' | 'completed' | 'cancelled';
 
+export type JobHistoryEntry = {
+  action: 'create' | 'assign' | 'accept' | 'decline' | 'complete' | 'cancel';
+  by: string;
+  at: string;
+  [extra: string]: unknown;
+};
+
 export type Job = {
   id: string;
   technicianId: string | null;
@@ -43,6 +50,9 @@ export type Job = {
   createdBy: string;
   cancelledBy: string | null;
   cancelReason: string | null;
+  acceptedAt: string | null;
+  completedAt: string | null;
+  history: JobHistoryEntry[];
 };
 
 export type ProfileUpdateStatus = 'pending' | 'approved' | 'rejected';

@@ -1,8 +1,10 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 import { requireAdmin } from './lib/authz';
 import { requireDoc } from './lib/docHelpers';
 import { db } from './lib/firebaseAdmin';
+import { historyEntry } from './lib/jobHistory';
 import { pushDismiss, pushToTechnician } from './lib/push';
 import { requireActiveTechnician } from './lib/technicians';
 
@@ -53,6 +55,11 @@ export const createJob = onCall(async (request) => {
     createdBy: adminUid,
     cancelledBy: null,
     cancelReason: null,
+    acceptedAt: null,
+    completedAt: null,
+    history: isAssigning
+      ? [historyEntry('create', adminUid, { technicianId }), historyEntry('assign', adminUid, { technicianId })]
+      : [historyEntry('create', adminUid, { technicianId: null })],
   });
 
   if (isAssigning) {
@@ -69,7 +76,7 @@ export const createJob = onCall(async (request) => {
 
 /** Admin assigns (or re-assigns, after a decline) an open job to a technician. */
 export const assignJob = onCall(async (request) => {
-  await requireAdmin(request);
+  const adminUid = await requireAdmin(request);
   const { jobId, technicianId } = request.data ?? {};
 
   if (typeof jobId !== 'string' || typeof technicianId !== 'string' || !technicianId) {
@@ -88,7 +95,11 @@ export const assignJob = onCall(async (request) => {
 
   const previousTechnicianId = data.technicianId;
 
-  await ref.update({ technicianId, status: 'assigned' });
+  await ref.update({
+    technicianId,
+    status: 'assigned',
+    history: FieldValue.arrayUnion(historyEntry('assign', adminUid, { technicianId, reassignedFrom: previousTechnicianId })),
+  });
   await bumpJobStats(technicianId, { pending: 1 });
 
   if (previousTechnicianId && previousTechnicianId !== technicianId) {
@@ -130,7 +141,11 @@ export const acceptJob = onCall(async (request) => {
     throw new HttpsError('failed-precondition', 'This job is no longer awaiting a response.');
   }
 
-  await ref.update({ status: 'accepted' });
+  await ref.update({
+    status: 'accepted',
+    acceptedAt: new Date().toISOString(),
+    history: FieldValue.arrayUnion(historyEntry('accept', uid)),
+  });
   return { status: 'ok' };
 });
 
@@ -148,7 +163,10 @@ export const declineJob = onCall(async (request) => {
     throw new HttpsError('failed-precondition', 'This job is no longer awaiting a response.');
   }
 
-  await ref.update({ status: 'declined' });
+  await ref.update({
+    status: 'declined',
+    history: FieldValue.arrayUnion(historyEntry('decline', uid)),
+  });
   await bumpJobStats(uid, { pending: -1 });
 
   return { status: 'ok' };
@@ -168,7 +186,11 @@ export const completeJob = onCall(async (request) => {
     throw new HttpsError('failed-precondition', 'Only an accepted job can be marked complete.');
   }
 
-  await ref.update({ status: 'completed' });
+  await ref.update({
+    status: 'completed',
+    completedAt: new Date().toISOString(),
+    history: FieldValue.arrayUnion(historyEntry('complete', uid)),
+  });
   await bumpJobStats(uid, { pending: -1, completed: 1 });
 
   return { status: 'ok' };
@@ -189,10 +211,13 @@ export const cancelJob = onCall(async (request) => {
     throw new HttpsError('failed-precondition', 'This job is already finished.');
   }
 
+  const cancelReason = typeof reason === 'string' && reason.trim() ? reason.trim() : null;
+
   await ref.update({
     status: 'cancelled',
     cancelledBy: adminUid,
-    cancelReason: typeof reason === 'string' && reason.trim() ? reason.trim() : null,
+    cancelReason,
+    history: FieldValue.arrayUnion(historyEntry('cancel', adminUid, { reason: cancelReason })),
   });
 
   if (data.technicianId) {
