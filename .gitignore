@@ -36,6 +36,9 @@ ui-debug.log
 .DS_Store
 *.pem
 
+# Claude Code project instructions (local only)
+CLAUDE.md
+
 # local env files (see .env.example / functions/.env.example for the template)
 .env
 .env*.local
