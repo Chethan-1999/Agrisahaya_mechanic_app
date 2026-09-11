@@ -8,15 +8,55 @@ export type MechanicForm = {
   state: string;
   pincode: string;
   address: string;
+  landmark: string;
   age: string;
   experience: string;
 };
 
+export type MechanicStatus = 'pending' | 'active' | 'inactive' | 'rejected';
+
+export type JobStats = {
+  pending: number;
+  completed: number;
+  cancelled: number;
+};
+
 export type Mechanic = MechanicForm & {
   id: string;
-  isActive: boolean;
+  status: MechanicStatus;
+  paymentVerified: boolean;
+  jobStats: JobStats;
   createdAt: string;
   updatedAt: string;
+};
+
+export type JobStatus = 'open' | 'assigned' | 'accepted' | 'declined' | 'completed' | 'cancelled';
+
+export type Job = {
+  id: string;
+  technicianId: string | null;
+  farmerName: string;
+  farmerPhone: string;
+  description: string;
+  status: JobStatus;
+  createdAt: string;
+  createdBy: string;
+  cancelledBy: string | null;
+  cancelReason: string | null;
+};
+
+export type ProfileUpdateStatus = 'pending' | 'approved' | 'rejected';
+
+export type ProfileUpdateRequest = {
+  id: string;
+  technicianId: string;
+  changes: Partial<MechanicForm>;
+  message: string;
+  status: ProfileUpdateStatus;
+  createdAt: string;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  adminNote: string | null;
 };
 
 export type AdminProfile = {
@@ -25,19 +65,6 @@ export type AdminProfile = {
   email: string;
   role: 'admin';
 };
-
-export type ScreenName =
-  | 'landing'
-  | 'mechanicAuth'
-  | 'mechanicDashboard'
-  | 'mechanicProfile'
-  | 'mechanicEditProfile'
-  | 'adminLogin'
-  | 'adminDashboard'
-  | 'adminMechanics'
-  | 'adminSettings'
-  | 'adminMechanicDetails'
-  | 'adminEditMechanic';
 
 export type AppSession =
   | { role: 'mechanic'; mechanicId: string }
@@ -52,6 +79,7 @@ export const emptyMechanicForm: MechanicForm = {
   state: '',
   pincode: '',
   address: '',
+  landmark: '',
   age: '',
   experience: '',
 };
