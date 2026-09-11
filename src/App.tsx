@@ -116,8 +116,6 @@ export default function App() {
   useEffect(() => {
     if (session?.role === 'mechanic') {
       void loadCurrentMechanic(session.mechanicId);
-      void loadAssignedJobs(session.mechanicId);
-      void loadCommunityPosts();
       setCommunitySeenAt(getStoredCommunitySeenAt(session.mechanicId));
     }
 
@@ -127,6 +125,19 @@ export default function App() {
       void loadCommunityPosts();
     }
   }, [session]);
+
+  useEffect(() => {
+    if (session?.role !== 'mechanic' || !currentMechanic) return;
+
+    if (!currentMechanic.isActive) {
+      setJobs([]);
+      setCommunityPosts([]);
+      return;
+    }
+
+    void loadAssignedJobs(session.mechanicId);
+    void loadCommunityPosts();
+  }, [currentMechanic, session]);
 
   useEffect(() => {
     if (session?.role !== 'mechanic' || page !== 'mechanicCommunity') return;
@@ -290,7 +301,11 @@ export default function App() {
         </AuthLayout>
       )}
 
-      {session?.role === 'mechanic' && currentMechanic && (page === 'mechanicJobs' || page === 'mechanicCommunity' || page === 'mechanicMarketplace' || page === 'mechanicProfile') && (
+      {session?.role === 'mechanic' && currentMechanic && !currentMechanic.isActive && (
+        <MechanicApprovalPending mechanicName={currentMechanic.fullName} onLogout={logout} />
+      )}
+
+      {session?.role === 'mechanic' && currentMechanic?.isActive && (page === 'mechanicJobs' || page === 'mechanicCommunity' || page === 'mechanicMarketplace' || page === 'mechanicProfile') && (
         <MechanicShell activePage={page} communityPostCount={communityUnreadCount} onLogout={logout} onNavigate={navigateMechanic}>
           {page === 'mechanicJobs' && <MechanicJobs jobs={jobs} mechanicId={currentMechanic.id} />}
           {page === 'mechanicCommunity' && <MechanicCommunity posts={communityPosts} />}
@@ -299,7 +314,7 @@ export default function App() {
         </MechanicShell>
       )}
 
-      {session?.role === 'mechanic' && currentMechanic && page === 'mechanicEdit' && (
+      {session?.role === 'mechanic' && currentMechanic?.isActive && page === 'mechanicEdit' && (
         <EditMechanic
           mechanic={currentMechanic}
           onBack={() => setPage('mechanicProfile')}
@@ -385,13 +400,13 @@ export default function App() {
             <AssignJobsTable
               jobs={jobs}
               mechanics={mechanics}
-              onAssign={async (job, mechanicId) => {
+              onAssign={async (job, mechanicId, isCompleted) => {
                 const mechanic = mechanics.find((item) => item.id === mechanicId);
                 if (!mechanic) return;
 
                 await withLoading(async () => {
-                  await assignJob(job.id, mechanic.id, mechanic.fullName);
-                  setToast({ kind: 'success', text: `Job ${job.jobId || ''} assigned to ${mechanic.fullName}` });
+                  await assignJob(job.id, mechanic.id, mechanic.fullName, isCompleted);
+                  setToast({ kind: 'success', text: isCompleted ? `Job ${job.jobId || ''} marked completed` : `Job ${job.jobId || ''} assigned to ${mechanic.fullName}` });
                   setJobs(await listJobs());
                 });
               }}
@@ -533,6 +548,7 @@ function MechanicLogin({ onLogin, setToast, withLoading }: { onLogin: (mechanicI
     <form className="form-grid" onSubmit={(event) => void submit(event)}>
       <Input error={phoneError} inputMode="numeric" label={t('mobileNumber')} maxLength={10} onChange={updatePhoneNumber} pattern="[0-9]*" value={phoneNumber} />
       <div className="otp-row"><Input label="OTP" onChange={setOtp} value={otp} /><button className="secondary" onClick={() => void sendOtp()} type="button">{t('sendOtp')}</button></div>
+      {sentOtp && <p className="success-text">{t('developmentOtp', { code: sentOtp })}</p>}
       <button className="primary" type="submit">{t('login')}</button>
     </form>
   );
@@ -594,6 +610,7 @@ function MechanicSignup({ onRegistered, setToast, withLoading }: { onRegistered:
     <form className="form-grid" onSubmit={(event) => void submit(event)}>
       <div className="otp-row"><Input disabled={otpVerified} error={errors.phoneNumber} inputMode="numeric" label={t('mobileNumber')} maxLength={10} onChange={(value) => updateField('phoneNumber', value)} pattern="[0-9]*" value={form.phoneNumber} /><button className="secondary" disabled={otpVerified} onClick={sendOtp} type="button">{t('sendOtp')}</button></div>
       <div className="otp-row"><Input error={errors.otp} label={t('otpVerification')} onChange={setOtp} value={otp} /><button className="secondary" disabled={otpVerified} onClick={verifyOtp} type="button">{t('verify')}</button></div>
+      {sentOtp && !otpVerified && <p className="success-text">{t('developmentOtp', { code: sentOtp })}</p>}
       <p className={otpVerified ? 'success-text' : 'muted'}>{otpVerified ? t('otpVerifiedFields') : t('verifyOtpEnableFields')}</p>
       <MechanicFields disabled={!otpVerified} errors={errors} form={form} onChange={updateField} />
       <button className="secondary" onClick={clearForm} type="button">{t('clear')}</button>
@@ -650,6 +667,21 @@ function MechanicShell({ activePage, children, communityPostCount, onLogout, onN
         })}
       </nav>
       <button className="mechanic-logout" onClick={onLogout} type="button">Logout</button>
+    </main>
+  );
+}
+
+function MechanicApprovalPending({ mechanicName, onLogout }: { mechanicName: string; onLogout: () => void }) {
+  return (
+    <main className="mechanic-app-page approval-page">
+      <section className="approval-card">
+        <div className="approval-badge" aria-hidden="true">✓</div>
+        <p className="eyebrow">Welcome</p>
+        <h1>{mechanicName}</h1>
+        <div className="approval-status-pill">Waiting for admin approval</div>
+        <div className="approval-progress" aria-hidden="true"><span /></div>
+        <button className="secondary approval-logout" onClick={onLogout} type="button">Logout</button>
+      </section>
     </main>
   );
 }
@@ -739,7 +771,7 @@ function MechanicJobs({ jobs, mechanicId }: { jobs: Job[]; mechanicId: string })
           const isExpanded = expandedJobIds.includes(job.id);
 
           return (
-            <article className="mechanic-job-card" key={job.id}>
+            <article className={job.isCompleted ? 'mechanic-job-card completed' : 'mechanic-job-card'} key={job.id}>
               <div className="job-card-summary">
                 <div>
                   <div className="job-card-topline"><span>Job ID: {job.jobId}</span><time>Created date: {formatDate(job.createdAt)}</time></div>
@@ -1087,9 +1119,10 @@ function JobsTable({ jobs, onDelete, onSave, onUpdate }: { jobs: Job[]; onDelete
   );
 }
 
-function AssignJobsTable({ jobs, mechanics, onAssign }: { jobs: Job[]; mechanics: Mechanic[]; onAssign: (job: Job, mechanicId: string) => Promise<void> }) {
+function AssignJobsTable({ jobs, mechanics, onAssign }: { jobs: Job[]; mechanics: Mechanic[]; onAssign: (job: Job, mechanicId: string, isCompleted: boolean) => Promise<void> }) {
   const [selectedMechanics, setSelectedMechanics] = useState<Record<string, string>>({});
   const [editingAssignments, setEditingAssignments] = useState<Record<string, boolean>>({});
+  const [completedJobs, setCompletedJobs] = useState<Record<string, boolean>>({});
 
   function getSelectedMechanicId(job: Job) {
     return selectedMechanics[job.id] ?? job.assignedMechanicId;
@@ -1098,15 +1131,17 @@ function AssignJobsTable({ jobs, mechanics, onAssign }: { jobs: Job[]; mechanics
   function startEditAssignment(job: Job) {
     setSelectedMechanics((current) => ({ ...current, [job.id]: job.assignedMechanicId }));
     setEditingAssignments((current) => ({ ...current, [job.id]: true }));
+    setCompletedJobs((current) => ({ ...current, [job.id]: job.isCompleted }));
   }
 
   function cancelEditAssignment(job: Job) {
     setSelectedMechanics((current) => ({ ...current, [job.id]: job.assignedMechanicId }));
     setEditingAssignments((current) => ({ ...current, [job.id]: false }));
+    setCompletedJobs((current) => ({ ...current, [job.id]: job.isCompleted }));
   }
 
-  async function saveAssignment(job: Job, mechanicId: string) {
-    await onAssign(job, mechanicId);
+  async function saveAssignment(job: Job, mechanicId: string, isCompleted: boolean) {
+    await onAssign(job, mechanicId, isCompleted);
     setEditingAssignments((current) => ({ ...current, [job.id]: false }));
   }
 
@@ -1118,10 +1153,11 @@ function AssignJobsTable({ jobs, mechanics, onAssign }: { jobs: Job[]; mechanics
       </div>
       <div className="table-wrap assign-table-wrap">
         <table className="assign-table">
-          <thead><tr><th>Job ID</th><th>Customer</th><th>Phone number</th><th>Equipment</th><th>Issue</th><th>District</th><th>Current mechanic</th><th>Assign mechanic</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Job ID</th><th>Customer</th><th>Phone number</th><th>Equipment</th><th>Issue</th><th>District</th><th>Current mechanic</th><th>Assign mechanic</th><th>Job completed</th><th>Actions</th></tr></thead>
           <tbody>
             {jobs.map((job, index) => {
               const selectedMechanicId = getSelectedMechanicId(job);
+              const isCompleted = completedJobs[job.id] ?? job.isCompleted;
               const isAssigned = Boolean(job.assignedMechanicId);
               const isEditingAssignment = Boolean(editingAssignments[job.id]);
               const isDropdownDisabled = isAssigned && !isEditingAssignment;
@@ -1134,18 +1170,25 @@ function AssignJobsTable({ jobs, mechanics, onAssign }: { jobs: Job[]; mechanics
                   <td>{job.equipment}</td>
                   <td>{job.issue}</td>
                   <td>{job.district}</td>
-                  <td>{job.assignedMechanicName ? <span className="assignment-status"><strong>ASSIGNED</strong><small>{job.assignedMechanicName}</small></span> : <span className="not-assigned">Not assigned</span>}</td>
+                  <td>{job.assignedMechanicName ? <span className={job.isCompleted ? 'assignment-status completed' : 'assignment-status'}><strong>{job.isCompleted ? 'COMPLETED' : 'ASSIGNED'}</strong><small>{job.assignedMechanicName}</small></span> : <span className="not-assigned">Not assigned</span>}</td>
                   <td>
                     <select aria-label={`Assign mechanic for ${job.jobId || job.customerName}`} disabled={isDropdownDisabled} onChange={(event) => setSelectedMechanics((current) => ({ ...current, [job.id]: event.target.value }))} value={selectedMechanicId}>
                       <option value="">Select mechanic</option>
                       {mechanics.map((mechanic) => <option key={mechanic.id} value={mechanic.id}>{mechanic.fullName} - {mechanic.district}</option>)}
                     </select>
                   </td>
+                  <td>
+                    {isEditingAssignment ? (
+                      <label className="job-completed-check"><input checked={isCompleted} onChange={(event) => setCompletedJobs((current) => ({ ...current, [job.id]: event.target.checked }))} type="checkbox" /> Completed</label>
+                    ) : (
+                      <span className={job.isCompleted ? 'completion-chip done' : 'completion-chip pending'}>{job.isCompleted ? 'Closed' : 'Open'}</span>
+                    )}
+                  </td>
                   <td className="actions">
                     {isDropdownDisabled ? (
                       <button onClick={() => startEditAssignment(job)} type="button">Edit</button>
                     ) : (
-                      <button className="icon-save" disabled={!selectedMechanicId} onClick={() => void saveAssignment(job, selectedMechanicId)} type="button">Save</button>
+                      <button className="icon-save" disabled={!selectedMechanicId} onClick={() => void saveAssignment(job, selectedMechanicId, isCompleted)} type="button">Save</button>
                     )}
                     {isEditingAssignment && <button className="danger-text" onClick={() => cancelEditAssignment(job)} type="button">Cancel</button>}
                   </td>

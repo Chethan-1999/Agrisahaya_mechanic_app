@@ -44,6 +44,7 @@ const toJob = (id: string, data: Record<string, unknown>): Job => ({
   assignedMechanicId: String(data.assignedMechanicId ?? ''),
   assignedMechanicName: String(data.assignedMechanicName ?? ''),
   assignedAt: String(data.assignedAt ?? ''),
+  isCompleted: Boolean(data.isCompleted ?? false),
   customerName: String(data.customerName ?? ''),
   phoneNumber: String(data.phoneNumber ?? ''),
   equipment: String(data.equipment ?? ''),
@@ -59,6 +60,7 @@ export async function createJob(form: JobForm, jobId: string) {
   const ref = await addDoc(collection(db, collectionName), {
     ...form,
     jobId,
+    isCompleted: false,
     createdAt: now,
     updatedAt: now,
   });
@@ -89,10 +91,11 @@ export async function updateJob(id: string, form: JobForm) {
   });
 }
 
-export async function assignJob(id: string, mechanicId: string, mechanicName: string) {
+export async function assignJob(id: string, mechanicId: string, mechanicName: string, isCompleted = false) {
   await updateDoc(doc(db, collectionName, id), {
     assignedMechanicId: mechanicId,
     assignedMechanicName: mechanicName,
+    isCompleted,
     assignedAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });

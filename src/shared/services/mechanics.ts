@@ -36,7 +36,7 @@ export async function createMechanic(form: MechanicForm) {
   const now = new Date().toISOString();
   const ref = await addDoc(collection(db, collectionName), {
     ...form,
-    isActive: true,
+    isActive: false,
     createdAt: now,
     updatedAt: now,
   });

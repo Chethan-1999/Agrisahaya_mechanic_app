@@ -34,6 +34,7 @@ export type Job = JobForm & {
   assignedMechanicId: string;
   assignedMechanicName: string;
   assignedAt: string;
+  isCompleted: boolean;
   createdAt: string;
   updatedAt: string;
 };

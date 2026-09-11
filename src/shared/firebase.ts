@@ -3,13 +3,13 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyAMKzPPkHFxug_-1vOr0J5_DqaWdDNPiE8',
-  authDomain: 'mechanicapp-3ebb8.firebaseapp.com',
-  projectId: 'mechanicapp-3ebb8',
-  storageBucket: 'mechanicapp-3ebb8.firebasestorage.app',
-  messagingSenderId: '738112371753',
-  appId: '1:738112371753:web:3c482f1239e63b735cb038',
-  measurementId: 'G-L5X5B21WJX',
+  apiKey: 'AIzaSyCtsA45E6ZMJ3wQnhuYeciGODVIQFWc3ZU',
+  authDomain: 'agrisahay-mechanic-app.firebaseapp.com',
+  projectId: 'agrisahay-mechanic-app',
+  storageBucket: 'agrisahay-mechanic-app.firebasestorage.app',
+  messagingSenderId: '968202600299',
+  appId: '1:968202600299:web:a615970a6a93e62b81d62e',
+  measurementId: 'G-TFCHKKPH9V',
 };
 
 export const firebaseConfigured =

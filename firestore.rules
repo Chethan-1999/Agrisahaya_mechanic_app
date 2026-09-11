@@ -13,7 +13,7 @@ service cloud.firestore {
     function isBootstrapAdmin(adminId) {
       return isSignedIn()
         && request.auth.uid == adminId
-        && request.auth.token.email == '55chethan159@gmail.com';
+        && request.auth.token.email in ['Agrisahay@gmail.com', 'agrisahay@gmail.com'];
     }
 
     match /admins/{adminId} {

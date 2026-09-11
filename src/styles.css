@@ -100,6 +100,18 @@ h2 { margin: 0 0 18px; font-size: 26px; }
 .mechanic-app-page { min-height: 100vh; display: grid; align-items: start; justify-items: center; padding: 76px 18px 112px; position: relative; font-family: "Outfit", Manrope, ui-sans-serif, system-ui, sans-serif; }
 .mechanic-app-page button, .mechanic-app-page input, .mechanic-app-page select, .mechanic-app-page textarea { font-family: "Outfit", Manrope, ui-sans-serif, system-ui, sans-serif; }
 .mechanic-app-content { width: min(430px, 100%); }
+.approval-page { align-items: center; padding-bottom: 76px; background: radial-gradient(circle at 16% 18%, rgba(255, 184, 77, 0.24), transparent 28%), radial-gradient(circle at 86% 12%, rgba(22, 128, 71, 0.18), transparent 30%), linear-gradient(160deg, #effbf4 0%, #f8fffb 48%, #fff4d5 100%); }
+.approval-card { position: relative; width: min(430px, 100%); display: grid; justify-items: center; gap: 12px; padding: 38px 22px 24px; border: 1px solid rgba(22, 128, 71, 0.16); border-radius: 30px; background: rgba(255, 255, 255, 0.88); box-shadow: 0 28px 60px rgba(18, 63, 39, 0.18); text-align: center; overflow: hidden; backdrop-filter: blur(18px); }
+.approval-card::before { content: ''; position: absolute; inset: 12px; border: 1px solid rgba(22, 128, 71, 0.1); border-radius: 24px; pointer-events: none; }
+.approval-card::after { content: ''; position: absolute; right: -54px; top: -58px; width: 156px; height: 156px; border-radius: 999px; background: rgba(255, 184, 77, 0.24); }
+.approval-badge { position: relative; z-index: 1; width: 78px; height: 78px; display: grid; place-items: center; margin-bottom: 4px; border-radius: 26px; background: linear-gradient(135deg, var(--primary), #36b86c); color: white; font-size: 34px; font-weight: 950; box-shadow: 0 18px 38px rgba(22, 128, 71, 0.28); }
+.approval-card .eyebrow, .approval-card h1, .approval-card p, .approval-card button, .approval-status-pill, .approval-progress { position: relative; z-index: 1; }
+.approval-card h1 { margin: 0; font-size: 36px; line-height: 1.04; overflow-wrap: anywhere; }
+.approval-card p:not(.eyebrow) { max-width: 330px; margin: 4px 0 6px; color: var(--muted); font-size: 15px; font-weight: 850; line-height: 1.5; }
+.approval-status-pill { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; padding: 0 14px; border-radius: 999px; background: #fff3d1; color: #87600c; font-size: 12px; font-weight: 950; text-transform: uppercase; letter-spacing: 0; }
+.approval-progress { width: min(260px, 100%); height: 8px; margin: 4px 0 8px; border-radius: 999px; background: #e4f2e9; overflow: hidden; }
+.approval-progress span { display: block; width: 56%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--primary), #ffb84d); }
+.approval-logout { min-width: 150px; }
 .mechanic-tab-card { width: 100%; border-radius: 22px; }
 .mechanic-tab-card .detail-grid { grid-template-columns: 1fr; }
 .blank-tab-card { min-height: 620px; display: grid; place-items: center; }
@@ -129,6 +141,8 @@ h2 { margin: 0 0 18px; font-size: 26px; }
 .jobs-hero > span { position: relative; width: 58px; height: 58px; display: grid; place-items: center; border-radius: 20px; background: var(--primary); color: white; font-size: 26px; font-weight: 950; box-shadow: 0 14px 28px rgba(22, 128, 71, 0.22); }
 .mechanic-job-list { display: grid; gap: 12px; padding-bottom: 110px; }
 .mechanic-job-card { position: relative; padding: 42px 14px 14px; border: 1px solid rgba(22, 128, 71, 0.14); border-radius: 20px; background: linear-gradient(145deg, #ffffff 0%, #f8fdf9 100%); box-shadow: 0 18px 34px rgba(18, 63, 39, 0.1); }
+.mechanic-job-card.completed { padding-bottom: 38px; border-color: rgba(22, 128, 71, 0.42); background: linear-gradient(145deg, #dff8e7 0%, #baf0ce 100%); box-shadow: 0 18px 38px rgba(22, 128, 71, 0.18); }
+.mechanic-job-card.completed::after { content: 'Completed'; position: absolute; right: 14px; bottom: 10px; padding: 7px 10px; border-radius: 999px; background: var(--primary); color: white; font-size: 11px; font-weight: 950; text-transform: uppercase; }
 .job-card-summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 76px; }
 .job-card-summary > div { min-width: 0; }
 .job-card-topline { position: absolute; left: 14px; right: 14px; top: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; color: var(--muted); font-size: 12px; font-weight: 900; }
@@ -222,11 +236,17 @@ th, td { padding: 16px; text-align: left; border-bottom: 1px solid var(--border)
 th { color: var(--muted); font-size: 13px; text-transform: uppercase; }
 .jobs-table { min-width: 1400px; }
 .jobs-table th:last-child, .jobs-table td:last-child { width: 160px; }
-.assign-table { min-width: 1420px; }
+.assign-table { min-width: 1540px; }
 .assign-table th:last-child, .assign-table td:last-child { width: 110px; text-align: center; }
 .assignment-status { display: grid; gap: 4px; justify-items: center; text-align: center; }
-.assignment-status strong { color: var(--primary); font-size: 16px; letter-spacing: 0; }
+.assignment-status strong { color: #d18400; font-size: 16px; letter-spacing: 0; }
+.assignment-status.completed strong { color: #0b8d46; }
 .assignment-status small { color: var(--muted); font-size: 12px; font-weight: 850; }
+.job-completed-check { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 12px; border-radius: 999px; background: #ecf8f0; color: var(--primary-dark); font-size: 12px; font-weight: 950; white-space: nowrap; }
+.job-completed-check input { width: 16px; height: 16px; accent-color: var(--primary); }
+.completion-chip { display: inline-grid; place-items: center; min-width: 68px; min-height: 30px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 950; }
+.completion-chip.done { background: #dff5e7; color: #0b8d46; }
+.completion-chip.pending { background: #fff0d4; color: var(--warning); }
 .not-assigned { display: block; color: var(--danger); font-weight: 900; text-align: center; }
 .job-entry-row td { background: var(--surface-alt); }
 .jobs-heading { justify-content: space-between; margin-bottom: 18px; }
