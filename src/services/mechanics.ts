@@ -1,48 +1,37 @@
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  orderBy,
-  query,
-  updateDoc,
-  where,
-} from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, orderBy, query, updateDoc } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 
-import { db } from '../firebase';
-import type { Mechanic, MechanicForm } from '../types';
+import { db, functions } from '../firebase';
+import type { Mechanic, MechanicForm, MechanicStatus } from '../types';
 
-const collectionName = 'mechanics';
+const collectionName = 'technicians';
 
-const toMechanic = (id: string, data: Record<string, unknown>): Mechanic => ({
-  id,
-  fullName: String(data.fullName ?? ''),
-  phoneNumber: String(data.phoneNumber ?? ''),
-  village: String(data.village ?? ''),
-  district: String(data.district ?? ''),
-  state: String(data.state ?? ''),
-  pincode: String(data.pincode ?? ''),
-  address: String(data.address ?? ''),
-  age: String(data.age ?? ''),
-  experience: String(data.experience ?? ''),
-  isActive: Boolean(data.isActive ?? true),
-  createdAt: String(data.createdAt ?? ''),
-  updatedAt: String(data.updatedAt ?? ''),
-});
+const toMechanic = (id: string, data: Record<string, unknown>): Mechanic => {
+  const jobStats = (data.jobStats ?? {}) as Record<string, unknown>;
 
-export async function createMechanic(form: MechanicForm) {
-  const now = new Date().toISOString();
-  const ref = await addDoc(collection(db, collectionName), {
-    ...form,
-    isActive: true,
-    createdAt: now,
-    updatedAt: now,
-  });
-
-  return ref.id;
-}
+  return {
+    id,
+    fullName: String(data.fullName ?? ''),
+    phoneNumber: String(data.phoneNumber ?? ''),
+    village: String(data.village ?? ''),
+    district: String(data.district ?? ''),
+    state: String(data.state ?? ''),
+    pincode: String(data.pincode ?? ''),
+    address: String(data.address ?? ''),
+    landmark: String(data.landmark ?? ''),
+    age: String(data.age ?? ''),
+    experience: String(data.experience ?? ''),
+    status: (data.status as MechanicStatus) ?? 'pending',
+    paymentVerified: Boolean(data.paymentVerified ?? false),
+    jobStats: {
+      pending: Number(jobStats.pending ?? 0),
+      completed: Number(jobStats.completed ?? 0),
+      cancelled: Number(jobStats.cancelled ?? 0),
+    },
+    createdAt: String(data.createdAt ?? ''),
+    updatedAt: String(data.updatedAt ?? ''),
+  };
+};
 
 export async function getMechanic(id: string) {
   const snapshot = await getDoc(doc(db, collectionName, id));
@@ -54,14 +43,6 @@ export async function getMechanic(id: string) {
   return toMechanic(snapshot.id, snapshot.data());
 }
 
-export async function findMechanicByPhone(phoneNumber: string) {
-  const mechanicsQuery = query(collection(db, collectionName), where('phoneNumber', '==', phoneNumber));
-  const snapshot = await getDocs(mechanicsQuery);
-  const first = snapshot.docs[0];
-
-  return first ? toMechanic(first.id, first.data()) : null;
-}
-
 export async function listMechanics() {
   const mechanicsQuery = query(collection(db, collectionName), orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(mechanicsQuery);
@@ -69,13 +50,40 @@ export async function listMechanics() {
   return snapshot.docs.map((mechanicDoc) => toMechanic(mechanicDoc.id, mechanicDoc.data()));
 }
 
-export async function updateMechanic(id: string, form: Partial<MechanicForm> & { isActive?: boolean }) {
+/**
+ * Admin-only direct edit of profile fields (name, address, etc — not status).
+ * Interim only: firestore.rules already denies this to anyone but the Admin
+ * SDK, so this call starts failing the moment the new rules are deployed.
+ * TODO(M3): move behind a reviewed Cloud Function once profile-update
+ * review exists for admin edits too, not just technician-submitted ones.
+ */
+export async function adminUpdateProfile(id: string, form: Partial<MechanicForm>) {
   await updateDoc(doc(db, collectionName, id), {
     ...form,
     updatedAt: new Date().toISOString(),
   });
 }
 
-export async function deleteMechanic(id: string) {
-  await deleteDoc(doc(db, collectionName, id));
+const reviewSignupFn = httpsCallable<
+  { technicianId: string; decision: 'approve' | 'reject'; paymentVerified?: boolean },
+  { status: 'ok' }
+>(functions, 'reviewSignup');
+
+const setTechnicianStatusFn = httpsCallable<
+  { technicianId: string; status: 'active' | 'inactive' },
+  { status: 'ok' }
+>(functions, 'setTechnicianStatus');
+
+export async function reviewSignup(technicianId: string, decision: 'approve' | 'reject', paymentVerified?: boolean) {
+  await reviewSignupFn({ technicianId, decision, paymentVerified });
+}
+
+export async function setTechnicianStatus(technicianId: string, status: 'active' | 'inactive') {
+  await setTechnicianStatusFn({ technicianId, status });
+}
+
+const updateDeviceInfoFn = httpsCallable<{ fcmToken: string }, { status: 'ok' }>(functions, 'updateDeviceInfo');
+
+export async function updateDeviceInfo(fcmToken: string) {
+  await updateDeviceInfoFn({ fcmToken });
 }
