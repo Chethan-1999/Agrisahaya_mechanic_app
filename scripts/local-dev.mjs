@@ -20,6 +20,7 @@
 
 import { spawnSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -44,8 +45,11 @@ function fail(message) {
 
 // Runs a command via the shell (used for npm/npx-resolved tools, where Windows
 // needs the .cmd shim resolved) and blocks until it exits. Throws on failure.
+// Args are static/hardcoded call sites only (never user input), and folded into
+// one command string — passing shell:true together with a separate args array
+// is a Node deprecation (DEP0190) since args aren't escaped before concatenation.
 function run(command, args, extraEnv = {}) {
-  const result = spawnSync(command, args, {
+  const result = spawnSync([command, ...args].join(' '), {
     cwd: repoRoot,
     stdio: 'inherit',
     shell: true,
@@ -134,6 +138,39 @@ function waitForBootOrRecover(adb, emulatorBin, avdName) {
   fail(`Emulator failed to boot after ${BOOT_RETRIES} attempts.`);
 }
 
+// The Firebase emulators fail with a confusing, easy-to-miss "port not open,
+// could not start" per-service warning (rather than a clear error) when a
+// previous run's process got orphaned — e.g. this script's terminal was
+// killed instead of Ctrl+C'd, leaving `firebase emulators:start` and the
+// Firestore JAR running. Check up front and name the actual conflicting port.
+function isPortFree(port) {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.once('error', () => resolve(false));
+    server.once('listening', () => server.close(() => resolve(true)));
+    server.listen(port, '0.0.0.0');
+  });
+}
+
+async function checkEmulatorPortsFree() {
+  const ports = [8080, 9099, 5001, 4000, 4400, 4500, 9150];
+  const busy = [];
+  for (const port of ports) {
+    if (!(await isPortFree(port))) busy.push(port);
+  }
+  if (busy.length > 0) {
+    const howToFind = isWindows
+      ? `netstat -ano | findstr :${busy[0]}`
+      : `lsof -i :${busy[0]} -sTCP:LISTEN`;
+    fail(
+      `Port(s) ${busy.join(', ')} are already in use — most likely an orphaned Firebase emulator ` +
+        `from a previous run (e.g. this script's terminal was closed instead of Ctrl+C'd).\n` +
+        `Find and stop it:\n  ${howToFind}\n` +
+        (isWindows ? '  taskkill /PID <pid> /F' : '  kill <pid>'),
+    );
+  }
+}
+
 function detectLanIp() {
   const interfaces = os.networkInterfaces();
   const candidates = [];
@@ -207,7 +244,7 @@ function ensureDebugCleartextConfig() {
   );
 }
 
-function main() {
+async function main() {
   const lanIp = detectLanIp();
   log(`Using this laptop's LAN IP for Firebase: ${lanIp}`);
   log('Other devices must be on the same Wi-Fi/network to reach it.');
@@ -257,13 +294,16 @@ function main() {
 
   if (existsSync(path.join(repoRoot, 'functions', 'package.json'))) {
     log('Building Cloud Functions...');
-    const functionsBuild = spawnSync('npm', ['run', 'build'], {
+    const functionsBuild = spawnSync('npm run build', {
       cwd: path.join(repoRoot, 'functions'),
       stdio: 'inherit',
       shell: true,
     });
     if (functionsBuild.status !== 0) fail('Cloud Functions build failed. See output above.');
   }
+
+  log('Checking that the emulator ports are free...');
+  await checkEmulatorPortsFree();
 
   log(`Starting the Firebase Emulator Suite on 0.0.0.0 (reachable at ${lanIp})...`);
   log('Emulator UI: http://localhost:4000   Ctrl+C to stop.');
@@ -275,4 +315,4 @@ function main() {
   run('npx', ['firebase', 'emulators:start', '--only', 'auth,firestore,functions'], { PATH: pathWithJava });
 }
 
-main();
+main().catch((err) => fail(err.stack || String(err)));
