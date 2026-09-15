@@ -1,4 +1,5 @@
 import type { MechanicForm } from '../types';
+import { isIndianState } from './indianStates';
 
 export type ValidationErrors = Partial<Record<keyof MechanicForm, string>>;
 
@@ -25,6 +26,12 @@ export function validateProfileForm(form: Omit<MechanicForm, 'phoneNumber'>): Va
 
   if (!form.district.trim()) {
     errors.district = 'District is required';
+  }
+
+  if (!form.state.trim()) {
+    errors.state = 'State is required';
+  } else if (!isIndianState(form.state)) {
+    errors.state = 'Select a valid Indian state';
   }
 
   if (form.pincode.trim() && !/^\d{6}$/.test(form.pincode.trim())) {

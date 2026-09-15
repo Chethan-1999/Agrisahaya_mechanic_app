@@ -984,7 +984,7 @@ function MechanicFields({ disabled = false, errors = {}, form, onChange, transla
       <Input error={errors.fullName} label={labels.fullName} onChange={(value) => onChange('fullName', value)} value={form.fullName} />
       <Input label={labels.village} error={errors.village} onChange={(value) => onChange('village', value)} value={form.village} />
       <Input label={labels.district} error={errors.district} onChange={(value) => onChange('district', value)} value={form.district} />
-      <Input label={labels.state} onChange={(value) => onChange('state', value)} value={form.state} />
+      <Input error={errors.state} label={labels.state} onChange={(value) => onChange('state', value)} value={form.state} />
       <Input label={labels.pincode} error={errors.pincode} onChange={(value) => onChange('pincode', value)} value={form.pincode} />
       <Input label={labels.address} onChange={(value) => onChange('address', value)} value={form.address} />
       <Input label={labels.landmark} onChange={(value) => onChange('landmark', value)} value={form.landmark} />

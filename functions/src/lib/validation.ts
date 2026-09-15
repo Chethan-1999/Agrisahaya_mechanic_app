@@ -1,8 +1,10 @@
+import { isIndianState } from './indianStates';
+
 export type ProfileInput = {
   fullName: string;
   village: string;
   district: string;
-  state?: string;
+  state: string;
   pincode?: string;
   address?: string;
   landmark?: string;
@@ -22,6 +24,12 @@ export function assertValidProfile(profile: ProfileInput): void {
 
   if (!profile.district?.trim()) {
     throw new Error('District is required.');
+  }
+
+  if (!profile.state?.trim()) {
+    throw new Error('State is required.');
+  } else if (!isIndianState(profile.state)) {
+    throw new Error('Select a valid Indian state.');
   }
 
   if (profile.pincode && !/^\d{6}$/.test(profile.pincode.trim())) {
