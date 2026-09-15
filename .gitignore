@@ -22,6 +22,7 @@ expo-env.d.ts
 .metro-health-check*
 
 # debug
+firebase-debug.log
 npm-debug.*
 yarn-debug.*
 yarn-error.*
@@ -31,6 +32,9 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
+.env.*
+!.env.example
 .env*.local
 push-github-api.ps1
 
