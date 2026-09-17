@@ -87,3 +87,14 @@ const updateDeviceInfoFn = httpsCallable<{ fcmToken: string }, { status: 'ok' }>
 export async function updateDeviceInfo(fcmToken: string) {
   await updateDeviceInfoFn({ fcmToken });
 }
+
+const revokeOtherSessionsFn = httpsCallable<Record<string, never>, { status: 'ok' }>(functions, 'revokeOtherSessions');
+
+/** Best-effort — swallows its own errors so a transient failure (network blip, a flaky emulator) never strands an otherwise-successful sign-in. */
+export async function revokeOtherSessions(): Promise<void> {
+  try {
+    await revokeOtherSessionsFn({});
+  } catch (err) {
+    console.warn('revokeOtherSessions failed:', err);
+  }
+}

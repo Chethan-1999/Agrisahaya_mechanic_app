@@ -2,7 +2,7 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 import { requireAdmin } from './lib/authz';
 import { requireDoc } from './lib/docHelpers';
-import { db } from './lib/firebaseAdmin';
+import { auth, db } from './lib/firebaseAdmin';
 import { pushToTechnician } from './lib/push';
 
 /** Admin approves or rejects a pending technician. This is the activation gate. */
@@ -86,6 +86,43 @@ export const updateDeviceInfo = onCall(async (request) => {
     fcmToken,
     updatedAt: new Date().toISOString(),
   });
+
+  return { status: 'ok' };
+});
+
+/**
+ * Best-effort single-device enforcement: called once right after any
+ * successful phone-OTP sign-in (fresh signup or returning login alike).
+ * Revokes every refresh token issued before now for this uid, forcing any
+ * other device's session to re-authenticate on its next token refresh.
+ *
+ * Two accepted tradeoffs, not closed here:
+ * - `revokeRefreshTokens` doesn't invalidate an already-issued ID token — an
+ *   old device's session can keep calling functions for up to its ~1hr
+ *   natural expiry. Checking `checkRevoked` on every call would close this
+ *   gap but adds an Auth/Firestore lookup to every request in the app — not
+ *   worth it at this app's scale/threat model.
+ * - This also revokes the tokens the just-signed-in device itself was
+ *   issued a moment earlier (second-granularity `iat` can tie with the
+ *   revocation cutoff). Callers must force a fresh ID token right after this
+ *   resolves (`auth.currentUser?.getIdToken(true)`) so this device's own
+ *   session survives.
+ *
+ * Best-effort like the push helpers in lib/push.ts: this single-device
+ * enforcement is a nice-to-have, not the thing that authenticates the
+ * caller, so a failure here (including, as observed, the Auth emulator
+ * occasionally erroring on revokeRefreshTokens) must never block an
+ * otherwise-successful sign-in.
+ */
+export const revokeOtherSessions = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError('unauthenticated', 'Sign in required.');
+
+  try {
+    await auth.revokeRefreshTokens(uid);
+  } catch (err) {
+    console.warn(`revokeOtherSessions failed for ${uid}:`, err);
+  }
 
   return { status: 'ok' };
 });

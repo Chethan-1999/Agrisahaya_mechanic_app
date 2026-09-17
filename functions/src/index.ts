@@ -3,4 +3,4 @@ export { acceptJob, assignJob, cancelJob, completeJob, createJob, declineJob } f
 export { changePin, loginWithPin, setPin } from './pinFunctions';
 export { reviewProfileUpdate, submitProfileUpdate } from './profileUpdateFunctions';
 export { completeSignup } from './signupFunctions';
-export { reviewSignup, setTechnicianStatus, updateDeviceInfo } from './technicianFunctions';
+export { revokeOtherSessions, reviewSignup, setTechnicianStatus, updateDeviceInfo } from './technicianFunctions';
