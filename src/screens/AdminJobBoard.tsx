@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
+import { PullToRefresh } from '../components/PullToRefresh';
 import { Input, Select, Textarea, formatDate, jobStatusMeta, type Toast } from '../components/ui';
 import { assignJob, cancelJob, createJob, listAllJobs } from '../services/jobs';
 import type { Job, Mechanic } from '../types';
@@ -24,6 +25,7 @@ export function AdminJobBoard({ mechanics, setToast, withLoading }: {
   const technicianName = (id: string | null) => (id ? (mechanics.find((mechanic) => mechanic.id === id)?.fullName ?? 'Unknown') : 'Unassigned');
 
   return (
+    <PullToRefresh onRefresh={refresh}>
     <section>
       <div className="section-heading">
         <h1>Job Board</h1>
@@ -96,6 +98,7 @@ export function AdminJobBoard({ mechanics, setToast, withLoading }: {
         {jobs.length === 0 && <p className="empty">No jobs logged yet.</p>}
       </div>
     </section>
+    </PullToRefresh>
   );
 }
 

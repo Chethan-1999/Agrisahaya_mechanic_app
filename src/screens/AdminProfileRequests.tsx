@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { PullToRefresh } from '../components/PullToRefresh';
 import { Textarea, formatDate, type Toast } from '../components/ui';
 import { listPendingProfileUpdateRequests, reviewProfileUpdate } from '../services/profileUpdates';
 import type { Mechanic, MechanicForm, ProfileUpdateRequest } from '../types';
@@ -35,22 +36,24 @@ export function AdminProfileRequests({ mechanics, setToast, withLoading }: {
   const technicianName = (id: string) => mechanics.find((mechanic) => mechanic.id === id)?.fullName ?? 'Unknown';
 
   return (
-    <section>
-      <div className="section-heading"><h1>Profile Requests</h1><button className="secondary" onClick={() => void refresh()}>Refresh</button></div>
-      {requests.length === 0 && <p className="empty">No pending requests.</p>}
-      <div className="request-list">
-        {requests.map((request) => (
-          <RequestCard
-            key={request.id}
-            onReviewed={refresh}
-            request={request}
-            setToast={setToast}
-            technicianName={technicianName(request.technicianId)}
-            withLoading={withLoading}
-          />
-        ))}
-      </div>
-    </section>
+    <PullToRefresh onRefresh={refresh}>
+      <section>
+        <div className="section-heading"><h1>Profile Requests</h1><button className="secondary" onClick={() => void refresh()}>Refresh</button></div>
+        {requests.length === 0 && <p className="empty">No pending requests.</p>}
+        <div className="request-list">
+          {requests.map((request) => (
+            <RequestCard
+              key={request.id}
+              onReviewed={refresh}
+              request={request}
+              setToast={setToast}
+              technicianName={technicianName(request.technicianId)}
+              withLoading={withLoading}
+            />
+          ))}
+        </div>
+      </section>
+    </PullToRefresh>
   );
 }
 

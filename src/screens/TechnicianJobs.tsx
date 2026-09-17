@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
+import { PullToRefresh } from '../components/PullToRefresh';
 import { jobStatusMeta, type Toast } from '../components/ui';
 import { useI18n } from '../i18n/I18nContext';
 import { acceptJob, completeJob, declineJob, listOwnJobs } from '../services/jobs';
@@ -47,35 +48,37 @@ export function TechnicianJobs({ onBack, setToast, technicianId, withLoading }: 
   }
 
   return (
-    <main className="detail-page">
-      <section className="card profile-card">
-        <button className="text-button" onClick={onBack}>{t('back')}</button>
-        <h1>{t('jobsTitle')}</h1>
-        {numbered.length === 0 && <p className="muted">{t('noJobsYet')}</p>}
-        <div className="job-list">
-          {numbered.map(({ job, taskNumber }) => {
-            const meta = jobStatusMeta(job.status, t);
-            const clickable = isOpenForAction(job);
-            return (
-              <button
-                className={`job-row-button ${clickable ? '' : 'static'}`}
-                disabled={!clickable}
-                key={job.id}
-                onClick={() => clickable && setSelectedJobId(job.id)}
-              >
-                <span className="tnum">{t('task')} {taskNumber}</span>
-                <span className="jinfo">
-                  <b>{job.description}</b>
-                  <span>{t('farmerLabel')}: {job.farmerName || '-'}</span>
-                </span>
-                <span className={`pill ${meta.pillClass}`}>{meta.label}</span>
-              </button>
-            );
-          })}
-        </div>
-        <p className="muted">{t('supportLabel')}: <a href={`tel:${SUPPORT_NUMBER}`}>{SUPPORT_NUMBER}</a></p>
-      </section>
-    </main>
+    <PullToRefresh onRefresh={refresh}>
+      <main className="detail-page">
+        <section className="card profile-card">
+          <button className="text-button" onClick={onBack}>{t('back')}</button>
+          <h1>{t('jobsTitle')}</h1>
+          {numbered.length === 0 && <p className="muted">{t('noJobsYet')}</p>}
+          <div className="job-list">
+            {numbered.map(({ job, taskNumber }) => {
+              const meta = jobStatusMeta(job.status, t);
+              const clickable = isOpenForAction(job);
+              return (
+                <button
+                  className={`job-row-button ${clickable ? '' : 'static'}`}
+                  disabled={!clickable}
+                  key={job.id}
+                  onClick={() => clickable && setSelectedJobId(job.id)}
+                >
+                  <span className="tnum">{t('task')} {taskNumber}</span>
+                  <span className="jinfo">
+                    <b>{job.description}</b>
+                    <span>{t('farmerLabel')}: {job.farmerName || '-'}</span>
+                  </span>
+                  <span className={`pill ${meta.pillClass}`}>{meta.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="muted">{t('supportLabel')}: <a href={`tel:${SUPPORT_NUMBER}`}>{SUPPORT_NUMBER}</a></p>
+        </section>
+      </main>
+    </PullToRefresh>
   );
 }
 

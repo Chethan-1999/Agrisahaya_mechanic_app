@@ -137,6 +137,10 @@ th { color: var(--muted); font-size: 13px; text-transform: uppercase; }
 .toast.success { background: var(--primary); }
 .toast.error { background: var(--danger); }
 
+.pull-indicator { display: flex; align-items: center; justify-content: center; overflow: hidden; transition: height 150ms ease; }
+.pull-indicator span { width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; }
+.pull-indicator span.spin { animation: spin 800ms linear infinite; }
+
 @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 
