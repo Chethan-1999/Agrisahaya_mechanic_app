@@ -57,6 +57,7 @@ export const completeSignup = onCall(async (request) => {
     paymentVerified: false,
     fcmToken: null,
     jobStats: { pending: 0, completed: 0, cancelled: 0 },
+    profileHistory: [],
     createdAt: now,
     updatedAt: now,
     approvedBy: null,

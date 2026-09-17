@@ -21,14 +21,31 @@ export type JobStats = {
   cancelled: number;
 };
 
+export type ProfileHistoryEntry = {
+  at: string;
+  by: string;
+  requestId: string;
+  changes: Record<string, { from: string | null; to: string }>;
+};
+
 export type Mechanic = MechanicForm & {
   id: string;
   status: MechanicStatus;
   paymentVerified: boolean;
   jobStats: JobStats;
+  profileHistory: ProfileHistoryEntry[];
   createdAt: string;
   updatedAt: string;
 };
+
+/**
+ * Display-only mirror of functions/src/lib/params.ts's
+ * PROFILE_UPDATE_LIFETIME_CAP default — the server call is the actual
+ * enforcement point, this is just a UI hint (the two TS projects don't share
+ * a package at this project's size; see EDITABLE_FIELDS in
+ * functions/src/profileUpdateFunctions.ts for the same tradeoff).
+ */
+export const PROFILE_UPDATE_LIFETIME_CAP_DISPLAY = 2;
 
 export type JobStatus = 'open' | 'assigned' | 'accepted' | 'declined' | 'completed' | 'cancelled';
 

@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Input, Textarea, type Toast } from '../components/ui';
 import { useI18n } from '../i18n/I18nContext';
-import { submitProfileUpdate } from '../services/profileUpdates';
+import { listOwnProfileUpdateRequests, submitProfileUpdate } from '../services/profileUpdates';
 import type { Mechanic, MechanicForm } from '../types';
+import { PROFILE_UPDATE_LIFETIME_CAP_DISPLAY } from '../types';
 import { hasErrors, validateProfileForm, type ValidationErrors } from '../utils/validation';
 
 type EditableKey = Exclude<keyof MechanicForm, 'phoneNumber'>;
@@ -30,12 +31,21 @@ export function RequestProfileChange({ mechanic, onBack, onSubmitted, setToast, 
   });
   const [message, setMessage] = useState('');
   const [errors, setErrors] = useState<ValidationErrors>({});
+  const [usedCount, setUsedCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    void listOwnProfileUpdateRequests(mechanic.id).then((requests) => setUsedCount(requests.length));
+  }, [mechanic.id]);
+
+  const capReached = usedCount !== null && usedCount >= PROFILE_UPDATE_LIFETIME_CAP_DISPLAY;
 
   function updateField(key: EditableKey, value: string) {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
   async function submit() {
+    if (capReached) return;
+
     const nextErrors = validateProfileForm(form);
     setErrors(nextErrors);
     if (hasErrors(nextErrors)) return;
@@ -71,6 +81,12 @@ export function RequestProfileChange({ mechanic, onBack, onSubmitted, setToast, 
         <button className="text-button" onClick={onBack} type="button">{t('back')}</button>
         <h1>{t('requestChangeTitle')}</h1>
         <p className="muted">{t('requestChangeHint')}</p>
+        {usedCount !== null && (
+          <p className="muted">
+            {t('changesUsedLabel')}: {usedCount}/{PROFILE_UPDATE_LIFETIME_CAP_DISPLAY}
+          </p>
+        )}
+        {capReached && <p className="muted error">{t('changesCapReachedError')}</p>}
         <Input error={errors.fullName} label={t('fullName')} onChange={(value) => updateField('fullName', value)} value={form.fullName} />
         <Input error={errors.village} label={t('village')} onChange={(value) => updateField('village', value)} value={form.village} />
         <Input error={errors.district} label={t('district')} onChange={(value) => updateField('district', value)} value={form.district} />
@@ -81,7 +97,9 @@ export function RequestProfileChange({ mechanic, onBack, onSubmitted, setToast, 
         <Input error={errors.age} label={t('age')} onChange={(value) => updateField('age', value)} value={form.age} />
         <Input error={errors.experience} label={t('experience')} onChange={(value) => updateField('experience', value)} value={form.experience} />
         <Textarea label={t('reasonForChange')} onChange={setMessage} value={message} />
-        <button className="primary" onClick={() => void submit()} type="button">{t('submitRequestButton')}</button>
+        <button className="primary" disabled={capReached} onClick={() => void submit()} type="button">
+          {t('submitRequestButton')}
+        </button>
       </section>
     </main>
   );

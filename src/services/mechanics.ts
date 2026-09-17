@@ -2,7 +2,7 @@ import { collection, doc, getDoc, getDocs, orderBy, query, updateDoc } from 'fir
 import { httpsCallable } from 'firebase/functions';
 
 import { db, functions } from '../firebase';
-import type { Mechanic, MechanicForm, MechanicStatus } from '../types';
+import type { Mechanic, MechanicForm, MechanicStatus, ProfileHistoryEntry } from '../types';
 
 const collectionName = 'technicians';
 
@@ -28,6 +28,7 @@ const toMechanic = (id: string, data: Record<string, unknown>): Mechanic => {
       completed: Number(jobStats.completed ?? 0),
       cancelled: Number(jobStats.cancelled ?? 0),
     },
+    profileHistory: (data.profileHistory as ProfileHistoryEntry[] | undefined) ?? [],
     createdAt: String(data.createdAt ?? ''),
     updatedAt: String(data.updatedAt ?? ''),
   };

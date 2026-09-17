@@ -1,8 +1,11 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 import { requireAdmin } from './lib/authz';
 import { requireDoc } from './lib/docHelpers';
 import { db } from './lib/firebaseAdmin';
+import { PROFILE_UPDATE_LIFETIME_CAP } from './lib/params';
+import { profileHistoryEntry } from './lib/profileHistory';
 import { pushToTechnician } from './lib/push';
 
 // Mirrors MechanicForm's keys (src/types.ts) minus phoneNumber, which is
@@ -56,6 +59,17 @@ export const submitProfileUpdate = onCall(async (request) => {
 
   await requireDoc(db.collection('technicians').doc(uid), 'Technician profile not found.');
 
+  const { count } = (
+    await db.collection('profileUpdateRequests').where('technicianId', '==', uid).count().get()
+  ).data();
+
+  if (count >= PROFILE_UPDATE_LIFETIME_CAP.value()) {
+    throw new HttpsError(
+      'resource-exhausted',
+      `You've used all ${PROFILE_UPDATE_LIFETIME_CAP.value()} profile-change requests allowed for this account.`,
+    );
+  }
+
   const ref = db.collection('profileUpdateRequests').doc();
   await ref.set({
     technicianId: uid,
@@ -92,9 +106,19 @@ export const reviewProfileUpdate = onCall(async (request) => {
   const note = typeof adminNote === 'string' && adminNote.trim() ? adminNote.trim() : null;
 
   if (decision === 'approve') {
-    await db.collection('technicians').doc(data.technicianId).update({
+    const technicianRef = db.collection('technicians').doc(data.technicianId);
+    const before = (await requireDoc(technicianRef, 'Technician not found.')).data() ?? {};
+
+    const diffChanges: Record<string, { from: unknown; to: unknown }> = {};
+    for (const [field, to] of Object.entries(data.changes)) {
+      const from = before[field] ?? null;
+      if (from !== to) diffChanges[field] = { from, to };
+    }
+
+    await technicianRef.update({
       ...data.changes,
       updatedAt: now,
+      profileHistory: FieldValue.arrayUnion(profileHistoryEntry(adminUid, requestId, diffChanges)),
     });
   }
 
