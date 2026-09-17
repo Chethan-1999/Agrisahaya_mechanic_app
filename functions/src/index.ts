@@ -1,3 +1,4 @@
+export { postAnnouncement } from './announcementFunctions';
 export { devSignIn } from './devFunctions';
 export { acceptJob, assignJob, cancelJob, completeJob, createJob, declineJob } from './jobFunctions';
 export { changePin, loginWithPin, setPin } from './pinFunctions';

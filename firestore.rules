@@ -39,6 +39,11 @@ service cloud.firestore {
       allow write: if false; // provisioned by scripts/create-admin.ts, not the client
     }
 
+    match /announcements/{id} {
+      allow read: if isSignedIn();
+      allow write: if false; // written only by postAnnouncement (functions/src/announcementFunctions.ts)
+    }
+
     // No otpRequests/pendingSignups collections — phone verification is
     // Firebase's own Phone Auth now, not a hand-rolled OTP store. See
     // services/otp/ on the client and functions/src/signupFunctions.ts.

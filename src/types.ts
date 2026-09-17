@@ -86,6 +86,14 @@ export type ProfileUpdateRequest = {
   adminNote: string | null;
 };
 
+export type Announcement = {
+  id: string;
+  title: string;
+  body: string;
+  createdBy: string;
+  createdAt: string;
+};
+
 export type AdminProfile = {
   id: string;
   name: string;

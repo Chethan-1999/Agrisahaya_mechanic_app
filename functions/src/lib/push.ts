@@ -29,6 +29,28 @@ export async function pushToTechnician(technicianId: string, payload: PushPayloa
   }
 }
 
+const FCM_BATCH_SIZE = 500; // sendEach's per-call cap
+
+/** Best-effort broadcast to many tokens at once, chunked to FCM's 500-per-call limit. Never throws — same ethos as pushToTechnician. */
+export async function pushBroadcast(tokens: string[], payload: PushPayload): Promise<void> {
+  for (let i = 0; i < tokens.length; i += FCM_BATCH_SIZE) {
+    const batch = tokens.slice(i, i + FCM_BATCH_SIZE);
+
+    try {
+      await messaging.sendEach(
+        batch.map((token) => ({
+          token,
+          notification: { title: payload.title, body: payload.body },
+          data: payload.data,
+          android: { priority: 'high' as const },
+        })),
+      );
+    } catch (err) {
+      console.warn('broadcast push batch failed:', err);
+    }
+  }
+}
+
 /** Silent data-only push — the client uses this to cancel one specific tagged notification (job:{id}) on the device. */
 export async function pushDismiss(technicianId: string, jobId: string): Promise<void> {
   const snap = await db.collection('technicians').doc(technicianId).get();
