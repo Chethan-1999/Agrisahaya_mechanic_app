@@ -2,28 +2,29 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
-import { Input, LanguageSelector, Metric, PinInput, Select, formatDate, getErrorMessage, type Toast } from './components/ui';
+import { PullToRefresh } from './components/PullToRefresh';
+import { Input, LanguageSelector, Metric, Select, formatDate, getErrorMessage, type Toast } from './components/ui';
 import { auth, db, firebaseConfigured } from './firebase';
 import { usePhoneOtp } from './hooks/usePhoneOtp';
 import { useI18n } from './i18n/I18nContext';
 import { loginAdmin } from './services/adminAuth';
 import { completeSignup } from './services/auth';
-import { enableBiometricPin, isBiometricAvailable, isBiometricPinEnabled, tryBiometricPinLogin, unlockWithBiometrics } from './services/biometric';
 import {
   adminUpdateProfile,
   getMechanic,
   listMechanics,
+  revokeOtherSessions,
   reviewSignup,
   setTechnicianStatus,
 } from './services/mechanics';
 import { initNotifications } from './services/notifications';
-import { changePin, getPinErrorInfo, loginWithPin, setPin } from './services/pin';
 import type { AdminProfile, AppSession, Mechanic, MechanicForm } from './types';
 import { emptyMechanicForm } from './types';
 import { hasErrors, validateProfileForm, type ValidationErrors } from './utils/validation';
+import { AdminAnnouncements } from './screens/AdminAnnouncements';
 import { AdminJobBoard } from './screens/AdminJobBoard';
 import { AdminProfileRequests } from './screens/AdminProfileRequests';
-import { ChangePin } from './screens/ChangePin';
+import { Announcements } from './screens/Announcements';
 import { RequestProfileChange } from './screens/RequestProfileChange';
 import { TechnicianJobs } from './screens/TechnicianJobs';
 
@@ -35,12 +36,13 @@ type Page =
   | 'mechanicProfile'
   | 'mechanicJobs'
   | 'mechanicRequestChange'
-  | 'mechanicChangePin'
+  | 'mechanicAnnouncements'
   | 'adminLogin'
   | 'adminDashboard'
   | 'adminMechanics'
   | 'adminJobs'
   | 'adminProfileRequests'
+  | 'adminAnnouncements'
   | 'adminSettings'
   | 'adminDetails'
   | 'adminEdit';
@@ -50,6 +52,7 @@ const navItems: Array<{ label: string; page: Page }> = [
   { label: 'Mechanics', page: 'adminMechanics' },
   { label: 'Jobs', page: 'adminJobs' },
   { label: 'Profile Requests', page: 'adminProfileRequests' },
+  { label: 'Announcements', page: 'adminAnnouncements' },
   { label: 'Settings', page: 'adminSettings' },
 ];
 
@@ -57,15 +60,12 @@ const SUPPORT_NUMBER = '9646424964';
 
 export default function App() {
   const [page, setPage] = useState<Page>('landing');
-  const [tab, setTab] = useState<'login' | 'signup'>('login');
   const [session, setSession] = useState<AppSession>(null);
   const [mechanics, setMechanics] = useState<Mechanic[]>([]);
   const [currentMechanic, setCurrentMechanic] = useState<Mechanic | null>(null);
   const [selectedMechanic, setSelectedMechanic] = useState<Mechanic | null>(null);
   const [loading, setLoading] = useState(false);
   const [bootstrapping, setBootstrapping] = useState(true);
-  const [locked, setLocked] = useState(false);
-  const [pendingUser, setPendingUser] = useState<User | null>(null);
   const [toast, setToast] = useState<Toast>(null);
   const [darkMode, setDarkMode] = useState(false);
   const { t } = useI18n();
@@ -82,8 +82,8 @@ export default function App() {
     return () => window.clearTimeout(timeoutId);
   }, [toast]);
 
-  // Reveals a persisted Firebase session's data — split out so the biometric
-  // gate below can call it either immediately or after a successful retry.
+  // Reveals a persisted Firebase session's data — looks up admins/{uid} then
+  // technicians/{uid} and sets session+page accordingly.
   async function revealSession(user: User) {
     const adminSnapshot = await getDoc(doc(db, 'admins', user.uid));
 
@@ -111,9 +111,9 @@ export default function App() {
   }
 
   // Restores a persisted Firebase session on load/refresh instead of
-  // dropping the user back to the landing page every time. On a native
-  // build, a device biometric/passcode prompt gates the reveal — see
-  // services/biometric.ts and Blueprint §07.
+  // dropping the user back to the landing page every time — the app opens
+  // straight to the dashboard with no lock/login prompt whenever a session
+  // is already there.
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
@@ -122,15 +122,6 @@ export default function App() {
       }
 
       void (async () => {
-        const unlocked = await unlockWithBiometrics();
-
-        if (!unlocked) {
-          setPendingUser(user);
-          setLocked(true);
-          setBootstrapping(false);
-          return;
-        }
-
         await revealSession(user);
         setBootstrapping(false);
       })();
@@ -138,16 +129,6 @@ export default function App() {
 
     return unsubscribe;
   }, []);
-
-  async function retryUnlock() {
-    if (!pendingUser) return;
-    const unlocked = await unlockWithBiometrics();
-    if (unlocked) {
-      setLocked(false);
-      await revealSession(pendingUser);
-      setPendingUser(null);
-    }
-  }
 
   useEffect(() => {
     if (session?.role === 'mechanic') {
@@ -210,10 +191,6 @@ export default function App() {
     );
   }
 
-  if (locked) {
-    return <LockedScreen onRetry={() => void retryUnlock()} />;
-  }
-
   return (
     <div className="app-shell">
       {/* Invisible reCAPTCHA anchor for firebaseOtpProvider's signInWithPhoneNumber — always mounted, never shown. */}
@@ -225,51 +202,30 @@ export default function App() {
         <Landing
           darkMode={darkMode}
           onAdmin={() => setPage('adminLogin')}
-          onMechanicLogin={() => {
-            setTab('login');
-            setPage('mechanicAuth');
-          }}
-          onMechanicSignup={() => {
-            setTab('signup');
-            setPage('mechanicAuth');
-          }}
+          onMechanicLogin={() => setPage('mechanicAuth')}
+          onMechanicSignup={() => setPage('mechanicAuth')}
           onToggleDarkMode={setDarkMode}
         />
       )}
 
       {page === 'mechanicAuth' && (
         <AuthLayout onBack={() => setPage('landing')} title={t('technicianAccess')}>
-          <div className="tabs">
-            <button className={tab === 'login' ? 'active' : ''} onClick={() => setTab('login')}>{t('loginTab')}</button>
-            <button className={tab === 'signup' ? 'active' : ''} onClick={() => setTab('signup')}>{t('signupTab')}</button>
-          </div>
-          {tab === 'login' ? (
-            <MechanicLogin
-              onLogin={(mechanicId) => {
-                setSession({ role: 'mechanic', mechanicId });
-                setPage('mechanicDashboard');
-              }}
-              onPending={(mechanicId) => {
-                setSession({ role: 'mechanic', mechanicId });
-                setPage('mechanicPending');
-              }}
-              setToast={setToast}
-              withLoading={withLoading}
-            />
-          ) : (
-            <MechanicSignup
-              onRegistered={(mechanicId) => {
-                setToast({
-                  kind: 'success',
-                  text: 'Registered — you will be notified once an admin verifies your account.',
-                });
-                setSession({ role: 'mechanic', mechanicId });
-                setPage('mechanicPending');
-              }}
-              setToast={setToast}
-              withLoading={withLoading}
-            />
-          )}
+          <MechanicAuth
+            onExisting={(mechanicId, technician) => {
+              setSession({ role: 'mechanic', mechanicId });
+              setPage(technician.status === 'active' ? 'mechanicDashboard' : 'mechanicPending');
+            }}
+            onNew={(mechanicId) => {
+              setToast({
+                kind: 'success',
+                text: 'Registered — you will be notified once an admin verifies your account.',
+              });
+              setSession({ role: 'mechanic', mechanicId });
+              setPage('mechanicPending');
+            }}
+            setToast={setToast}
+            withLoading={withLoading}
+          />
         </AuthLayout>
       )}
 
@@ -292,10 +248,11 @@ export default function App() {
       {session?.role === 'mechanic' && currentMechanic && page === 'mechanicDashboard' && (
         <MechanicDashboard
           mechanic={currentMechanic}
-          onChangePin={() => setPage('mechanicChangePin')}
+          onAnnouncements={() => setPage('mechanicAnnouncements')}
           onJobs={() => setPage('mechanicJobs')}
           onLogout={logout}
           onProfile={() => setPage('mechanicProfile')}
+          onRefresh={() => loadCurrentMechanic(session.mechanicId)}
           onRequestChange={() => setPage('mechanicRequestChange')}
         />
       )}
@@ -329,8 +286,8 @@ export default function App() {
         />
       )}
 
-      {session?.role === 'mechanic' && currentMechanic && page === 'mechanicChangePin' && (
-        <ChangePin onBack={() => setPage('mechanicDashboard')} setToast={setToast} withLoading={withLoading} />
+      {session?.role === 'mechanic' && currentMechanic && page === 'mechanicAnnouncements' && (
+        <Announcements onBack={() => setPage('mechanicDashboard')} withLoading={withLoading} />
       )}
 
       {session?.role === 'admin' && page.startsWith('admin') && (
@@ -377,6 +334,7 @@ export default function App() {
           )}
           {page === 'adminJobs' && <AdminJobBoard mechanics={mechanics} setToast={setToast} withLoading={withLoading} />}
           {page === 'adminProfileRequests' && <AdminProfileRequests mechanics={mechanics} setToast={setToast} withLoading={withLoading} />}
+          {page === 'adminAnnouncements' && <AdminAnnouncements setToast={setToast} withLoading={withLoading} />}
           {page === 'adminSettings' && <Settings darkMode={darkMode} onToggleDarkMode={setDarkMode} />}
           {page === 'adminDetails' && selectedMechanic && (
             <DetailPage editable mechanic={selectedMechanic} onBack={() => setPage('adminMechanics')} onEdit={() => setPage('adminEdit')} title="Mechanic Details" />
@@ -430,20 +388,6 @@ function Landing({ darkMode, onAdmin, onMechanicLogin, onMechanicSignup, onToggl
   );
 }
 
-function LockedScreen({ onRetry }: { onRetry: () => void }) {
-  return (
-    <div className="app-shell">
-      <main className="auth-page">
-        <section className="auth-card card">
-          <h2>Locked</h2>
-          <p className="muted">Unlock with your fingerprint, face, or device passcode to continue.</p>
-          <button className="primary" onClick={onRetry} type="button">Try Again</button>
-        </section>
-      </main>
-    </div>
-  );
-}
-
 function AuthLayout({ children, onBack, title }: { children: React.ReactNode; onBack: () => void; title: string }) {
   return (
     <main className="auth-page">
@@ -457,222 +401,25 @@ function AuthLayout({ children, onBack, title }: { children: React.ReactNode; on
 }
 
 /**
- * Day-to-day login is phone + PIN (loginWithPin), not a fresh OTP every time.
- * OTP only re-enters the picture as the "forgot PIN" / locked-account
- * recovery path (see ForgotPinFlow below) — the exact same flow signup uses,
- * reused rather than duplicated.
+ * Merged login/signup: phone-OTP verification only, no PIN. After OTP
+ * verifies, an existing technician (technicians/{uid} already exists) is
+ * revealed directly; a brand-new phone number is walked through the profile
+ * form and completeSignup. Both paths call revokeOtherSessions right after
+ * sign-in to enforce "only one phone at a time" (see technicianFunctions.ts)
+ * — the getIdToken(true) refresh after it keeps THIS device's own session
+ * from being caught by the same revocation.
  */
-function MechanicLogin({ onLogin, onPending, setToast, withLoading }: { onLogin: (mechanicId: string) => void; onPending: (mechanicId: string) => void; setToast: (toast: Toast) => void; withLoading: (action: () => Promise<void>) => Promise<void> }) {
+function MechanicAuth({ onExisting, onNew, setToast, withLoading }: {
+  onExisting: (mechanicId: string, technician: Mechanic) => void;
+  onNew: (mechanicId: string) => void;
+  setToast: (toast: Toast) => void;
+  withLoading: (action: () => Promise<void>) => Promise<void>;
+}) {
   const { t } = useI18n();
-  const [mode, setMode] = useState<'pin' | 'forgotOtp'>('pin');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [pin, setPinValue] = useState('');
-  const canUseBiometric = useMemo(() => isBiometricPinEnabled(), []);
-
-  async function afterSignIn() {
-    const uid = auth.currentUser?.uid;
-    if (!uid) throw new Error('Sign-in failed. Try again.');
-    const technician = await getMechanic(uid);
-    if (!technician) {
-      await signOut(auth);
-      throw new Error(t('noAccountFound'));
-    }
-    if (technician.status === 'active') {
-      onLogin(uid);
-    } else {
-      onPending(uid);
-    }
-  }
-
-  /** Routes a failed loginWithPin call to either a retryable toast or the OTP-recovery flow. */
-  async function handlePinLoginError(err: unknown): Promise<void> {
-    const { reason, remainingAttempts } = getPinErrorInfo(err);
-
-    if (reason === 'PIN_NOT_SET' || reason === 'LOCKED') {
-      setMode('forgotOtp');
-      setToast({ kind: 'error', text: reason === 'LOCKED' ? t('pinLockedMessage') : t('pinNotSetMessage') });
-      return;
-    }
-
-    if (reason === 'WRONG_PIN') {
-      const suffix = typeof remainingAttempts === 'number' ? ` (${remainingAttempts})` : '';
-      throw new Error(`${t('wrongPinError')}${suffix}`);
-    }
-
-    throw err;
-  }
-
-  async function submitPin(event: FormEvent) {
-    event.preventDefault();
-    await withLoading(async () => {
-      try {
-        await loginWithPin(phoneNumber, pin);
-      } catch (err) {
-        await handlePinLoginError(err);
-        return;
-      }
-      await afterSignIn();
-    });
-  }
-
-  async function useFingerprint() {
-    await withLoading(async () => {
-      const stored = await tryBiometricPinLogin();
-      if (!stored) return;
-
-      setPhoneNumber(stored.phoneNumber);
-      setPinValue(stored.pin);
-
-      try {
-        await loginWithPin(stored.phoneNumber, stored.pin);
-      } catch (err) {
-        await handlePinLoginError(err);
-        return;
-      }
-      await afterSignIn();
-    });
-  }
-
-  if (mode === 'forgotOtp') {
-    return <ForgotPinFlow onDone={afterSignIn} setToast={setToast} withLoading={withLoading} />;
-  }
-
-  return (
-    <form className="form-grid" onSubmit={(event) => void submitPin(event)}>
-      <Input label={t('mobileNumber')} onChange={setPhoneNumber} value={phoneNumber} />
-      <PinInput label={t('pin')} onChange={setPinValue} value={pin} />
-      <button className="primary" type="submit">{t('loginButton')}</button>
-      {canUseBiometric && (
-        <button className="secondary" onClick={() => void useFingerprint()} type="button">
-          {t('useFingerprintButton')}
-        </button>
-      )}
-      <button className="text-button" onClick={() => setMode('forgotOtp')} type="button">
-        {t('forgotPinLink')}
-      </button>
-    </form>
-  );
-}
-
-/** Forgot/locked PIN recovery: the same phone-OTP flow signup uses, ending in the same PIN-set step. */
-function ForgotPinFlow({ onDone, setToast, withLoading }: { onDone: () => Promise<void>; setToast: (toast: Toast) => void; withLoading: (action: () => Promise<void>) => Promise<void> }) {
-  const { t } = useI18n();
-  const { confirmOtp, devHint, otp, phoneNumber, sendOtp, session, setOtp, setPhoneNumber } = usePhoneOtp();
-  const [verified, setVerified] = useState(false);
-
-  async function send() {
-    await withLoading(async () => {
-      try {
-        await sendOtp();
-      } catch (err) {
-        throw err instanceof Error && err.message === 'INVALID_PHONE' ? new Error(t('enterValidPhone')) : err;
-      }
-      setToast({ kind: 'success', text: devHint ? `Dev code: ${devHint}` : t('codeSentBySms') });
-    });
-  }
-
-  async function verify(event: FormEvent) {
-    event.preventDefault();
-    if (!session) {
-      setToast({ kind: 'error', text: t('sendCodeFirst') });
-      return;
-    }
-    await withLoading(async () => {
-      await confirmOtp();
-      const uid = auth.currentUser?.uid;
-      if (!uid) throw new Error('Sign-in failed. Try again.');
-      const technician = await getMechanic(uid);
-      if (!technician) {
-        await signOut(auth);
-        throw new Error(t('noAccountFound'));
-      }
-      setVerified(true);
-    });
-  }
-
-  if (verified) {
-    return <SetPinStep onDone={onDone} phoneNumber={phoneNumber} setToast={setToast} withLoading={withLoading} />;
-  }
-
-  return (
-    <form className="form-grid" onSubmit={(event) => void verify(event)}>
-      <Input label={t('mobileNumber')} onChange={setPhoneNumber} value={phoneNumber} />
-      <div className="otp-row"><Input label={t('otp')} onChange={setOtp} value={otp} /><button className="secondary" onClick={() => void send()} type="button">{t('sendOtp')}</button></div>
-      <button className="primary" type="submit">{t('verifyButton')}</button>
-    </form>
-  );
-}
-
-/**
- * Sets/resets the PIN (used right after signup, and again after a
- * forgot-PIN OTP recovery), then optionally offers to enroll the biometric
- * shortcut on this device. Shared by MechanicSignup and ForgotPinFlow so the
- * "two PinInputs → setPin → optional biometric offer" sequence exists once.
- */
-function SetPinStep({ onDone, phoneNumber, setToast, withLoading }: { onDone: () => Promise<void>; phoneNumber: string; setToast: (toast: Toast) => void; withLoading: (action: () => Promise<void>) => Promise<void> }) {
-  const { t } = useI18n();
-  const [pin, setPinValue] = useState('');
-  const [confirmPinValue, setConfirmPinValue] = useState('');
-  const [offerBiometric, setOfferBiometric] = useState(false);
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    if (!/^\d{4}$/.test(pin)) {
-      setToast({ kind: 'error', text: t('pinFormatError') });
-      return;
-    }
-    if (pin !== confirmPinValue) {
-      setToast({ kind: 'error', text: t('pinMismatchError') });
-      return;
-    }
-    await withLoading(async () => {
-      await setPin(pin);
-      if (await isBiometricAvailable()) {
-        setOfferBiometric(true);
-      } else {
-        await onDone();
-      }
-    });
-  }
-
-  async function respondToBiometricOffer(enable: boolean) {
-    await withLoading(async () => {
-      if (enable) {
-        await enableBiometricPin(phoneNumber, pin);
-      }
-      await onDone();
-    });
-  }
-
-  if (offerBiometric) {
-    return (
-      <div className="form-grid">
-        <p className="muted">{t('enableBiometricPrompt')}</p>
-        <div className="button-row">
-          <button className="primary" onClick={() => void respondToBiometricOffer(true)} type="button">{t('enableBiometricYes')}</button>
-          <button className="secondary" onClick={() => void respondToBiometricOffer(false)} type="button">{t('enableBiometricNo')}</button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <form className="form-grid" onSubmit={(event) => void submit(event)}>
-      <p className="success-text">{t('setPinHint')}</p>
-      <PinInput label={t('newPinLabel')} onChange={setPinValue} value={pin} />
-      <PinInput label={t('confirmPinLabel')} onChange={setConfirmPinValue} value={confirmPinValue} />
-      <button className="primary" type="submit">{t('setPinButton')}</button>
-    </form>
-  );
-}
-
-function MechanicSignup({ onRegistered, setToast, withLoading }: { onRegistered: (mechanicId: string) => void; setToast: (toast: Toast) => void; withLoading: (action: () => Promise<void>) => Promise<void> }) {
-  const { t } = useI18n();
-  const { confirmOtp, devHint, otp, phoneNumber, sendOtp, session, setOtp, setPhoneNumber } = usePhoneOtp();
-  const [step, setStep] = useState<'verify' | 'profile' | 'setPin'>('verify');
+  const { confirmOtp, otp, phoneNumber, sendOtp, session, setOtp, setPhoneNumber } = usePhoneOtp();
+  const [step, setStep] = useState<'verify' | 'profile'>('verify');
   const [form, setForm] = useState<MechanicForm>(emptyMechanicForm);
   const [errors, setErrors] = useState<ValidationErrors>({});
-  const [registeredUid, setRegisteredUid] = useState<string | null>(null);
 
   function updateField(key: keyof MechanicForm, value: string) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -680,12 +427,13 @@ function MechanicSignup({ onRegistered, setToast, withLoading }: { onRegistered:
 
   async function send() {
     await withLoading(async () => {
+      let hint: string | null;
       try {
-        await sendOtp();
+        hint = await sendOtp();
       } catch (err) {
         throw err instanceof Error && err.message === 'INVALID_PHONE' ? new Error(t('enterValidPhone')) : err;
       }
-      setToast({ kind: 'success', text: devHint ? `Dev code: ${devHint}` : t('codeSentBySms') });
+      setToast({ kind: 'success', text: hint ? `Dev code: ${hint}` : t('codeSentBySms') });
     });
   }
 
@@ -699,11 +447,16 @@ function MechanicSignup({ onRegistered, setToast, withLoading }: { onRegistered:
       await confirmOtp();
       const uid = auth.currentUser?.uid;
       if (!uid) throw new Error('Sign-in failed. Try again.');
-      const existingTechnician = await getMechanic(uid);
-      if (existingTechnician) {
-        await signOut(auth);
-        throw new Error(t('accountExists'));
+
+      await revokeOtherSessions();
+      await auth.currentUser?.getIdToken(true);
+
+      const technician = await getMechanic(uid);
+      if (technician) {
+        onExisting(uid, technician);
+        return;
       }
+
       setForm((current) => ({ ...current, phoneNumber: phoneNumber.trim() }));
       setStep('profile');
     });
@@ -720,37 +473,25 @@ function MechanicSignup({ onRegistered, setToast, withLoading }: { onRegistered:
       await completeSignup(profile);
       const uid = auth.currentUser?.uid;
       if (!uid) throw new Error('Registration failed. Try again.');
-      setRegisteredUid(uid);
-      setStep('setPin');
+      onNew(uid);
     });
   }
 
-  if (step === 'verify') {
+  if (step === 'profile') {
     return (
-      <form className="form-grid" onSubmit={(event) => void verify(event)}>
-        <Input label={t('mobileNumber')} onChange={setPhoneNumber} value={phoneNumber} />
-        <div className="otp-row"><Input label={t('otp')} onChange={setOtp} value={otp} /><button className="secondary" onClick={() => void send()} type="button">{t('sendOtp')}</button></div>
-        <button className="primary" type="submit">{t('verifyButton')}</button>
+      <form className="form-grid" onSubmit={(event) => void submitProfile(event)}>
+        <p className="success-text">{t('phoneVerifiedCompleteProfile')}</p>
+        <MechanicFields errors={errors} form={form} onChange={updateField} translated />
+        <button className="primary" type="submit">{t('submitButton')}</button>
       </form>
     );
   }
 
-  if (step === 'setPin' && registeredUid) {
-    return (
-      <SetPinStep
-        onDone={async () => onRegistered(registeredUid)}
-        phoneNumber={phoneNumber}
-        setToast={setToast}
-        withLoading={withLoading}
-      />
-    );
-  }
-
   return (
-    <form className="form-grid" onSubmit={(event) => void submitProfile(event)}>
-      <p className="success-text">{t('phoneVerifiedCompleteProfile')}</p>
-      <MechanicFields errors={errors} form={form} onChange={updateField} translated />
-      <button className="primary" type="submit">{t('submitButton')}</button>
+    <form className="form-grid" onSubmit={(event) => void verify(event)}>
+      <Input label={t('mobileNumber')} onChange={setPhoneNumber} value={phoneNumber} />
+      <div className="otp-row"><Input label={t('otp')} onChange={setOtp} value={otp} /><button className="secondary" onClick={() => void send()} type="button">{t('sendOtp')}</button></div>
+      <button className="primary" type="submit">{t('verifyButton')}</button>
     </form>
   );
 }
@@ -792,10 +533,11 @@ function MechanicPending({ mechanic, onLogout }: { mechanic: Mechanic | null; on
   );
 }
 
-function MechanicDashboard({ mechanic, onChangePin, onJobs, onLogout, onProfile, onRequestChange }: { mechanic: Mechanic; onChangePin: () => void; onJobs: () => void; onLogout: () => void; onProfile: () => void; onRequestChange: () => void }) {
+function MechanicDashboard({ mechanic, onAnnouncements, onJobs, onLogout, onProfile, onRefresh, onRequestChange }: { mechanic: Mechanic; onAnnouncements: () => void; onJobs: () => void; onLogout: () => void; onProfile: () => void; onRefresh: () => Promise<void>; onRequestChange: () => void }) {
   const { t } = useI18n();
 
   return (
+    <PullToRefresh onRefresh={onRefresh}>
     <main className="dashboard-page mechanic-page">
       <section className="card profile-card">
         <p className="eyebrow">{t('welcome')}</p>
@@ -806,11 +548,12 @@ function MechanicDashboard({ mechanic, onChangePin, onJobs, onLogout, onProfile,
           <button className="primary" onClick={onJobs}>{t('jobsNav')}</button>
           <button className="secondary" onClick={onProfile}>{t('profileNav')}</button>
           <button className="secondary" onClick={onRequestChange}>{t('requestChangeNav')}</button>
-          <button className="secondary" onClick={onChangePin}>{t('changePinNav')}</button>
+          <button className="secondary" onClick={onAnnouncements}>{t('announcementsNav')}</button>
           <button className="danger" onClick={onLogout}>{t('logout')}</button>
         </div>
       </section>
     </main>
+    </PullToRefresh>
   );
 }
 
@@ -857,6 +600,7 @@ function MechanicsTable({ mechanics, onApprove, onEdit, onReject, onRefresh, onT
   }), [district, mechanics, search, status, village]);
 
   return (
+    <PullToRefresh onRefresh={onRefresh}>
     <section>
       <div className="section-heading"><h1>Mechanics</h1><button className="secondary" onClick={() => void onRefresh()}>Refresh</button></div>
       <div className="card filters">
@@ -895,6 +639,7 @@ function MechanicsTable({ mechanics, onApprove, onEdit, onReject, onRefresh, onT
         {filtered.length === 0 && <p className="empty">No mechanics found.</p>}
       </div>
     </section>
+    </PullToRefresh>
   );
 }
 

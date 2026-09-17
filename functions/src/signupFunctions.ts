@@ -61,11 +61,6 @@ export const completeSignup = onCall(async (request) => {
     createdAt: now,
     updatedAt: now,
     approvedBy: null,
-    pinHash: null,
-    pinFailedAttempts: 0,
-    pinLocked: false,
-    pinSetAt: null,
-    pinChangeLog: [],
   });
 
   return { status: 'created' };

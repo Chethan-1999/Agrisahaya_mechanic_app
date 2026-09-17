@@ -24,20 +24,15 @@ export type StringKey =
   | 'technicianLogin'
   | 'technicianSignup'
   | 'technicianAccess'
-  | 'loginTab'
-  | 'signupTab'
   | 'back'
   | 'mobileNumber'
   | 'otp'
   | 'sendOtp'
-  | 'loginButton'
   | 'verifyButton'
   | 'submitButton'
   | 'codeSentBySms'
   | 'enterValidPhone'
   | 'sendCodeFirst'
-  | 'noAccountFound'
-  | 'accountExists'
   | 'phoneVerifiedCompleteProfile'
   | 'registeredMessage'
   | 'pendingHeading'
@@ -51,6 +46,9 @@ export type StringKey =
   | 'jobsNav'
   | 'profileNav'
   | 'requestChangeNav'
+  | 'announcementsNav'
+  | 'announcementsTitle'
+  | 'noAnnouncementsYet'
   | 'logout'
   | 'logoutConfirm'
   | 'jobsTitle'
@@ -89,48 +87,23 @@ export type StringKey =
   | 'requestSubmittedToast'
   | 'giveReasonError'
   | 'changeAtLeastOneError'
-  | 'languageLabel'
-  | 'pin'
-  | 'newPinLabel'
-  | 'confirmPinLabel'
-  | 'currentPinLabel'
-  | 'setPinTitle'
-  | 'setPinHint'
-  | 'setPinButton'
-  | 'pinMismatchError'
-  | 'pinFormatError'
-  | 'forgotPinLink'
-  | 'pinLockedMessage'
-  | 'pinNotSetMessage'
-  | 'wrongPinError'
-  | 'changePinNav'
-  | 'changePinTitle'
-  | 'changePinButton'
-  | 'pinChangedToast'
-  | 'pinChangeCapError'
-  | 'enableBiometricPrompt'
-  | 'enableBiometricYes'
-  | 'enableBiometricNo'
-  | 'useFingerprintButton';
+  | 'changesUsedLabel'
+  | 'changesCapReachedError'
+  | 'languageLabel';
 
 const en: Record<StringKey, string> = {
   technicianLogin: 'Technician Login',
   technicianSignup: 'Technician Sign Up',
   technicianAccess: 'Technician Access',
-  loginTab: 'Login',
-  signupTab: 'Sign Up',
   back: 'Back',
   mobileNumber: 'Mobile Number',
   otp: 'OTP',
   sendOtp: 'Send OTP',
-  loginButton: 'Login',
   verifyButton: 'Verify',
   submitButton: 'Submit',
   codeSentBySms: 'Code sent by SMS.',
   enterValidPhone: 'Enter a valid 10 digit phone number.',
   sendCodeFirst: 'Send yourself a code first.',
-  noAccountFound: 'No account found for this number. Use Sign Up instead.',
-  accountExists: 'An account already exists for this number. Use Login instead.',
   phoneVerifiedCompleteProfile: 'Phone verified. Complete your profile to finish registering.',
   registeredMessage: 'Registered — you will be notified once an admin verifies your account.',
   pendingHeading: 'Account pending approval',
@@ -144,6 +117,9 @@ const en: Record<StringKey, string> = {
   jobsNav: 'Jobs',
   profileNav: 'Profile',
   requestChangeNav: 'Request Change',
+  announcementsNav: 'Announcements',
+  announcementsTitle: 'Announcements',
+  noAnnouncementsYet: 'No announcements yet.',
   logout: 'Logout',
   logoutConfirm: 'Logout from technician account?',
   jobsTitle: 'Jobs',
@@ -182,49 +158,24 @@ const en: Record<StringKey, string> = {
   requestSubmittedToast: 'Request submitted — you will be notified once it is reviewed.',
   giveReasonError: 'Tell admin why you are requesting this change.',
   changeAtLeastOneError: 'Change at least one field first.',
+  changesUsedLabel: 'Changes used',
+  changesCapReachedError: "You've used all your allowed profile-change requests.",
   languageLabel: 'Language',
-  pin: 'PIN',
-  newPinLabel: 'New PIN',
-  confirmPinLabel: 'Confirm PIN',
-  currentPinLabel: 'Current PIN',
-  setPinTitle: 'Set Your PIN',
-  setPinHint: "Choose a 4-digit PIN. You'll use it to log in from now on.",
-  setPinButton: 'Save PIN',
-  pinMismatchError: "PINs don't match.",
-  pinFormatError: 'PIN must be exactly 4 digits.',
-  forgotPinLink: 'Forgot PIN? Verify by OTP',
-  pinLockedMessage: 'Too many wrong attempts. Verify your phone number to reset your PIN.',
-  pinNotSetMessage: 'No PIN set yet. Verify your phone number to create one.',
-  wrongPinError: 'Incorrect PIN.',
-  changePinNav: 'Change PIN',
-  changePinTitle: 'Change PIN',
-  changePinButton: 'Update PIN',
-  pinChangedToast: 'PIN updated.',
-  pinChangeCapError: 'You can only change your PIN 3 times every 30 days.',
-  enableBiometricPrompt: 'Use your fingerprint or face to log in faster next time?',
-  enableBiometricYes: 'Enable',
-  enableBiometricNo: 'Not now',
-  useFingerprintButton: 'Use fingerprint',
 };
 
 const hi: Record<StringKey, string> = {
   technicianLogin: 'टेक्नीशियन लॉगिन',
   technicianSignup: 'टेक्नीशियन साइन अप',
   technicianAccess: 'टेक्नीशियन एक्सेस',
-  loginTab: 'लॉगिन',
-  signupTab: 'साइन अप',
   back: 'वापस',
   mobileNumber: 'मोबाइल नंबर',
   otp: 'ओटीपी',
   sendOtp: 'ओटीपी भेजें',
-  loginButton: 'लॉगिन',
   verifyButton: 'सत्यापित करें',
   submitButton: 'सबमिट करें',
   codeSentBySms: 'कोड एसएमएस से भेज दिया गया है।',
   enterValidPhone: 'सही 10 अंकों का मोबाइल नंबर डालें।',
   sendCodeFirst: 'पहले खुद को कोड भेजें।',
-  noAccountFound: 'इस नंबर से कोई खाता नहीं मिला। कृपया साइन अप करें।',
-  accountExists: 'इस नंबर से पहले से खाता मौजूद है। कृपया लॉगिन करें।',
   phoneVerifiedCompleteProfile: 'मोबाइल नंबर सत्यापित हो गया। रजिस्ट्रेशन पूरा करने के लिए प्रोफाइल भरें।',
   registeredMessage: 'रजिस्ट्रेशन हो गया — एडमिन के खाता सत्यापित करने पर आपको सूचना मिलेगी।',
   pendingHeading: 'खाता स्वीकृति के इंतज़ार में',
@@ -238,6 +189,9 @@ const hi: Record<StringKey, string> = {
   jobsNav: 'जॉब्स',
   profileNav: 'प्रोफाइल',
   requestChangeNav: 'बदलाव का अनुरोध',
+  announcementsNav: 'घोषणाएं',
+  announcementsTitle: 'घोषणाएं',
+  noAnnouncementsYet: 'अभी तक कोई घोषणा नहीं है।',
   logout: 'लॉगआउट',
   logoutConfirm: 'टेक्नीशियन खाते से लॉगआउट करें?',
   jobsTitle: 'जॉब्स',
@@ -276,49 +230,24 @@ const hi: Record<StringKey, string> = {
   requestSubmittedToast: 'अनुरोध भेज दिया गया — समीक्षा होने पर आपको सूचना मिलेगी।',
   giveReasonError: 'एडमिन को बताएं कि आप यह बदलाव क्यों चाहते हैं।',
   changeAtLeastOneError: 'पहले कम से कम एक जानकारी बदलें।',
+  changesUsedLabel: 'उपयोग किए गए बदलाव',
+  changesCapReachedError: 'आपने अपने सभी स्वीकृत प्रोफाइल-बदलाव अनुरोध उपयोग कर लिए हैं।',
   languageLabel: 'भाषा',
-  pin: 'पिन',
-  newPinLabel: 'नया पिन',
-  confirmPinLabel: 'पिन दोबारा डालें',
-  currentPinLabel: 'मौजूदा पिन',
-  setPinTitle: 'अपना पिन सेट करें',
-  setPinHint: 'एक 4 अंकों का पिन चुनें। अब से लॉगिन करने के लिए इसका उपयोग करेंगे।',
-  setPinButton: 'पिन सेव करें',
-  pinMismatchError: 'पिन मेल नहीं खा रहे हैं।',
-  pinFormatError: 'पिन ठीक 4 अंकों का होना चाहिए।',
-  forgotPinLink: 'पिन भूल गए? ओटीपी से सत्यापित करें',
-  pinLockedMessage: 'बहुत बार गलत प्रयास हुए। अपना पिन रीसेट करने के लिए मोबाइल नंबर सत्यापित करें।',
-  pinNotSetMessage: 'अभी तक कोई पिन सेट नहीं है। पिन बनाने के लिए मोबाइल नंबर सत्यापित करें।',
-  wrongPinError: 'गलत पिन।',
-  changePinNav: 'पिन बदलें',
-  changePinTitle: 'पिन बदलें',
-  changePinButton: 'पिन अपडेट करें',
-  pinChangedToast: 'पिन अपडेट हो गया।',
-  pinChangeCapError: 'आप हर 30 दिनों में केवल 3 बार पिन बदल सकते हैं।',
-  enableBiometricPrompt: 'अगली बार तेज़ी से लॉगिन करने के लिए फिंगरप्रिंट या फेस का उपयोग करें?',
-  enableBiometricYes: 'चालू करें',
-  enableBiometricNo: 'अभी नहीं',
-  useFingerprintButton: 'फिंगरप्रिंट का उपयोग करें',
 };
 
 const kn: Record<StringKey, string> = {
   technicianLogin: 'ಟೆಕ್ನಿಷಿಯನ್ ಲಾಗಿನ್',
   technicianSignup: 'ಟೆಕ್ನಿಷಿಯನ್ ಸೈನ್ ಅಪ್',
   technicianAccess: 'ಟೆಕ್ನಿಷಿಯನ್ ಪ್ರವೇಶ',
-  loginTab: 'ಲಾಗಿನ್',
-  signupTab: 'ಸೈನ್ ಅಪ್',
   back: 'ಹಿಂದೆ',
   mobileNumber: 'ಮೊಬೈಲ್ ಸಂಖ್ಯೆ',
   otp: 'ಒಟಿಪಿ',
   sendOtp: 'ಒಟಿಪಿ ಕಳುಹಿಸಿ',
-  loginButton: 'ಲಾಗಿನ್',
   verifyButton: 'ಪರಿಶೀಲಿಸಿ',
   submitButton: 'ಸಲ್ಲಿಸಿ',
   codeSentBySms: 'ಕೋಡ್ ಅನ್ನು ಎಸ್‌ಎಂಎಸ್ ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ.',
   enterValidPhone: 'ಸರಿಯಾದ 10 ಅಂಕಿಗಳ ಫೋನ್ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ.',
   sendCodeFirst: 'ಮೊದಲು ನಿಮಗೆ ಕೋಡ್ ಕಳುಹಿಸಿ.',
-  noAccountFound: 'ಈ ಸಂಖ್ಯೆಗೆ ಯಾವುದೇ ಖಾತೆ ಕಂಡುಬಂದಿಲ್ಲ. ದಯವಿಟ್ಟು ಸೈನ್ ಅಪ್ ಮಾಡಿ.',
-  accountExists: 'ಈ ಸಂಖ್ಯೆಗೆ ಈಗಾಗಲೇ ಖಾತೆ ಇದೆ. ದಯವಿಟ್ಟು ಲಾಗಿನ್ ಮಾಡಿ.',
   phoneVerifiedCompleteProfile: 'ಫೋನ್ ಪರಿಶೀಲಿಸಲಾಗಿದೆ. ನೋಂದಣಿ ಪೂರ್ಣಗೊಳಿಸಲು ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ಭರ್ತಿ ಮಾಡಿ.',
   registeredMessage: 'ನೋಂದಣಿ ಆಗಿದೆ — ಅಡ್ಮಿನ್ ನಿಮ್ಮ ಖಾತೆಯನ್ನು ಪರಿಶೀಲಿಸಿದ ನಂತರ ನಿಮಗೆ ತಿಳಿಸಲಾಗುವುದು.',
   pendingHeading: 'ಖಾತೆ ಅನುಮೋದನೆಗೆ ಬಾಕಿ ಇದೆ',
@@ -332,6 +261,9 @@ const kn: Record<StringKey, string> = {
   jobsNav: 'ಕೆಲಸಗಳು',
   profileNav: 'ಪ್ರೊಫೈಲ್',
   requestChangeNav: 'ಬದಲಾವಣೆ ಕೋರಿಕೆ',
+  announcementsNav: 'ಪ್ರಕಟಣೆಗಳು',
+  announcementsTitle: 'ಪ್ರಕಟಣೆಗಳು',
+  noAnnouncementsYet: 'ಇನ್ನೂ ಯಾವುದೇ ಪ್ರಕಟಣೆ ಇಲ್ಲ.',
   logout: 'ಲಾಗ್ ಔಟ್',
   logoutConfirm: 'ಟೆಕ್ನಿಷಿಯನ್ ಖಾತೆಯಿಂದ ಲಾಗ್ ಔಟ್ ಮಾಡಬೇಕೇ?',
   jobsTitle: 'ಕೆಲಸಗಳು',
@@ -370,49 +302,24 @@ const kn: Record<StringKey, string> = {
   requestSubmittedToast: 'ಕೋರಿಕೆ ಸಲ್ಲಿಸಲಾಗಿದೆ — ಪರಿಶೀಲನೆಯಾದ ನಂತರ ನಿಮಗೆ ತಿಳಿಸಲಾಗುವುದು.',
   giveReasonError: 'ಈ ಬದಲಾವಣೆಯನ್ನು ಏಕೆ ಕೋರುತ್ತಿದ್ದೀರಿ ಎಂದು ಅಡ್ಮಿನ್‌ಗೆ ತಿಳಿಸಿ.',
   changeAtLeastOneError: 'ಮೊದಲು ಕನಿಷ್ಠ ಒಂದು ವಿವರವನ್ನು ಬದಲಾಯಿಸಿ.',
+  changesUsedLabel: 'ಬಳಸಿದ ಬದಲಾವಣೆಗಳು',
+  changesCapReachedError: 'ನೀವು ಅನುಮತಿಸಲಾದ ಎಲ್ಲಾ ಪ್ರೊಫೈಲ್-ಬದಲಾವಣೆ ಕೋರಿಕೆಗಳನ್ನು ಬಳಸಿದ್ದೀರಿ.',
   languageLabel: 'ಭಾಷೆ',
-  pin: 'ಪಿನ್',
-  newPinLabel: 'ಹೊಸ ಪಿನ್',
-  confirmPinLabel: 'ಪಿನ್ ಅನ್ನು ಖಚಿತಪಡಿಸಿ',
-  currentPinLabel: 'ಪ್ರಸ್ತುತ ಪಿನ್',
-  setPinTitle: 'ನಿಮ್ಮ ಪಿನ್ ಹೊಂದಿಸಿ',
-  setPinHint: '4 ಅಂಕಿಗಳ ಪಿನ್ ಆಯ್ಕೆಮಾಡಿ. ಇನ್ನು ಮುಂದೆ ಲಾಗಿನ್ ಮಾಡಲು ಇದನ್ನು ಬಳಸುತ್ತೀರಿ.',
-  setPinButton: 'ಪಿನ್ ಉಳಿಸಿ',
-  pinMismatchError: 'ಪಿನ್‌ಗಳು ಹೊಂದಿಕೆಯಾಗುತ್ತಿಲ್ಲ.',
-  pinFormatError: 'ಪಿನ್ ನಿಖರವಾಗಿ 4 ಅಂಕಿಗಳಾಗಿರಬೇಕು.',
-  forgotPinLink: 'ಪಿನ್ ಮರೆತಿರಾ? ಒಟಿಪಿ ಮೂಲಕ ಪರಿಶೀಲಿಸಿ',
-  pinLockedMessage: 'ಹಲವಾರು ಬಾರಿ ತಪ್ಪಾದ ಪ್ರಯತ್ನಗಳು. ಪಿನ್ ಮರುಹೊಂದಿಸಲು ನಿಮ್ಮ ಫೋನ್ ಸಂಖ್ಯೆಯನ್ನು ಪರಿಶೀಲಿಸಿ.',
-  pinNotSetMessage: 'ಇನ್ನೂ ಯಾವುದೇ ಪಿನ್ ಹೊಂದಿಸಿಲ್ಲ. ಪಿನ್ ರಚಿಸಲು ನಿಮ್ಮ ಫೋನ್ ಸಂಖ್ಯೆಯನ್ನು ಪರಿಶೀಲಿಸಿ.',
-  wrongPinError: 'ತಪ್ಪಾದ ಪಿನ್.',
-  changePinNav: 'ಪಿನ್ ಬದಲಾಯಿಸಿ',
-  changePinTitle: 'ಪಿನ್ ಬದಲಾಯಿಸಿ',
-  changePinButton: 'ಪಿನ್ ನವೀಕರಿಸಿ',
-  pinChangedToast: 'ಪಿನ್ ನವೀಕರಿಸಲಾಗಿದೆ.',
-  pinChangeCapError: 'ನೀವು ಪ್ರತಿ 30 ದಿನಗಳಿಗೆ ಕೇವಲ 3 ಬಾರಿ ಮಾತ್ರ ಪಿನ್ ಬದಲಾಯಿಸಬಹುದು.',
-  enableBiometricPrompt: 'ಮುಂದಿನ ಬಾರಿ ವೇಗವಾಗಿ ಲಾಗಿನ್ ಮಾಡಲು ಫಿಂಗರ್‌ಪ್ರಿಂಟ್ ಅಥವಾ ಫೇಸ್ ಬಳಸುವುದೇ?',
-  enableBiometricYes: 'ಸಕ್ರಿಯಗೊಳಿಸಿ',
-  enableBiometricNo: 'ಈಗ ಬೇಡ',
-  useFingerprintButton: 'ಫಿಂಗರ್‌ಪ್ರಿಂಟ್ ಬಳಸಿ',
 };
 
 const ta: Record<StringKey, string> = {
   technicianLogin: 'டெக்னீஷியன் லாகின்',
   technicianSignup: 'டெக்னீஷியன் பதிவு',
   technicianAccess: 'டெக்னீஷியன் அணுகல்',
-  loginTab: 'லாகின்',
-  signupTab: 'பதிவு செய்க',
   back: 'பின்செல்',
   mobileNumber: 'மொபைல் எண்',
   otp: 'ஓடிபி',
   sendOtp: 'ஓடிபி அனுப்பு',
-  loginButton: 'லாகின்',
   verifyButton: 'சரிபார்க்க',
   submitButton: 'சமர்ப்பி',
   codeSentBySms: 'குறியீடு எஸ்எம்எஸ் மூலம் அனுப்பப்பட்டது.',
   enterValidPhone: 'சரியான 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்.',
   sendCodeFirst: 'முதலில் உங்களுக்கு குறியீடு அனுப்புங்கள்.',
-  noAccountFound: 'இந்த எண்ணுக்கு கணக்கு இல்லை. தயவுசெய்து பதிவு செய்யவும்.',
-  accountExists: 'இந்த எண்ணுக்கு ஏற்கனவே கணக்கு உள்ளது. தயவுசெய்து லாகின் செய்யவும்.',
   phoneVerifiedCompleteProfile: 'மொபைல் எண் சரிபார்க்கப்பட்டது. பதிவை முடிக்க உங்கள் விவரங்களை நிரப்பவும்.',
   registeredMessage: 'பதிவு முடிந்தது — நிர்வாகி உங்கள் கணக்கை சரிபார்த்தவுடன் உங்களுக்கு தெரிவிக்கப்படும்.',
   pendingHeading: 'கணக்கு ஒப்புதலுக்காக காத்திருக்கிறது',
@@ -426,6 +333,9 @@ const ta: Record<StringKey, string> = {
   jobsNav: 'வேலைகள்',
   profileNav: 'சுயவிவரம்',
   requestChangeNav: 'மாற்றம் கோரிக்கை',
+  announcementsNav: 'அறிவிப்புகள்',
+  announcementsTitle: 'அறிவிப்புகள்',
+  noAnnouncementsYet: 'இதுவரை அறிவிப்புகள் இல்லை.',
   logout: 'லாக் அவுட்',
   logoutConfirm: 'டெக்னீஷியன் கணக்கிலிருந்து லாக் அவுட் செய்யவா?',
   jobsTitle: 'வேலைகள்',
@@ -464,49 +374,24 @@ const ta: Record<StringKey, string> = {
   requestSubmittedToast: 'கோரிக்கை சமர்ப்பிக்கப்பட்டது — பரிசீலிக்கப்பட்டவுடன் உங்களுக்கு தெரிவிக்கப்படும்.',
   giveReasonError: 'இந்த மாற்றத்தை ஏன் கோருகிறீர்கள் என்பதை நிர்வாகிக்கு தெரிவிக்கவும்.',
   changeAtLeastOneError: 'முதலில் குறைந்தது ஒரு விவரத்தையாவது மாற்றவும்.',
+  changesUsedLabel: 'பயன்படுத்திய மாற்றங்கள்',
+  changesCapReachedError: 'அனுமதிக்கப்பட்ட அனைத்து சுயவிவர மாற்ற கோரிக்கைகளையும் நீங்கள் பயன்படுத்திவிட்டீர்கள்.',
   languageLabel: 'மொழி',
-  pin: 'பின்',
-  newPinLabel: 'புதிய பின்',
-  confirmPinLabel: 'பின்னை உறுதிப்படுத்தவும்',
-  currentPinLabel: 'தற்போதைய பின்',
-  setPinTitle: 'உங்கள் பின்னை அமைக்கவும்',
-  setPinHint: '4 இலக்க பின்னைத் தேர்ந்தெடுக்கவும். இனி லாகின் செய்ய இதைப் பயன்படுத்துவீர்கள்.',
-  setPinButton: 'பின்னை சேமி',
-  pinMismatchError: 'பின்கள் பொருந்தவில்லை.',
-  pinFormatError: 'பின் சரியாக 4 இலக்கங்களாக இருக்க வேண்டும்.',
-  forgotPinLink: 'பின் மறந்துவிட்டீர்களா? ஓடிபி மூலம் சரிபார்க்கவும்',
-  pinLockedMessage: 'பல முறை தவறான முயற்சிகள். பின்னை மீட்டமைக்க உங்கள் மொபைல் எண்ணை சரிபார்க்கவும்.',
-  pinNotSetMessage: 'இன்னும் பின் அமைக்கப்படவில்லை. பின்னை உருவாக்க உங்கள் மொபைல் எண்ணை சரிபார்க்கவும்.',
-  wrongPinError: 'தவறான பின்.',
-  changePinNav: 'பின்னை மாற்று',
-  changePinTitle: 'பின்னை மாற்று',
-  changePinButton: 'பின்னை புதுப்பி',
-  pinChangedToast: 'பின் புதுப்பிக்கப்பட்டது.',
-  pinChangeCapError: 'ஒவ்வொரு 30 நாட்களுக்கும் 3 முறை மட்டுமே பின்னை மாற்ற முடியும்.',
-  enableBiometricPrompt: 'அடுத்த முறை வேகமாக லாகின் செய்ய கைரேகை அல்லது முகத்தை பயன்படுத்தவா?',
-  enableBiometricYes: 'இயக்கு',
-  enableBiometricNo: 'இப்போது வேண்டாம்',
-  useFingerprintButton: 'கைரேகையைப் பயன்படுத்து',
 };
 
 const te: Record<StringKey, string> = {
   technicianLogin: 'టెక్నీషియన్ లాగిన్',
   technicianSignup: 'టెక్నీషియన్ సైన్ అప్',
   technicianAccess: 'టెక్నీషియన్ యాక్సెస్',
-  loginTab: 'లాగిన్',
-  signupTab: 'సైన్ అప్',
   back: 'వెనక్కి',
   mobileNumber: 'మొబైల్ నంబర్',
   otp: 'ఓటీపీ',
   sendOtp: 'ఓటీపీ పంపండి',
-  loginButton: 'లాగిన్',
   verifyButton: 'ధృవీకరించండి',
   submitButton: 'సమర్పించండి',
   codeSentBySms: 'కోడ్ ఎస్ఎంఎస్ ద్వారా పంపబడింది.',
   enterValidPhone: 'సరైన 10 అంకెల ఫోన్ నంబర్ నమోదు చేయండి.',
   sendCodeFirst: 'ముందుగా మీకు కోడ్ పంపండి.',
-  noAccountFound: 'ఈ నంబర్‌కు ఖాతా కనుగొనబడలేదు. దయచేసి సైన్ అప్ చేయండి.',
-  accountExists: 'ఈ నంబర్‌కు ఇప్పటికే ఖాతా ఉంది. దయచేసి లాగిన్ చేయండి.',
   phoneVerifiedCompleteProfile: 'ఫోన్ నంబర్ ధృవీకరించబడింది. నమోదును పూర్తి చేయడానికి మీ ప్రొఫైల్ నింపండి.',
   registeredMessage: 'నమోదు పూర్తయింది — అడ్మిన్ మీ ఖాతాను ధృవీకరించిన తర్వాత మీకు తెలియజేయబడుతుంది.',
   pendingHeading: 'ఖాతా ఆమోదం కోసం వేచి ఉంది',
@@ -520,6 +405,9 @@ const te: Record<StringKey, string> = {
   jobsNav: 'పనులు',
   profileNav: 'ప్రొఫైల్',
   requestChangeNav: 'మార్పు అభ్యర్థన',
+  announcementsNav: 'ప్రకటనలు',
+  announcementsTitle: 'ప్రకటనలు',
+  noAnnouncementsYet: 'ఇంకా ప్రకటనలు లేవు.',
   logout: 'లాగ్ అవుట్',
   logoutConfirm: 'టెక్నీషియన్ ఖాతా నుండి లాగ్ అవుట్ చేయాలా?',
   jobsTitle: 'పనులు',
@@ -558,49 +446,24 @@ const te: Record<StringKey, string> = {
   requestSubmittedToast: 'అభ్యర్థన సమర్పించబడింది — సమీక్షించిన తర్వాత మీకు తెలియజేయబడుతుంది.',
   giveReasonError: 'మీరు ఈ మార్పును ఎందుకు అభ్యర్థిస్తున్నారో అడ్మిన్‌కు తెలియజేయండి.',
   changeAtLeastOneError: 'ముందుగా కనీసం ఒక వివరాన్ని మార్చండి.',
+  changesUsedLabel: 'ఉపయోగించిన మార్పులు',
+  changesCapReachedError: 'మీరు అనుమతించిన అన్ని ప్రొఫైల్-మార్పు అభ్యర్థనలను ఉపయోగించారు.',
   languageLabel: 'భాష',
-  pin: 'పిన్',
-  newPinLabel: 'కొత్త పిన్',
-  confirmPinLabel: 'పిన్‌ను నిర్ధారించండి',
-  currentPinLabel: 'ప్రస్తుత పిన్',
-  setPinTitle: 'మీ పిన్‌ను సెట్ చేయండి',
-  setPinHint: '4 అంకెల పిన్‌ను ఎంచుకోండి. ఇక నుండి లాగిన్ చేయడానికి దీన్ని ఉపయోగిస్తారు.',
-  setPinButton: 'పిన్ సేవ్ చేయండి',
-  pinMismatchError: 'పిన్‌లు సరిపోలడం లేదు.',
-  pinFormatError: 'పిన్ ఖచ్చితంగా 4 అంకెలు ఉండాలి.',
-  forgotPinLink: 'పిన్ మర్చిపోయారా? ఓటీపీ ద్వారా ధృవీకరించండి',
-  pinLockedMessage: 'చాలాసార్లు తప్పు ప్రయత్నాలు. పిన్‌ను రీసెట్ చేయడానికి మీ ఫోన్ నంబర్‌ను ధృవీకరించండి.',
-  pinNotSetMessage: 'ఇంకా పిన్ సెట్ చేయలేదు. పిన్ సృష్టించడానికి మీ ఫోన్ నంబర్‌ను ధృవీకరించండి.',
-  wrongPinError: 'తప్పు పిన్.',
-  changePinNav: 'పిన్ మార్చండి',
-  changePinTitle: 'పిన్ మార్చండి',
-  changePinButton: 'పిన్ నవీకరించండి',
-  pinChangedToast: 'పిన్ నవీకరించబడింది.',
-  pinChangeCapError: 'మీరు ప్రతి 30 రోజులకు 3 సార్లు మాత్రమే పిన్ మార్చవచ్చు.',
-  enableBiometricPrompt: 'తదుపరిసారి వేగంగా లాగిన్ చేయడానికి వేలిముద్ర లేదా ముఖాన్ని ఉపయోగించాలా?',
-  enableBiometricYes: 'ప్రారంభించండి',
-  enableBiometricNo: 'ఇప్పుడు వద్దు',
-  useFingerprintButton: 'వేలిముద్రను ఉపయోగించండి',
 };
 
 const ml: Record<StringKey, string> = {
   technicianLogin: 'ടെക്നീഷ്യൻ ലോഗിൻ',
   technicianSignup: 'ടെക്നീഷ്യൻ സൈൻ അപ്പ്',
   technicianAccess: 'ടെക്നീഷ്യൻ ആക്സസ്',
-  loginTab: 'ലോഗിൻ',
-  signupTab: 'സൈൻ അപ്പ്',
   back: 'തിരികെ',
   mobileNumber: 'മൊബൈൽ നമ്പർ',
   otp: 'ഒടിപി',
   sendOtp: 'ഒടിപി അയയ്ക്കുക',
-  loginButton: 'ലോഗിൻ',
   verifyButton: 'പരിശോധിക്കുക',
   submitButton: 'സമർപ്പിക്കുക',
   codeSentBySms: 'കോഡ് എസ്എംഎസ് വഴി അയച്ചു.',
   enterValidPhone: 'ശരിയായ 10 അക്ക ഫോൺ നമ്പർ നൽകുക.',
   sendCodeFirst: 'ആദ്യം നിങ്ങൾക്ക് ഒരു കോഡ് അയയ്ക്കുക.',
-  noAccountFound: 'ഈ നമ്പറിന് അക്കൗണ്ട് കണ്ടെത്തിയില്ല. ദയവായി സൈൻ അപ്പ് ചെയ്യുക.',
-  accountExists: 'ഈ നമ്പറിന് ഇതിനകം അക്കൗണ്ട് ഉണ്ട്. ദയവായി ലോഗിൻ ചെയ്യുക.',
   phoneVerifiedCompleteProfile: 'ഫോൺ നമ്പർ പരിശോധിച്ചു. രജിസ്ട്രേഷൻ പൂർത്തിയാക്കാൻ നിങ്ങളുടെ പ്രൊഫൈൽ പൂരിപ്പിക്കുക.',
   registeredMessage: 'രജിസ്ട്രേഷൻ പൂർത്തിയായി — അഡ്മിൻ നിങ്ങളുടെ അക്കൗണ്ട് പരിശോധിച്ച ശേഷം അറിയിക്കും.',
   pendingHeading: 'അക്കൗണ്ട് അംഗീകാരത്തിനായി കാത്തിരിക്കുന്നു',
@@ -614,6 +477,9 @@ const ml: Record<StringKey, string> = {
   jobsNav: 'ജോലികൾ',
   profileNav: 'പ്രൊഫൈൽ',
   requestChangeNav: 'മാറ്റത്തിനുള്ള അഭ്യർത്ഥന',
+  announcementsNav: 'അറിയിപ്പുകൾ',
+  announcementsTitle: 'അറിയിപ്പുകൾ',
+  noAnnouncementsYet: 'ഇതുവരെ അറിയിപ്പുകൾ ഇല്ല.',
   logout: 'ലോഗ് ഔട്ട്',
   logoutConfirm: 'ടെക്നീഷ്യൻ അക്കൗണ്ടിൽ നിന്ന് ലോഗ് ഔട്ട് ചെയ്യണോ?',
   jobsTitle: 'ജോലികൾ',
@@ -652,29 +518,9 @@ const ml: Record<StringKey, string> = {
   requestSubmittedToast: 'അഭ്യർത്ഥന സമർപ്പിച്ചു — അവലോകനം ചെയ്ത ശേഷം നിങ്ങളെ അറിയിക്കും.',
   giveReasonError: 'ഈ മാറ്റം എന്തിനാണ് അഭ്യർത്ഥിക്കുന്നതെന്ന് അഡ്മിനെ അറിയിക്കുക.',
   changeAtLeastOneError: 'ആദ്യം ഒരു വിവരമെങ്കിലും മാറ്റുക.',
+  changesUsedLabel: 'ഉപയോഗിച്ച മാറ്റങ്ങൾ',
+  changesCapReachedError: 'നിങ്ങൾക്ക് അനുവദനീയമായ എല്ലാ പ്രൊഫൈൽ-മാറ്റ അഭ്യർത്ഥനകളും ഉപയോഗിച്ചു കഴിഞ്ഞു.',
   languageLabel: 'ഭാഷ',
-  pin: 'പിൻ',
-  newPinLabel: 'പുതിയ പിൻ',
-  confirmPinLabel: 'പിൻ സ്ഥിരീകരിക്കുക',
-  currentPinLabel: 'നിലവിലെ പിൻ',
-  setPinTitle: 'നിങ്ങളുടെ പിൻ സജ്ജമാക്കുക',
-  setPinHint: '4 അക്ക പിൻ തിരഞ്ഞെടുക്കുക. ഇനി മുതൽ ലോഗിൻ ചെയ്യാൻ ഇത് ഉപയോഗിക്കും.',
-  setPinButton: 'പിൻ സേവ് ചെയ്യുക',
-  pinMismatchError: 'പിന്നുകൾ പൊരുത്തപ്പെടുന്നില്ല.',
-  pinFormatError: 'പിൻ കൃത്യമായി 4 അക്കങ്ങൾ ആയിരിക്കണം.',
-  forgotPinLink: 'പിൻ മറന്നോ? ഒടിപി വഴി പരിശോധിക്കുക',
-  pinLockedMessage: 'വളരെയധികം തെറ്റായ ശ്രമങ്ങൾ. പിൻ പുനഃക്രമീകരിക്കാൻ നിങ്ങളുടെ ഫോൺ നമ്പർ പരിശോധിക്കുക.',
-  pinNotSetMessage: 'ഇതുവരെ പിൻ സജ്ജമാക്കിയിട്ടില്ല. പിൻ ഉണ്ടാക്കാൻ നിങ്ങളുടെ ഫോൺ നമ്പർ പരിശോധിക്കുക.',
-  wrongPinError: 'തെറ്റായ പിൻ.',
-  changePinNav: 'പിൻ മാറ്റുക',
-  changePinTitle: 'പിൻ മാറ്റുക',
-  changePinButton: 'പിൻ അപ്ഡേറ്റ് ചെയ്യുക',
-  pinChangedToast: 'പിൻ അപ്ഡേറ്റ് ചെയ്തു.',
-  pinChangeCapError: 'ഓരോ 30 ദിവസത്തിലും 3 തവണ മാത്രമേ പിൻ മാറ്റാൻ കഴിയൂ.',
-  enableBiometricPrompt: 'അടുത്ത തവണ വേഗത്തിൽ ലോഗിൻ ചെയ്യാൻ വിരലടയാളമോ മുഖമോ ഉപയോഗിക്കണോ?',
-  enableBiometricYes: 'സജീവമാക്കുക',
-  enableBiometricNo: 'ഇപ്പോൾ വേണ്ട',
-  useFingerprintButton: 'വിരലടയാളം ഉപയോഗിക്കുക',
 };
 
 export const strings: Record<LanguageCode, Record<StringKey, string>> = { en, hi, kn, ta, te, ml };

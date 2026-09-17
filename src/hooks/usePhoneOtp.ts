@@ -13,16 +13,22 @@ export function usePhoneOtp() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [session, setSession] = useState<OtpSession | null>(null);
-  const [devHint, setDevHint] = useState<string | null>(null);
 
-  async function sendOtp(): Promise<void> {
+  /**
+   * Returns the fresh devHint directly, since the state this hook set a
+   * moment ago isn't visible in the caller's own closure until the next
+   * render — reading a hook-returned state value right after the call that
+   * set it shows the *previous* send's code, which no longer matches the
+   * session this call just created.
+   */
+  async function sendOtp(): Promise<string | null> {
     if (!isValidPhone(phoneNumber)) {
       throw new Error('INVALID_PHONE');
     }
 
     const result = await requestOtp(toE164(phoneNumber));
     setSession(result.session);
-    setDevHint(result.devHint ?? null);
+    return result.devHint ?? null;
   }
 
   async function confirmOtp(): Promise<void> {
@@ -33,5 +39,5 @@ export function usePhoneOtp() {
     await session.confirm(otp);
   }
 
-  return { phoneNumber, setPhoneNumber, otp, setOtp, session, devHint, sendOtp, confirmOtp };
+  return { phoneNumber, setPhoneNumber, otp, setOtp, session, sendOtp, confirmOtp };
 }
