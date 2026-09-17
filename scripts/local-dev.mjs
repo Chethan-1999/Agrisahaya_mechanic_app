@@ -11,15 +11,20 @@
 //      the emulator suite isn't served over TLS).
 //   4. Boots the Android emulator if nothing is already connected, installs the
 //      debug APK, and launches the app.
-//   5. Starts the Firebase Emulator Suite (Auth, Firestore, Functions) in the
+//   5. Starts a browser-accessible Vite dev server (http://localhost:5173) with
+//      the same local-emulator config baked in, so testing from a browser hits
+//      the same Firebase Emulator Suite as the Android app instead of production
+//      Firebase — no more burning real SMS/OTP quota while iterating.
+//   6. Starts the Firebase Emulator Suite (Auth, Firestore, Functions) in the
 //      foreground, bound to 0.0.0.0 so other devices on the network can reach it.
-//      Ctrl+C stops it.
+//      Ctrl+C stops everything (the dev server included — it's a child of this
+//      process, not detached like the Android emulator).
 //
 // Works the same on macOS and Windows: every step below is plain Node.js — no
 // bash-only syntax, so nothing here depends on WSL, Git Bash, or GNU Make.
 
 import { spawnSync, spawn } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, openSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
@@ -94,6 +99,22 @@ function bootEmulator(emulatorBin, avdName, { wipeData }) {
   child.unref();
 }
 
+// Deliberately NOT detached, unlike bootEmulator above — this dev server
+// should live and die with this script (Ctrl+C on the emulator suite below
+// kills it too, since a non-detached child shares the parent's process
+// group and gets the same SIGINT), not survive independently the way the
+// Android emulator is meant to.
+function startWebDevServer(lanIp) {
+  log(`Starting a browser dev server at http://localhost:${WEB_DEV_PORT} (log: ${WEB_DEV_LOG})...`);
+  const logFd = openSync(WEB_DEV_LOG, 'a');
+  spawn('npx', ['vite', 'dev', '--host', '0.0.0.0', '--port', String(WEB_DEV_PORT)], {
+    cwd: repoRoot,
+    stdio: ['ignore', logFd, logFd],
+    shell: isWindows, // Windows needs the .cmd shim resolved via the shell
+    env: { ...process.env, VITE_FIREBASE_EMULATOR_HOST: lanIp },
+  });
+}
+
 const BOOT_TIMEOUT_MS = 90_000;
 const BOOT_RETRIES = 3;
 
@@ -152,8 +173,11 @@ function isPortFree(port) {
   });
 }
 
+const WEB_DEV_PORT = 5173;
+const WEB_DEV_LOG = path.join(os.tmpdir(), 'agrisahaya-vite-dev.log');
+
 async function checkEmulatorPortsFree() {
-  const ports = [8080, 9099, 5001, 4000, 4400, 4500, 9150];
+  const ports = [8080, 9099, 5001, 4000, 4400, 4500, 9150, WEB_DEV_PORT];
   const busy = [];
   for (const port of ports) {
     if (!(await isPortFree(port))) busy.push(port);
@@ -163,8 +187,8 @@ async function checkEmulatorPortsFree() {
       ? `netstat -ano | findstr :${busy[0]}`
       : `lsof -i :${busy[0]} -sTCP:LISTEN`;
     fail(
-      `Port(s) ${busy.join(', ')} are already in use — most likely an orphaned Firebase emulator ` +
-        `from a previous run (e.g. this script's terminal was closed instead of Ctrl+C'd).\n` +
+      `Port(s) ${busy.join(', ')} are already in use — most likely an orphaned Firebase emulator or ` +
+        `Vite dev server from a previous run (e.g. this script's terminal was closed instead of Ctrl+C'd).\n` +
         `Find and stop it:\n  ${howToFind}\n` +
         (isWindows ? '  taskkill /PID <pid> /F' : '  kill <pid>'),
     );
@@ -305,8 +329,11 @@ async function main() {
   log('Checking that the emulator ports are free...');
   await checkEmulatorPortsFree();
 
+  startWebDevServer(lanIp);
+
   log(`Starting the Firebase Emulator Suite on 0.0.0.0 (reachable at ${lanIp})...`);
-  log('Emulator UI: http://localhost:4000   Ctrl+C to stop.');
+  log(`Browser:    http://localhost:${WEB_DEV_PORT}   (talks to this same local emulator)`);
+  log('Emulator UI: http://localhost:4000   Ctrl+C to stop everything.');
   // The Firebase CLI shells out to `java` on PATH (not JAVA_HOME) for the Firestore/Auth
   // emulators, so make sure the resolved JDK's bin/ is actually on PATH for this step.
   const pathWithJava = javaHome
