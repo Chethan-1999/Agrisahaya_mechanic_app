@@ -16,7 +16,8 @@ admin console stays in English.
 
 ### Signing up
 
-1. From the landing screen, choose **Technician Sign Up**.
+1. From the landing screen, choose **Technician Sign Up** (or **Technician
+   Login** — both lead to the same phone-verification screen).
 2. Enter your mobile number and tap **Send OTP**. You'll get a code by SMS.
    (Only when testing locally against the Firebase emulator does the app show
    the code directly on screen instead of sending an SMS — see the README's
@@ -36,14 +37,16 @@ the reason and the support number to call.
 
 ### Logging in
 
-From the landing screen, choose **Technician Login**, enter your mobile
-number, request a code, enter it, and tap **Login**. If your account isn't
-approved yet you'll land on the pending screen above instead of the dashboard.
+There's no separate login step or password to remember. The first time you
+verify your phone number, the app keeps you signed in on that device — closing
+and reopening the app takes you straight to your dashboard (or the pending
+screen, if you're not approved yet) with no prompt. If you ever end up signed
+out (a new device, or app data cleared), verifying your phone number again
+with a fresh OTP code signs you straight back into your existing account — no
+profile form to refill.
 
-On a device with fingerprint/face unlock or a screen lock set up, the app may
-ask you to unlock with it before showing your session — this is a device-level
-lock on top of an already-signed-in session, not a second password to
-remember. If it doesn't recognize you, tap **Try Again**.
+Signing in on a new phone signs you out of any other phone that was signed in
+— only one device can be active on your account at a time.
 
 ### Dashboard
 
@@ -86,6 +89,10 @@ Nothing changes immediately — an admin reviews the request and approves or
 rejects it. You're notified in the app either way (rejections include the
 admin's note, if they left one). You must change at least one field to
 submit.
+
+You can only submit a limited number of change requests in total (2 by
+default) — the screen shows how many you've used. Once you've used them all,
+contact your admin directly for any further changes.
 
 ## For admins
 
@@ -143,8 +150,6 @@ Light/dark mode toggle.
   hasn't been verified on a real device yet — see the README's "Known gaps".
   If a "your job was cancelled" notification doesn't clear itself in the
   background, it will clear the next time the app is opened.
-- The fingerprint/face unlock step also hasn't been verified on a real device
-  yet. If it misbehaves, logging out and back in bypasses it.
 - Kannada, Tamil, Telugu, and Malayalam translations are a first pass and
   haven't been checked by a native speaker yet — if something reads oddly in
   one of those languages, switch to English or Hindi (both verified) and let

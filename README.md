@@ -116,12 +116,15 @@ make local
 This one command detects your LAN IP, builds the web app against it, syncs it
 into the Android project (with cleartext HTTP enabled *only* for this build),
 boots the Android emulator if nothing's connected, installs and launches the
-app, builds the Cloud Functions, and starts the emulator suite bound to
-`0.0.0.0` so another device on the same Wi-Fi can reach it too. Emulator UI:
-http://localhost:4000. Ctrl+C stops it.
+app, builds the Cloud Functions, starts a browser-accessible Vite dev server
+(so you don't have to run `npm run dev` separately, and don't accidentally hit
+production Firebase from a browser instead of the emulator), and starts the
+emulator suite bound to `0.0.0.0` so another device on the same Wi-Fi can
+reach it too. Browser: http://localhost:5173. Emulator UI:
+http://localhost:4000. Ctrl+C stops all of it.
 
 If a device on Wi-Fi can't connect, check your OS firewall allows inbound
-connections on ports 8080, 9099, 5001, and 4000.
+connections on ports 8080, 9099, 5001, 5173, and 4000.
 
 ### Granular `make` targets (macOS/Linux)
 
@@ -206,7 +209,21 @@ approval, jobs, notifications, profile changes — see [USER_GUIDE.md](USER_GUID
   dismissing it when a job is cancelled/reassigned) is implemented but not yet
   verified on a real device while backgrounded/killed — see the comment at the
   top of `src/services/notifications.ts`.
-- The biometric app-lock (`src/services/biometric.ts`) is implemented against
-  the plugin's documented API but not yet verified on a real device.
+- There is no PIN and no biometric app-lock — a technician signs in with
+  phone-OTP only, and a persisted session opens the app directly. "Only one
+  phone at a time" is enforced best-effort via refresh-token revocation
+  (`revokeOtherSessions` in `functions/src/technicianFunctions.ts`): an old
+  device's already-issued session can keep working for up to ~1hr after a new
+  sign-in, since revocation doesn't invalidate an already-issued ID token.
 - Kannada/Tamil/Telugu/Malayalam strings in `src/i18n/strings.ts` are a first
   pass, not yet reviewed by a native speaker (Hindi has been checked carefully).
+
+## Requirement: Google Play Store release, multi-Android-version compatibility
+
+The app needs to be publishable on the Google Play Store and run correctly across
+the Android versions the project supports (`minSdkVersion` 24 through
+`targetSdkVersion`/`compileSdkVersion` 36 — see `android/variables.gradle`). Any
+dependency or native-config change made toward this must follow the process in
+[docs/dependency_decison.md](docs/dependency_decison.md). See that evaluation's
+findings for the current gap list before adding a release-signing, in-app-update,
+or Play-Console-integration dependency.
