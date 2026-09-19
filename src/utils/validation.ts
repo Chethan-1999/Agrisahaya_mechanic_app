@@ -1,27 +1,23 @@
 import type { MechanicForm } from '../types';
 import { isIndianState } from './indianStates';
 
-export type ValidationErrors = Partial<Record<keyof MechanicForm | 'otp', string>>;
+export type ValidationErrors = Partial<Record<keyof MechanicForm, string>>;
 
 export function isValidPhone(phoneNumber: string) {
-  return /^\d{10}$/.test(phoneNumber.trim());
+  return /^[6-9]\d{9}$/.test(phoneNumber.trim());
 }
 
-export function validateMechanicForm(form: MechanicForm, otpVerified: boolean): ValidationErrors {
+/** Firebase Phone Auth requires E.164 — call only after isValidPhone() has confirmed the 10-digit form. */
+export function toE164(phoneNumber: string): string {
+  return `+91${phoneNumber.trim()}`;
+}
+
+/** Mirrors functions/src/lib/validation.ts — the server re-checks all of this too. */
+export function validateProfileForm(form: Omit<MechanicForm, 'phoneNumber'>): ValidationErrors {
   const errors: ValidationErrors = {};
 
   if (!form.fullName.trim()) {
     errors.fullName = 'Full name is required';
-  }
-
-  if (!form.phoneNumber.trim()) {
-    errors.phoneNumber = 'Phone number is required';
-  } else if (!isValidPhone(form.phoneNumber)) {
-    errors.phoneNumber = 'Enter a 10 digit phone number';
-  }
-
-  if (!otpVerified) {
-    errors.otp = 'OTP verification is required';
   }
 
   if (!form.village.trim()) {
@@ -38,8 +34,18 @@ export function validateMechanicForm(form: MechanicForm, otpVerified: boolean): 
     errors.state = 'Select a valid Indian state';
   }
 
-  if (form.experience.trim() && Number.isNaN(Number(form.experience))) {
-    errors.experience = 'Experience should be numeric';
+  if (form.pincode.trim() && !/^\d{6}$/.test(form.pincode.trim())) {
+    errors.pincode = 'Pincode must be 6 digits';
+  }
+
+  const age = Number(form.age);
+  if (!form.age.trim() || Number.isNaN(age) || age < 18 || age > 70) {
+    errors.age = 'Age must be between 18 and 70';
+  }
+
+  const experience = Number(form.experience);
+  if (form.experience.trim() && (Number.isNaN(experience) || experience < 0 || experience > 50)) {
+    errors.experience = 'Experience must be between 0 and 50 years';
   }
 
   return errors;
