@@ -111,7 +111,7 @@ Totals for active, inactive, and pending technicians.
 A searchable, filterable list of every technician (by district, village,
 status). For each technician you can:
 
-- **Approve or reject** a pending signup
+- **Approve** a pending signup
 - **Activate / deactivate** an existing technician
 - **View** full details, including their running job stats (completed,
   cancelled, pending)
@@ -150,10 +150,6 @@ changed, their stated reason, and:
 - **Approve** — applies the change immediately.
 - **Reject** — leave a note (shown to the technician) explaining why, then
   reject.
-
-### Settings
-
-Light/dark mode toggle.
 
 ## Known caveats
 

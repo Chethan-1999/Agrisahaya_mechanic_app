@@ -51,7 +51,6 @@ type Page =
   | 'adminAssignJobs'
   | 'adminCommunity'
   | 'adminProfileRequests'
-  | 'adminSettings'
   | 'adminDetails'
   | 'adminEdit';
 
@@ -62,7 +61,6 @@ const navItems: Array<{ label: string; page: Page }> = [
   { label: 'Assign jobs', page: 'adminAssignJobs' },
   { label: 'Community', page: 'adminCommunity' },
   { label: 'Profile Requests', page: 'adminProfileRequests' },
-  { label: 'Settings', page: 'adminSettings' },
 ];
 
 const SUPPORT_NUMBER = '9646424964';
@@ -105,7 +103,6 @@ const backTarget: Partial<Record<Page, Page>> = {
   adminAssignJobs: 'adminDashboard',
   adminCommunity: 'adminDashboard',
   adminProfileRequests: 'adminDashboard',
-  adminSettings: 'adminDashboard',
   adminDetails: 'adminMechanics',
   adminEdit: 'adminMechanics',
 };
@@ -119,15 +116,10 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [bootstrapping, setBootstrapping] = useState(true);
   const [toast, setToast] = useState<Toast>(null);
-  const [darkMode, setDarkMode] = useState(false);
   const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog>(null);
   const { t } = useI18n();
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = darkMode ? 'dark' : 'light';
-  }, [darkMode]);
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -275,17 +267,19 @@ export default function App() {
   }
 
   function logout() {
-    const confirmText = session?.role === 'admin' ? 'Logout from admin account?' : t('logoutConfirm');
-
-    if (!confirm(confirmText)) {
-      return;
-    }
-
-    void signOut(auth);
-    setSession(null);
-    setCurrentMechanic(null);
-    setSelectedMechanic(null);
-    setPage('landing');
+    setConfirmDialog({
+      title: 'Logout?',
+      message: session?.role === 'admin' ? 'Logout from admin account?' : t('logoutConfirm'),
+      confirmLabel: t('logout'),
+      kind: 'danger',
+      onConfirm: () => {
+        void signOut(auth);
+        setSession(null);
+        setCurrentMechanic(null);
+        setSelectedMechanic(null);
+        setPage('landing');
+      },
+    });
   }
 
   const activeMechanics = mechanics.filter((mechanic) => mechanic.status === 'active').length;
@@ -325,11 +319,9 @@ export default function App() {
 
       {page === 'landing' && (
         <Landing
-          darkMode={darkMode}
           onAdmin={() => setPage('adminLogin')}
           onMechanicLogin={() => setPage('mechanicAuth')}
           onMechanicSignup={() => setPage('mechanicAuth')}
-          onToggleDarkMode={setDarkMode}
         />
       )}
 
@@ -409,7 +401,7 @@ export default function App() {
       )}
 
       {session?.role === 'admin' && page.startsWith('admin') && (
-        <AdminShell activePage={page} darkMode={darkMode} onLogout={logout} onNavigate={setPage} onToggleDarkMode={setDarkMode}>
+        <AdminShell activePage={page} onLogout={logout} onNavigate={setPage}>
           {page === 'adminDashboard' && (
             <AdminDashboard active={activeMechanics} inactive={inactiveMechanics} jobs={jobs} mechanics={mechanics} pending={pendingMechanics} total={mechanics.length} />
           )}
@@ -427,19 +419,6 @@ export default function App() {
                 setSelectedMechanic(mechanic);
                 setPage('adminEdit');
               }}
-              onReject={(mechanic) => setConfirmDialog({
-                title: 'Reject signup?',
-                message: `${mechanic.fullName}'s signup will be rejected.`,
-                confirmLabel: 'Reject',
-                kind: 'danger',
-                onConfirm: () => {
-                  void withLoading(async () => {
-                    await reviewSignup(mechanic.id, 'reject');
-                    setToast({ kind: 'success', text: `${mechanic.fullName} rejected.` });
-                    setMechanics(await listMechanics());
-                  });
-                },
-              })}
               onRefresh={loadMechanics}
               onToggleStatus={(mechanic) => {
                 const next = mechanic.status === 'active' ? 'inactive' : 'active';
@@ -472,7 +451,6 @@ export default function App() {
           {page === 'adminAssignJobs' && <AdminAssignJobs askConfirm={setConfirmDialog} jobs={jobs} mechanics={mechanics} onRefresh={loadJobs} setToast={setToast} withLoading={withLoading} />}
           {page === 'adminProfileRequests' && <AdminProfileRequests mechanics={mechanics} setToast={setToast} withLoading={withLoading} />}
           {page === 'adminCommunity' && <AdminCommunity setToast={setToast} withLoading={withLoading} />}
-          {page === 'adminSettings' && <Settings darkMode={darkMode} onToggleDarkMode={setDarkMode} />}
           {page === 'adminDetails' && selectedMechanic && (
             <DetailPage editable mechanic={selectedMechanic} onBack={() => setPage('adminMechanics')} onEdit={() => setPage('adminEdit')} title="Mechanic Details" />
           )}
@@ -494,14 +472,11 @@ export default function App() {
   );
 }
 
-function Landing({ darkMode, onAdmin, onMechanicLogin, onMechanicSignup, onToggleDarkMode }: { darkMode: boolean; onAdmin: () => void; onMechanicLogin: () => void; onMechanicSignup: () => void; onToggleDarkMode: (value: boolean) => void }) {
+function Landing({ onAdmin, onMechanicLogin, onMechanicSignup }: { onAdmin: () => void; onMechanicLogin: () => void; onMechanicSignup: () => void }) {
   const { language, setLanguage, t } = useI18n();
 
   return (
     <main className="landing-page">
-      <div className="top-actions">
-        <label className="theme-toggle"><span>{darkMode ? 'Dark' : 'Light'} mode</span><span className="switch"><input checked={darkMode} onChange={(event) => onToggleDarkMode(event.target.checked)} type="checkbox" /><span /></span></label>
-      </div>
       <section className="hero-panel">
         <div className="landing-card-actions">
           <button className="admin-link" onClick={onAdmin}>Admin Login</button>
@@ -757,13 +732,12 @@ function MechanicProfile({ mechanic, onRefresh, onRequestChange }: { mechanic: M
   );
 }
 
-function AdminShell({ activePage, children, darkMode, onLogout, onNavigate, onToggleDarkMode }: { activePage: Page; children: React.ReactNode; darkMode: boolean; onLogout: () => void; onNavigate: (page: Page) => void; onToggleDarkMode: (value: boolean) => void }) {
+function AdminShell({ activePage, children, onLogout, onNavigate }: { activePage: Page; children: React.ReactNode; onLogout: () => void; onNavigate: (page: Page) => void }) {
   return (
     <div className="admin-layout">
       <aside className="sidebar">
         <h2>Mechanic Directory</h2>
         {navItems.map((item) => <button className={activePage === item.page ? 'active' : ''} key={item.page} onClick={() => onNavigate(item.page)}>{item.label}</button>)}
-        <label className="sidebar-toggle"><span>Dark Mode</span><input checked={darkMode} onChange={(event) => onToggleDarkMode(event.target.checked)} type="checkbox" /></label>
         <button className="logout" onClick={onLogout}>Logout</button>
       </aside>
       <main className="admin-content">{children}</main>
@@ -863,7 +837,7 @@ function AdminDashboard({ active, inactive, jobs, mechanics, pending, total }: {
   );
 }
 
-function MechanicsTable({ mechanics, onApprove, onEdit, onReject, onRefresh, onToggleStatus, onView }: { mechanics: Mechanic[]; onApprove: (mechanic: Mechanic) => void; onEdit: (mechanic: Mechanic) => void; onReject: (mechanic: Mechanic) => void; onRefresh: () => Promise<void>; onToggleStatus: (mechanic: Mechanic) => void; onView: (mechanic: Mechanic) => void }) {
+function MechanicsTable({ mechanics, onApprove, onEdit, onRefresh, onToggleStatus, onView }: { mechanics: Mechanic[]; onApprove: (mechanic: Mechanic) => void; onEdit: (mechanic: Mechanic) => void; onRefresh: () => Promise<void>; onToggleStatus: (mechanic: Mechanic) => void; onView: (mechanic: Mechanic) => void }) {
   const [search, setSearch] = useState('');
   const [district, setDistrict] = useState('');
   const [village, setVillage] = useState('');
@@ -901,7 +875,6 @@ function MechanicsTable({ mechanics, onApprove, onEdit, onReject, onRefresh, onT
                   {mechanic.status === 'pending' && (
                     <>
                       <button onClick={() => onApprove(mechanic)}>Approve</button>
-                      <button className="danger-text" onClick={() => onReject(mechanic)}>Reject</button>
                     </>
                   )}
                   {(mechanic.status === 'active' || mechanic.status === 'inactive') && (
@@ -967,10 +940,6 @@ function EditMechanic({ mechanic, onBack, onSaved, setToast, withLoading }: { me
       </form>
     </main>
   );
-}
-
-function Settings({ darkMode, onToggleDarkMode }: { darkMode: boolean; onToggleDarkMode: (value: boolean) => void }) {
-  return <section className="card settings-card"><h1>Settings</h1><label className="checkbox-row"><input checked={darkMode} onChange={(event) => onToggleDarkMode(event.target.checked)} type="checkbox" /> Enable dark mode</label></section>;
 }
 
 // `translated` is only true on the technician's own signup form — the admin's
