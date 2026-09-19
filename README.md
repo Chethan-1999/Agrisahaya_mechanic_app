@@ -113,8 +113,9 @@ npm run dev:local     # macOS/Windows/Linux — plain Node.js
 make local
 ```
 
-This one command detects your LAN IP, builds the web app against it, syncs it
-into the Android project (with cleartext HTTP enabled *only* for this build),
+This one command detects your LAN IP, builds the web app against the right
+Firebase-emulator host for whatever's connected (see below), syncs it into
+the Android project (with cleartext HTTP enabled *only* for this build),
 boots the Android emulator if nothing's connected, installs and launches the
 app, builds the Cloud Functions, starts a browser-accessible Vite dev server
 (so you don't have to run `npm run dev` separately, and don't accidentally hit
@@ -123,8 +124,19 @@ emulator suite bound to `0.0.0.0` so another device on the same Wi-Fi can
 reach it too. Browser: http://localhost:5173. Emulator UI:
 http://localhost:4000. Ctrl+C stops all of it.
 
-If a device on Wi-Fi can't connect, check your OS firewall allows inbound
-connections on ports 8080, 9099, 5001, 5173, and 4000.
+**The AVD emulator and a real physical device need different hosts baked in**,
+and this script picks the right one automatically: the AVD can *only* reach
+this laptop via the special `10.0.2.2` alias — its virtual network can't
+route to the laptop's own real LAN interface at all (confirmed: packets to
+the LAN IP from inside the AVD come back corrupted, not just slow) — while an
+actual phone on Wi-Fi has no such alias and needs the real LAN IP instead. If
+you build with the wrong one, the symptom isn't a clear connection error —
+the app just hangs forever on the "Loading..." screen, with
+`auth/network-request-failed` buried in the console (`adb logcat`). If that
+happens, this is the first thing to check.
+
+If a physical device on Wi-Fi can't connect, check your OS firewall allows
+inbound connections on ports 8080, 9099, 5001, 5173, and 4000.
 
 ### Granular `make` targets (macOS/Linux)
 

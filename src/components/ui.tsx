@@ -38,8 +38,8 @@ export function jobStatusMeta(status: JobStatus, t?: (key: StringKey) => string)
   }
 }
 
-export function Input({ error, label, onChange, type = 'text', value }: { error?: string; label: string; onChange: (value: string) => void; type?: string; value: string }) {
-  return <label className="field"><span>{label}</span><input className={error ? 'invalid' : ''} onChange={(event) => onChange(event.target.value)} type={type} value={value} />{error && <small>{error}</small>}</label>;
+export function Input({ autoComplete, error, label, name, onChange, type = 'text', value }: { autoComplete?: string; error?: string; label: string; name?: string; onChange: (value: string) => void; type?: string; value: string }) {
+  return <label className="field"><span>{label}</span><input autoComplete={autoComplete} className={error ? 'invalid' : ''} name={name} onChange={(event) => onChange(event.target.value)} type={type} value={value} />{error && <small>{error}</small>}</label>;
 }
 
 export function Textarea({ error, label, onChange, value }: { error?: string; label: string; onChange: (value: string) => void; value: string }) {

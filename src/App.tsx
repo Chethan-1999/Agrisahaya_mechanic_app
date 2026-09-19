@@ -507,8 +507,8 @@ function AdminLogin({ onLogin, withLoading }: { onLogin: (admin: AdminProfile) =
 
   return (
     <form className="form-grid" onSubmit={(event) => void submit(event)}>
-      <Input label="Email" onChange={setEmail} type="email" value={email} />
-      <Input label="Password" onChange={setPassword} type="password" value={password} />
+      <Input autoComplete="username" label="Email" name="email" onChange={setEmail} type="email" value={email} />
+      <Input autoComplete="current-password" label="Password" name="password" onChange={setPassword} type="password" value={password} />
       <button className="primary" type="submit">Admin Login</button>
       <p className="muted">Admin users are created manually in Firebase Authentication and the admins collection.</p>
     </form>
@@ -726,15 +726,15 @@ function MechanicFields({ disabled = false, errors = {}, form, onChange, transla
 
   return (
     <fieldset className="form-grid fields-grid" disabled={disabled}>
-      <Input error={errors.fullName} label={labels.fullName} onChange={(value) => onChange('fullName', value)} value={form.fullName} />
-      <Input label={labels.village} error={errors.village} onChange={(value) => onChange('village', value)} value={form.village} />
-      <Input label={labels.district} error={errors.district} onChange={(value) => onChange('district', value)} value={form.district} />
-      <Input error={errors.state} label={labels.state} onChange={(value) => onChange('state', value)} value={form.state} />
-      <Input label={labels.pincode} error={errors.pincode} onChange={(value) => onChange('pincode', value)} value={form.pincode} />
-      <Input label={labels.address} onChange={(value) => onChange('address', value)} value={form.address} />
-      <Input label={labels.landmark} onChange={(value) => onChange('landmark', value)} value={form.landmark} />
-      <Input error={errors.age} label={labels.age} onChange={(value) => onChange('age', value)} value={form.age} />
-      <Input label={labels.experience} error={errors.experience} onChange={(value) => onChange('experience', value)} value={form.experience} />
+      <Input error={errors.fullName} label={labels.fullName} autoComplete="name" name="fullName" onChange={(value) => onChange('fullName', value)} value={form.fullName} />
+      <Input label={labels.village} error={errors.village} autoComplete="address-level3" name="village" onChange={(value) => onChange('village', value)} value={form.village} />
+      <Input label={labels.district} error={errors.district} autoComplete="address-level2" name="district" onChange={(value) => onChange('district', value)} value={form.district} />
+      <Input error={errors.state} label={labels.state} autoComplete="address-level1" name="state" onChange={(value) => onChange('state', value)} value={form.state} />
+      <Input label={labels.pincode} error={errors.pincode} autoComplete="postal-code" name="pincode" onChange={(value) => onChange('pincode', value)} value={form.pincode} />
+      <Input label={labels.address} autoComplete="street-address" name="address" onChange={(value) => onChange('address', value)} value={form.address} />
+      <Input label={labels.landmark} autoComplete="off" name="landmark" onChange={(value) => onChange('landmark', value)} value={form.landmark} />
+      <Input error={errors.age} label={labels.age} autoComplete="off" name="age" onChange={(value) => onChange('age', value)} value={form.age} />
+      <Input label={labels.experience} error={errors.experience} autoComplete="off" name="experience" onChange={(value) => onChange('experience', value)} value={form.experience} />
     </fieldset>
   );
 }

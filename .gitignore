@@ -57,3 +57,5 @@ functions/lib/
 
 /package-lock.json
 /package.json
+# Persisted Firebase emulator data (Auth users incl. password hashes, Firestore)
+emulator-data/

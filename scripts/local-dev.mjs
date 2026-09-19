@@ -4,17 +4,25 @@
 //   npm run dev:local
 //
 // What it does, in order:
-//   1. Detects this laptop's LAN IPv4 address.
-//   2. Builds the web app (into ./dist) with that IP baked in, so the Firebase SDK
-//      talks to the local emulators instead of production Firebase.
+//   1. Detects this laptop's LAN IPv4 address, and checks whether adb already
+//      sees a real physical device (as opposed to nothing, meaning this script
+//      will boot its own AVD emulator).
+//   2. Builds the web app (into ./dist) with the right Firebase-emulator host
+//      baked in for whichever of those it's targeting: a real device needs the
+//      actual LAN IP to reach this laptop over Wi-Fi, but the AVD emulator can
+//      ONLY reach the host via the special 10.0.2.2 alias — its NAT network
+//      can't route to the host's own real LAN interface (confirmed by testing:
+//      packets to the LAN IP from inside the AVD come back corrupted, a NAT
+//      hairpin failure). Using the wrong one for either target is a silent dead
+//      end — the app just hangs on "Loading..." with a buried
+//      "auth/network-request-failed" in the console, not a clear error.
 //   3. Syncs the build into the Android project (with cleartext HTTP allowed, since
 //      the emulator suite isn't served over TLS).
 //   4. Boots the Android emulator if nothing is already connected, installs the
 //      debug APK, and launches the app.
-//   5. Starts a browser-accessible Vite dev server (http://localhost:5173) with
-//      the same local-emulator config baked in, so testing from a browser hits
-//      the same Firebase Emulator Suite as the Android app instead of production
-//      Firebase — no more burning real SMS/OTP quota while iterating.
+//   5. Starts a browser-accessible Vite dev server (http://localhost:5173), using
+//      'localhost' for the emulator host since this process runs directly on the
+//      host machine — no NAT hop to route around here.
 //   6. Starts the Firebase Emulator Suite (Auth, Firestore, Functions) in the
 //      foreground, bound to 0.0.0.0 so other devices on the network can reach it.
 //      Ctrl+C stops everything (the dev server included — it's a child of this
@@ -104,14 +112,18 @@ function bootEmulator(emulatorBin, avdName, { wipeData }) {
 // kills it too, since a non-detached child shares the parent's process
 // group and gets the same SIGINT), not survive independently the way the
 // Android emulator is meant to.
-function startWebDevServer(lanIp) {
+//
+// Uses 'localhost' for the emulator host, not the LAN IP or the AVD's
+// 10.0.2.2 alias — this process runs directly on the host machine (not
+// inside any VM), so there's no NAT/network hop to route around here.
+function startWebDevServer() {
   log(`Starting a browser dev server at http://localhost:${WEB_DEV_PORT} (log: ${WEB_DEV_LOG})...`);
   const logFd = openSync(WEB_DEV_LOG, 'a');
   spawn('npx', ['vite', 'dev', '--host', '0.0.0.0', '--port', String(WEB_DEV_PORT)], {
     cwd: repoRoot,
     stdio: ['ignore', logFd, logFd],
     shell: isWindows, // Windows needs the .cmd shim resolved via the shell
-    env: { ...process.env, VITE_FIREBASE_EMULATOR_HOST: lanIp },
+    env: { ...process.env, VITE_FIREBASE_EMULATOR_HOST: 'localhost' },
   });
 }
 
@@ -270,8 +282,6 @@ function ensureDebugCleartextConfig() {
 
 async function main() {
   const lanIp = detectLanIp();
-  log(`Using this laptop's LAN IP for Firebase: ${lanIp}`);
-  log('Other devices must be on the same Wi-Fi/network to reach it.');
 
   const androidHome = resolveAndroidHome();
   const javaHome = resolveJavaHome();
@@ -281,23 +291,45 @@ async function main() {
   if (!existsSync(adb)) fail(`adb not found at ${adb}. Check your Android SDK install.`);
   if (!existsSync(androidDir)) fail(`No android/ project found. Run "npx cap add android" first.`);
 
+  // The AVD emulator this script boots can only reach the host machine via
+  // the special 10.0.2.2 loopback alias — its slirp/NAT network cannot
+  // route to the host's own real LAN interface (confirmed: pinging the LAN
+  // IP from inside the AVD gets corrupted/duplicate replies, a NAT hairpin
+  // failure, not a clean timeout). Baking the LAN IP into a build destined
+  // for the AVD is a dead end that surfaces as a buried
+  // "auth/network-request-failed" deep in the Firebase SDK, not a clear
+  // connection error. A real physical device on Wi-Fi (adb serial doesn't
+  // start with "emulator-") has no such alias and genuinely needs the LAN
+  // IP instead — so the two targets need two different builds.
+  runBin(adb, ['start-server']);
+  const connectedSerials = (capture(adb, ['devices']).stdout || '')
+    .split('\n')
+    .slice(1)
+    .filter((line) => line.trim().endsWith('device')) // excludes offline/unauthorized entries
+    .map((line) => line.trim().split(/\s+/)[0])
+    .filter(Boolean);
+  const hasPhysicalDevice = connectedSerials.some((serial) => !serial.startsWith('emulator-'));
+  const androidFirebaseHost = hasPhysicalDevice ? lanIp : '10.0.2.2';
+
+  log(`This laptop's LAN IP: ${lanIp} (used for the browser dev server and any physical device on Wi-Fi).`);
+  log(
+    hasPhysicalDevice
+      ? 'A physical device is connected — building for it with the LAN IP so it can reach this laptop over Wi-Fi.'
+      : "Targeting the AVD emulator — building with its 10.0.2.2 host alias, since the LAN IP isn't reachable from inside it.",
+  );
+
   mkdirSync(path.join(repoRoot, 'dist'), { recursive: true });
 
   log('Building the web app with the local Firebase emulator host baked in...');
   run('npx', ['tsc', '--noEmit']);
-  run('npx', ['vite', 'build'], { VITE_FIREBASE_EMULATOR_HOST: lanIp });
+  run('npx', ['vite', 'build'], { VITE_FIREBASE_EMULATOR_HOST: androidFirebaseHost });
 
   log('Syncing the build into the Android project (cleartext HTTP enabled for this build only)...');
   run('npx', ['cap', 'sync', 'android'], { CAP_LOCAL_DEV: '1' });
   ensureDebugCleartextConfig();
 
   log('Checking for a connected Android device/emulator...');
-  runBin(adb, ['start-server']);
-  const devices = capture(adb, ['devices']).stdout || '';
-  const hasDevice = devices
-    .split('\n')
-    .slice(1)
-    .some((line) => line.trim().endsWith('device'));
+  const hasDevice = connectedSerials.length > 0;
 
   if (!hasDevice) {
     bootEmulator(emulatorBin, avdName, { wipeData: false });
@@ -329,7 +361,7 @@ async function main() {
   log('Checking that the emulator ports are free...');
   await checkEmulatorPortsFree();
 
-  startWebDevServer(lanIp);
+  startWebDevServer();
 
   log(`Starting the Firebase Emulator Suite on 0.0.0.0 (reachable at ${lanIp})...`);
   log(`Browser:    http://localhost:${WEB_DEV_PORT}   (talks to this same local emulator)`);
@@ -339,7 +371,12 @@ async function main() {
   const pathWithJava = javaHome
     ? `${path.join(javaHome, 'bin')}${path.delimiter}${process.env.PATH}`
     : process.env.PATH;
-  run('npx', ['firebase', 'emulators:start', '--only', 'auth,firestore,functions'], { PATH: pathWithJava });
+  // Persist Auth + Firestore across restarts: import the last export if there is one, and
+  // export again on a clean exit (Ctrl+C). A hard kill skips the export, so stop with Ctrl+C.
+  const dataDir = path.join(repoRoot, 'emulator-data');
+  const persistArgs = [`--export-on-exit=${dataDir}`];
+  if (existsSync(dataDir)) persistArgs.unshift(`--import=${dataDir}`);
+  run('npx', ['firebase', 'emulators:start', '--only', 'auth,firestore,functions', ...persistArgs], { PATH: pathWithJava });
 }
 
 main().catch((err) => fail(err.stack || String(err)));
