@@ -26,9 +26,22 @@ import { updateDeviceInfo } from './mechanics';
 
 const JOB_CHANNEL_ID = 'jobs';
 
-export async function initNotifications(): Promise<void> {
-  if (!Capacitor.isNativePlatform()) return;
+// PushNotifications.register() hard-crashes the native app (uncatchable from JS) when
+// android/app/google-services.json is missing. Opt in with VITE_ENABLE_PUSH=true only
+// after that file is in place.
+const PUSH_ENABLED = import.meta.env.VITE_ENABLE_PUSH === 'true';
 
+export async function initNotifications(): Promise<void> {
+  if (!Capacitor.isNativePlatform() || !PUSH_ENABLED) return;
+
+  try {
+    await registerNotifications();
+  } catch (err) {
+    console.warn('notification setup failed:', err);
+  }
+}
+
+async function registerNotifications(): Promise<void> {
   await LocalNotifications.createChannel({
     id: JOB_CHANNEL_ID,
     name: 'Jobs',
