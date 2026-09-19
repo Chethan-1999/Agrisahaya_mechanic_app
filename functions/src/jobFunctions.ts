@@ -184,7 +184,7 @@ export const assignJob = onCall(async (request) => {
   const { jobId, technicianId } = request.data ?? {};
 
   if (typeof jobId !== 'string' || typeof technicianId !== 'string' || !technicianId) {
-    throw new HttpsError('invalid-argument', 'jobId and technicianId are required.');
+    throw new HttpsError('invalid-argument', 'Job and mechanic are required.');
   }
 
   const ref = db.collection('jobs').doc(jobId);
@@ -199,7 +199,7 @@ export const assignJob = onCall(async (request) => {
   const previouslyHeld = data.status === 'assigned' || data.status === 'accepted';
 
   if (previouslyHeld && previousTechnicianId === technicianId) {
-    throw new HttpsError('failed-precondition', 'This job is already assigned to that technician.');
+    throw new HttpsError('failed-precondition', 'This job is already assigned to that mechanic.');
   }
 
   await requireActiveTechnician(technicianId);
@@ -241,7 +241,7 @@ export const completeJobAsAdmin = onCall(async (request) => {
   const data = snap.data() as { technicianId: string | null; status: string };
 
   if ((data.status !== 'assigned' && data.status !== 'accepted') || !data.technicianId) {
-    throw new HttpsError('failed-precondition', 'Only a job held by a technician can be marked complete.');
+    throw new HttpsError('failed-precondition', 'Only a job held by a mechanic can be marked complete.');
   }
 
   await ref.update({

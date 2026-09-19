@@ -1,3 +1,4 @@
+import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Input, Textarea, type Toast } from '../components/ui';
@@ -78,7 +79,7 @@ export function RequestProfileChange({ mechanic, onBack, onSubmitted, setToast, 
   return (
     <main className="detail-page">
       <section className="card form-grid edit-card">
-        <button className="text-button" onClick={onBack} type="button">{t('back')}</button>
+        <button className="text-button back-button" onClick={onBack} type="button"><ArrowLeft size={18} aria-hidden="true" />{t('back')}</button>
         <h1>{t('requestChangeTitle')}</h1>
         <p className="muted">{t('requestChangeHint')}</p>
         {usedCount !== null && (
@@ -93,7 +94,6 @@ export function RequestProfileChange({ mechanic, onBack, onSubmitted, setToast, 
         <Input error={errors.state} label={t('state')} onChange={(value) => updateField('state', value)} value={form.state} />
         <Input error={errors.pincode} label={t('pincode')} onChange={(value) => updateField('pincode', value)} value={form.pincode} />
         <Input label={t('address')} onChange={(value) => updateField('address', value)} value={form.address} />
-        <Input label={t('landmarkOptional')} onChange={(value) => updateField('landmark', value)} value={form.landmark} />
         <Input error={errors.age} label={t('age')} onChange={(value) => updateField('age', value)} value={form.age} />
         <Input error={errors.experience} label={t('experience')} onChange={(value) => updateField('experience', value)} value={form.experience} />
         <Textarea label={t('reasonForChange')} onChange={setMessage} value={message} />

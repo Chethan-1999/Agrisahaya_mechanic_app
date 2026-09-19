@@ -87,7 +87,7 @@ export function AdminAddJobs({ askConfirm, jobs, onRefresh, setToast, withLoadin
   function confirmDelete(job: Job) {
     askConfirm({
       title: 'Delete job?',
-      message: `${job.jobCode || 'This job'} will be permanently removed${job.technicianId ? ' and taken off the technician\'s list' : ''}.`,
+      message: `${job.jobCode || 'This job'} will be permanently removed${job.technicianId ? ' and taken off the mechanic\'s list' : ''}.`,
       confirmLabel: 'Delete',
       kind: 'danger',
       onConfirm: () => {

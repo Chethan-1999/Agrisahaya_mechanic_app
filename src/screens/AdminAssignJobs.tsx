@@ -47,7 +47,7 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
   function confirmCancel(job: Job) {
     askConfirm({
       title: 'Cancel job?',
-      message: `${job.jobCode || 'This job'} will be cancelled${job.technicianId ? ' and the technician will be notified' : ''}.`,
+      message: `${job.jobCode || 'This job'} will be cancelled${job.technicianId ? ' and the mechanic will be notified' : ''}.`,
       confirmLabel: 'Cancel job',
       kind: 'danger',
       onConfirm: () => {
@@ -65,11 +65,11 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
     <section>
       <div className="section-heading jobs-heading">
         <h1>Assign jobs</h1>
-        <p className="muted">Select a technician for each job and save the assignment.</p>
+        <p className="muted">Select a mechanic for each job and save the assignment.</p>
       </div>
       <div className="table-wrap assign-table-wrap">
         <table className="assign-table">
-          <thead><tr><th>Job ID</th><th>Customer</th><th>Phone number</th><th>Equipment</th><th>Issue</th><th>District</th><th>Current technician</th><th>Assign technician</th><th>Job completed</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Job ID</th><th>Customer</th><th>Phone number</th><th>Equipment</th><th>Issue</th><th>District</th><th>Current mechanic</th><th>Assign mechanic</th><th>Job completed</th><th>Actions</th></tr></thead>
           <tbody>
             {jobs.map((job) => {
               const meta = jobStatusMeta(job.status);
@@ -99,8 +99,8 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
                       : <span className="not-assigned">{job.status === 'declined' ? 'Declined — reassign' : 'Not assigned'}</span>}
                   </td>
                   <td>
-                    <select aria-label={`Assign technician for ${job.jobCode || job.farmerName}`} disabled={locked} onChange={(event) => setSelected((current) => ({ ...current, [job.id]: event.target.value }))} value={technicianId}>
-                      <option value="">Select technician</option>
+                    <select aria-label={`Assign mechanic for ${job.jobCode || job.farmerName}`} disabled={locked} onChange={(event) => setSelected((current) => ({ ...current, [job.id]: event.target.value }))} value={technicianId}>
+                      <option value="">Select mechanic</option>
                       {options.map((technician) => <option key={technician.id} value={technician.id}>{technician.fullName} - {technician.district}</option>)}
                     </select>
                   </td>
@@ -126,7 +126,7 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
           </tbody>
         </table>
         {jobs.length === 0 && <p className="empty">No jobs available to assign.</p>}
-        {activeTechnicians.length === 0 && <p className="empty">No active technicians available. Approve technicians before assigning jobs.</p>}
+        {activeTechnicians.length === 0 && <p className="empty">No active mechanics available. Approve mechanics before assigning jobs.</p>}
       </div>
     </section>
     </PullToRefresh>

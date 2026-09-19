@@ -24,12 +24,24 @@ export type StringKey =
   | 'technicianLogin'
   | 'technicianSignup'
   | 'technicianAccess'
+  | 'adminLogin'
+  | 'villageDistrictNetwork'
+  | 'mechanicDirectory'
+  | 'heroDescription'
+  | 'login'
+  | 'signUp'
   | 'back'
   | 'mobileNumber'
   | 'otp'
+  | 'otpVerification'
+  | 'otpVerifiedComplete'
+  | 'otpVerifiedFields'
+  | 'verifyOtpEnableFields'
   | 'sendOtp'
   | 'verifyButton'
   | 'submitButton'
+  | 'clear'
+  | 'phoneAlreadyExists'
   | 'codeSentBySms'
   | 'enterValidPhone'
   | 'sendCodeFirst'
@@ -48,6 +60,7 @@ export type StringKey =
   | 'requestChangeNav'
   | 'announcementsNav'
   | 'communityNav'
+  | 'communityTitle'
   | 'announcementsTitle'
   | 'noAnnouncementsYet'
   | 'logout'
@@ -76,9 +89,10 @@ export type StringKey =
   | 'village'
   | 'district'
   | 'state'
+  | 'searchSelectState'
+  | 'noStateFound'
   | 'pincode'
   | 'address'
-  | 'landmarkOptional'
   | 'age'
   | 'experience'
   | 'requestChangeTitle'
@@ -93,15 +107,27 @@ export type StringKey =
   | 'languageLabel';
 
 const en: Record<StringKey, string> = {
-  technicianLogin: 'Technician Login',
-  technicianSignup: 'Technician Sign Up',
-  technicianAccess: 'Technician Access',
+  technicianLogin: 'Mechanic Login',
+  technicianSignup: 'Mechanic Sign Up',
+  technicianAccess: 'Mechanic Access',
+  adminLogin: 'Admin Login',
+  villageDistrictNetwork: 'Village and district service network',
+  mechanicDirectory: 'Mechanic Directory',
+  heroDescription: 'Connecting trusted mechanics with real field work, faster service, and stronger support for every village.',
+  login: 'Login',
+  signUp: 'Sign Up',
   back: 'Back',
   mobileNumber: 'Mobile Number',
   otp: 'OTP',
+  otpVerification: 'OTP Verification',
+  otpVerifiedComplete: 'OTP verified. Complete your details.',
+  otpVerifiedFields: 'OTP verified. You can complete the form now.',
+  verifyOtpEnableFields: 'Verify OTP to enable profile fields.',
   sendOtp: 'Send OTP',
   verifyButton: 'Verify',
   submitButton: 'Submit',
+  clear: 'Clear',
+  phoneAlreadyExists: 'A mechanic profile already exists for this phone number.',
   codeSentBySms: 'Code sent by SMS.',
   enterValidPhone: 'Enter a valid 10 digit phone number.',
   sendCodeFirst: 'Send yourself a code first.',
@@ -120,11 +146,12 @@ const en: Record<StringKey, string> = {
   requestChangeNav: 'Request Change',
   announcementsNav: 'Announcements',
   communityNav: 'Community',
+  communityTitle: 'Announcements',
   announcementsTitle: 'Announcements',
   noAnnouncementsYet: 'No announcements yet.',
   logout: 'Logout',
-  logoutConfirm: 'Logout from technician account?',
-  jobsTitle: 'Jobs',
+  logoutConfirm: 'Logout from mechanic account?',
+  jobsTitle: 'Assigned jobs',
   noJobsYet: 'No jobs yet.',
   task: 'Task',
   farmerLabel: 'Farmer',
@@ -148,9 +175,10 @@ const en: Record<StringKey, string> = {
   village: 'Village',
   district: 'District',
   state: 'State',
+  searchSelectState: 'Search and select state',
+  noStateFound: 'No state found',
   pincode: 'Pincode',
   address: 'Address',
-  landmarkOptional: 'Landmark (optional)',
   age: 'Age',
   experience: 'Years of Experience',
   requestChangeTitle: 'Request a Profile Change',
@@ -166,15 +194,27 @@ const en: Record<StringKey, string> = {
 };
 
 const hi: Record<StringKey, string> = {
-  technicianLogin: 'टेक्नीशियन लॉगिन',
-  technicianSignup: 'टेक्नीशियन साइन अप',
-  technicianAccess: 'टेक्नीशियन एक्सेस',
+  technicianLogin: 'मैकेनिक लॉगिन',
+  technicianSignup: 'मैकेनिक साइन अप',
+  technicianAccess: 'मैकेनिक एक्सेस',
+  adminLogin: 'एडमिन लॉगिन',
+  villageDistrictNetwork: 'गांव और जिला सेवा नेटवर्क',
+  mechanicDirectory: 'मैकेनिक डायरेक्टरी',
+  heroDescription: 'भरोसेमंद मैकेनिकों को असली फील्ड काम, तेज़ सेवा और हर गांव के बेहतर समर्थन से जोड़ें।',
+  login: 'लॉगिन',
+  signUp: 'साइन अप',
   back: 'वापस',
   mobileNumber: 'मोबाइल नंबर',
   otp: 'ओटीपी',
+  otpVerification: 'ओटीपी सत्यापन',
+  otpVerifiedComplete: 'ओटीपी सत्यापित हो गया। अपनी जानकारी भरें।',
+  otpVerifiedFields: 'ओटीपी सत्यापित हो गया। अब फॉर्म भर सकते हैं।',
+  verifyOtpEnableFields: 'प्रोफाइल फ़ील्ड चालू करने के लिए ओटीपी सत्यापित करें।',
   sendOtp: 'ओटीपी भेजें',
   verifyButton: 'सत्यापित करें',
   submitButton: 'सबमिट करें',
+  clear: 'साफ़ करें',
+  phoneAlreadyExists: 'इस फ़ोन नंबर के लिए मैकेनिक प्रोफाइल पहले से मौजूद है।',
   codeSentBySms: 'कोड एसएमएस से भेज दिया गया है।',
   enterValidPhone: 'सही 10 अंकों का मोबाइल नंबर डालें।',
   sendCodeFirst: 'पहले खुद को कोड भेजें।',
@@ -193,11 +233,12 @@ const hi: Record<StringKey, string> = {
   requestChangeNav: 'बदलाव का अनुरोध',
   announcementsNav: 'घोषणाएं',
   communityNav: 'समुदाय',
+  communityTitle: 'घोषणाएं',
   announcementsTitle: 'घोषणाएं',
   noAnnouncementsYet: 'अभी तक कोई घोषणा नहीं है।',
   logout: 'लॉगआउट',
-  logoutConfirm: 'टेक्नीशियन खाते से लॉगआउट करें?',
-  jobsTitle: 'जॉब्स',
+  logoutConfirm: 'मैकेनिक खाते से लॉगआउट करें?',
+  jobsTitle: 'असाइन किए गए जॉब्स',
   noJobsYet: 'अभी तक कोई जॉब नहीं है।',
   task: 'कार्य',
   farmerLabel: 'किसान',
@@ -221,9 +262,10 @@ const hi: Record<StringKey, string> = {
   village: 'गांव',
   district: 'जिला',
   state: 'राज्य',
+  searchSelectState: 'राज्य खोजें और चुनें',
+  noStateFound: 'राज्य नहीं मिला',
   pincode: 'पिनकोड',
   address: 'पता',
-  landmarkOptional: 'लैंडमार्क (वैकल्पिक)',
   age: 'उम्र',
   experience: 'अनुभव (वर्षों में)',
   requestChangeTitle: 'प्रोफाइल में बदलाव का अनुरोध करें',
@@ -239,15 +281,27 @@ const hi: Record<StringKey, string> = {
 };
 
 const kn: Record<StringKey, string> = {
-  technicianLogin: 'ಟೆಕ್ನಿಷಿಯನ್ ಲಾಗಿನ್',
-  technicianSignup: 'ಟೆಕ್ನಿಷಿಯನ್ ಸೈನ್ ಅಪ್',
-  technicianAccess: 'ಟೆಕ್ನಿಷಿಯನ್ ಪ್ರವೇಶ',
+  technicianLogin: 'ಮೆಕ್ಯಾನಿಕ್ ಲಾಗಿನ್',
+  technicianSignup: 'ಮೆಕ್ಯಾನಿಕ್ ಸೈನ್ ಅಪ್',
+  technicianAccess: 'ಮೆಕ್ಯಾನಿಕ್ ಪ್ರವೇಶ',
+  adminLogin: 'ಅಡ್ಮಿನ್ ಲಾಗಿನ್',
+  villageDistrictNetwork: 'ಗ್ರಾಮ ಮತ್ತು ಜಿಲ್ಲಾ ಸೇವಾ ಜಾಲ',
+  mechanicDirectory: 'ಮೆಕ್ಯಾನಿಕ್ ಡೈರೆಕ್ಟರಿ',
+  heroDescription: 'ನಂಬಿಕೆಯ ಮೆಕ್ಯಾನಿಕ್‌ಗಳನ್ನು ನಿಜವಾದ ಫೀಲ್ಡ್ ಕೆಲಸ, ವೇಗದ ಸೇವೆ ಮತ್ತು ಪ್ರತಿ ಗ್ರಾಮದ ಉತ್ತಮ ಬೆಂಬಲಕ್ಕೆ ಸಂಪರ್ಕಿಸಿ.',
+  login: 'ಲಾಗಿನ್',
+  signUp: 'ಸೈನ್ ಅಪ್',
   back: 'ಹಿಂದೆ',
   mobileNumber: 'ಮೊಬೈಲ್ ಸಂಖ್ಯೆ',
   otp: 'ಒಟಿಪಿ',
+  otpVerification: 'ಒಟಿಪಿ ಪರಿಶೀಲನೆ',
+  otpVerifiedComplete: 'ಒಟಿಪಿ ಪರಿಶೀಲಿಸಲಾಗಿದೆ. ನಿಮ್ಮ ವಿವರಗಳನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ.',
+  otpVerifiedFields: 'ಒಟಿಪಿ ಪರಿಶೀಲಿಸಲಾಗಿದೆ. ಈಗ ಫಾರ್ಮ್ ಭರ್ತಿ ಮಾಡಬಹುದು.',
+  verifyOtpEnableFields: 'ಪ್ರೊಫೈಲ್ ಕ್ಷೇತ್ರಗಳನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಲು ಒಟಿಪಿ ಪರಿಶೀಲಿಸಿ.',
   sendOtp: 'ಒಟಿಪಿ ಕಳುಹಿಸಿ',
   verifyButton: 'ಪರಿಶೀಲಿಸಿ',
   submitButton: 'ಸಲ್ಲಿಸಿ',
+  clear: 'ತೆರವುಗೊಳಿಸಿ',
+  phoneAlreadyExists: 'ಈ ಫೋನ್ ಸಂಖ್ಯೆಗೆ ಮೆಕ್ಯಾನಿಕ್ ಪ್ರೊಫೈಲ್ ಈಗಾಗಲೇ ಇದೆ.',
   codeSentBySms: 'ಕೋಡ್ ಅನ್ನು ಎಸ್‌ಎಂಎಸ್ ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ.',
   enterValidPhone: 'ಸರಿಯಾದ 10 ಅಂಕಿಗಳ ಫೋನ್ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ.',
   sendCodeFirst: 'ಮೊದಲು ನಿಮಗೆ ಕೋಡ್ ಕಳುಹಿಸಿ.',
@@ -266,11 +320,12 @@ const kn: Record<StringKey, string> = {
   requestChangeNav: 'ಬದಲಾವಣೆ ಕೋರಿಕೆ',
   announcementsNav: 'ಪ್ರಕಟಣೆಗಳು',
   communityNav: 'ಸಮುದಾಯ',
+  communityTitle: 'ಪ್ರಕಟಣೆಗಳು',
   announcementsTitle: 'ಪ್ರಕಟಣೆಗಳು',
   noAnnouncementsYet: 'ಇನ್ನೂ ಯಾವುದೇ ಪ್ರಕಟಣೆ ಇಲ್ಲ.',
   logout: 'ಲಾಗ್ ಔಟ್',
-  logoutConfirm: 'ಟೆಕ್ನಿಷಿಯನ್ ಖಾತೆಯಿಂದ ಲಾಗ್ ಔಟ್ ಮಾಡಬೇಕೇ?',
-  jobsTitle: 'ಕೆಲಸಗಳು',
+  logoutConfirm: 'ಮೆಕ್ಯಾನಿಕ್ ಖಾತೆಯಿಂದ ಲಾಗ್ ಔಟ್ ಮಾಡಬೇಕೇ?',
+  jobsTitle: 'ನಿಯೋಜಿತ ಕೆಲಸಗಳು',
   noJobsYet: 'ಇನ್ನೂ ಯಾವುದೇ ಕೆಲಸ ಇಲ್ಲ.',
   task: 'ಕೆಲಸ',
   farmerLabel: 'ರೈತ',
@@ -294,9 +349,10 @@ const kn: Record<StringKey, string> = {
   village: 'ಗ್ರಾಮ',
   district: 'ಜಿಲ್ಲೆ',
   state: 'ರಾಜ್ಯ',
+  searchSelectState: 'ರಾಜ್ಯ ಹುಡುಕಿ ಮತ್ತು ಆಯ್ಕೆಮಾಡಿ',
+  noStateFound: 'ರಾಜ್ಯ ಕಂಡುಬಂದಿಲ್ಲ',
   pincode: 'ಪಿನ್‌ಕೋಡ್',
   address: 'ವಿಳಾಸ',
-  landmarkOptional: 'ಗುರುತು ಸ್ಥಳ (ಐಚ್ಛಿಕ)',
   age: 'ವಯಸ್ಸು',
   experience: 'ಅನುಭವ (ವರ್ಷಗಳಲ್ಲಿ)',
   requestChangeTitle: 'ಪ್ರೊಫೈಲ್ ಬದಲಾವಣೆಗೆ ಕೋರಿಕೆ',
@@ -312,15 +368,27 @@ const kn: Record<StringKey, string> = {
 };
 
 const ta: Record<StringKey, string> = {
-  technicianLogin: 'டெக்னீஷியன் லாகின்',
-  technicianSignup: 'டெக்னீஷியன் பதிவு',
-  technicianAccess: 'டெக்னீஷியன் அணுகல்',
+  technicianLogin: 'மெக்கானிக் லாகின்',
+  technicianSignup: 'மெக்கானிக் பதிவு',
+  technicianAccess: 'மெக்கானிக் அணுகல்',
+  adminLogin: 'நிர்வாகி லாகின்',
+  villageDistrictNetwork: 'கிராமம் மற்றும் மாவட்ட சேவை வலைப்பின்னல்',
+  mechanicDirectory: 'மெக்கானிக் அடைவு',
+  heroDescription: 'நம்பகமான மெக்கானிக்குகளை உண்மையான கள வேலை, வேகமான சேவை மற்றும் ஒவ்வொரு கிராமத்திற்குமான வலுவான ஆதரவுடன் இணைக்கிறது.',
+  login: 'லாகின்',
+  signUp: 'பதிவு',
   back: 'பின்செல்',
   mobileNumber: 'மொபைல் எண்',
   otp: 'ஓடிபி',
+  otpVerification: 'ஓடிபி சரிபார்ப்பு',
+  otpVerifiedComplete: 'ஓடிபி சரிபார்க்கப்பட்டது. உங்கள் விவரங்களை நிரப்பவும்.',
+  otpVerifiedFields: 'ஓடிபி சரிபார்க்கப்பட்டது. இப்போது படிவத்தை நிரப்பலாம்.',
+  verifyOtpEnableFields: 'சுயவிவர புலங்களை இயக்க ஓடிபியை சரிபார்க்கவும்.',
   sendOtp: 'ஓடிபி அனுப்பு',
   verifyButton: 'சரிபார்க்க',
   submitButton: 'சமர்ப்பி',
+  clear: 'அழி',
+  phoneAlreadyExists: 'இந்த தொலைபேசி எண்ணிற்கு மெக்கானிக் சுயவிவரம் ஏற்கனவே உள்ளது.',
   codeSentBySms: 'குறியீடு எஸ்எம்எஸ் மூலம் அனுப்பப்பட்டது.',
   enterValidPhone: 'சரியான 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்.',
   sendCodeFirst: 'முதலில் உங்களுக்கு குறியீடு அனுப்புங்கள்.',
@@ -339,11 +407,12 @@ const ta: Record<StringKey, string> = {
   requestChangeNav: 'மாற்றம் கோரிக்கை',
   announcementsNav: 'அறிவிப்புகள்',
   communityNav: 'சமூகம்',
+  communityTitle: 'அறிவிப்புகள்',
   announcementsTitle: 'அறிவிப்புகள்',
   noAnnouncementsYet: 'இதுவரை அறிவிப்புகள் இல்லை.',
   logout: 'லாக் அவுட்',
-  logoutConfirm: 'டெக்னீஷியன் கணக்கிலிருந்து லாக் அவுட் செய்யவா?',
-  jobsTitle: 'வேலைகள்',
+  logoutConfirm: 'மெக்கானிக் கணக்கிலிருந்து லாக் அவுட் செய்யவா?',
+  jobsTitle: 'ஒதுக்கப்பட்ட வேலைகள்',
   noJobsYet: 'இதுவரை வேலைகள் இல்லை.',
   task: 'பணி',
   farmerLabel: 'விவசாயி',
@@ -367,9 +436,10 @@ const ta: Record<StringKey, string> = {
   village: 'கிராமம்',
   district: 'மாவட்டம்',
   state: 'மாநிலம்',
+  searchSelectState: 'மாநிலத்தை தேடி தேர்வு செய்யவும்',
+  noStateFound: 'மாநிலம் கிடைக்கவில்லை',
   pincode: 'அஞ்சல் குறியீடு',
   address: 'முகவரி',
-  landmarkOptional: 'அடையாளக் குறி (விருப்பம்)',
   age: 'வயது',
   experience: 'அனுபவம் (ஆண்டுகளில்)',
   requestChangeTitle: 'சுயவிவர மாற்றத்திற்கு கோரிக்கை',
@@ -385,15 +455,27 @@ const ta: Record<StringKey, string> = {
 };
 
 const te: Record<StringKey, string> = {
-  technicianLogin: 'టెక్నీషియన్ లాగిన్',
-  technicianSignup: 'టెక్నీషియన్ సైన్ అప్',
-  technicianAccess: 'టెక్నీషియన్ యాక్సెస్',
+  technicianLogin: 'మెకానిక్ లాగిన్',
+  technicianSignup: 'మెకానిక్ సైన్ అప్',
+  technicianAccess: 'మెకానిక్ యాక్సెస్',
+  adminLogin: 'అడ్మిన్ లాగిన్',
+  villageDistrictNetwork: 'గ్రామం మరియు జిల్లా సేవా నెట్‌వర్క్',
+  mechanicDirectory: 'మెకానిక్ డైరెక్టరీ',
+  heroDescription: 'నమ్మకమైన మెకానిక్‌లను నిజమైన ఫీల్డ్ పని, వేగమైన సేవ మరియు ప్రతి గ్రామానికి బలమైన మద్దతుతో కలుపుతుంది.',
+  login: 'లాగిన్',
+  signUp: 'సైన్ అప్',
   back: 'వెనక్కి',
   mobileNumber: 'మొబైల్ నంబర్',
   otp: 'ఓటీపీ',
+  otpVerification: 'ఓటీపీ ధృవీకరణ',
+  otpVerifiedComplete: 'ఓటీపీ ధృవీకరించబడింది. మీ వివరాలను పూర్తి చేయండి.',
+  otpVerifiedFields: 'ఓటీపీ ధృవీకరించబడింది. ఇప్పుడు ఫారమ్ పూర్తి చేయవచ్చు.',
+  verifyOtpEnableFields: 'ప్రొఫైల్ ఫీల్డ్‌లను ప్రారంభించడానికి ఓటీపీ ధృవీకరించండి.',
   sendOtp: 'ఓటీపీ పంపండి',
   verifyButton: 'ధృవీకరించండి',
   submitButton: 'సమర్పించండి',
+  clear: 'క్లియర్',
+  phoneAlreadyExists: 'ఈ ఫోన్ నంబర్‌కు మెకానిక్ ప్రొఫైల్ ఇప్పటికే ఉంది.',
   codeSentBySms: 'కోడ్ ఎస్ఎంఎస్ ద్వారా పంపబడింది.',
   enterValidPhone: 'సరైన 10 అంకెల ఫోన్ నంబర్ నమోదు చేయండి.',
   sendCodeFirst: 'ముందుగా మీకు కోడ్ పంపండి.',
@@ -412,11 +494,12 @@ const te: Record<StringKey, string> = {
   requestChangeNav: 'మార్పు అభ్యర్థన',
   announcementsNav: 'ప్రకటనలు',
   communityNav: 'సంఘం',
+  communityTitle: 'ప్రకటనలు',
   announcementsTitle: 'ప్రకటనలు',
   noAnnouncementsYet: 'ఇంకా ప్రకటనలు లేవు.',
   logout: 'లాగ్ అవుట్',
-  logoutConfirm: 'టెక్నీషియన్ ఖాతా నుండి లాగ్ అవుట్ చేయాలా?',
-  jobsTitle: 'పనులు',
+  logoutConfirm: 'మెకానిక్ ఖాతా నుండి లాగ్ అవుట్ చేయాలా?',
+  jobsTitle: 'కేటాయించిన పనులు',
   noJobsYet: 'ఇంకా పనులు లేవు.',
   task: 'పని',
   farmerLabel: 'రైతు',
@@ -440,9 +523,10 @@ const te: Record<StringKey, string> = {
   village: 'గ్రామం',
   district: 'జిల్లా',
   state: 'రాష్ట్రం',
+  searchSelectState: 'రాష్ట్రాన్ని వెతికి ఎంచుకోండి',
+  noStateFound: 'రాష్ట్రం కనబడలేదు',
   pincode: 'పిన్‌కోడ్',
   address: 'చిరునామా',
-  landmarkOptional: 'గుర్తింపు స్థలం (ఐచ్ఛికం)',
   age: 'వయస్సు',
   experience: 'అనుభవం (సంవత్సరాలలో)',
   requestChangeTitle: 'ప్రొఫైల్ మార్పు కోసం అభ్యర్థన',
@@ -458,15 +542,27 @@ const te: Record<StringKey, string> = {
 };
 
 const ml: Record<StringKey, string> = {
-  technicianLogin: 'ടെക്നീഷ്യൻ ലോഗിൻ',
-  technicianSignup: 'ടെക്നീഷ്യൻ സൈൻ അപ്പ്',
-  technicianAccess: 'ടെക്നീഷ്യൻ ആക്സസ്',
+  technicianLogin: 'മെക്കാനിക് ലോഗിൻ',
+  technicianSignup: 'മെക്കാനിക് സൈൻ അപ്പ്',
+  technicianAccess: 'മെക്കാനിക് ആക്സസ്',
+  adminLogin: 'അഡ്മിൻ ലോഗിൻ',
+  villageDistrictNetwork: 'ഗ്രാമവും ജില്ലയും ഉൾപ്പെടുന്ന സേവന ശൃംഖല',
+  mechanicDirectory: 'മെക്കാനിക് ഡയറക്ടറി',
+  heroDescription: 'വിശ്വസനീയമായ മെക്കാനിക്കുകളെ യഥാർത്ഥ ഫീൽഡ് ജോലിയും വേഗത്തിലുള്ള സേവനവും ഓരോ ഗ്രാമത്തിനും ശക്തമായ പിന്തുണയും നൽകുന്ന രീതിയിൽ ബന്ധിപ്പിക്കുന്നു.',
+  login: 'ലോഗിൻ',
+  signUp: 'സൈൻ അപ്പ്',
   back: 'തിരികെ',
   mobileNumber: 'മൊബൈൽ നമ്പർ',
   otp: 'ഒടിപി',
+  otpVerification: 'ഒടിപി പരിശോധന',
+  otpVerifiedComplete: 'ഒടിപി പരിശോധിച്ചു. നിങ്ങളുടെ വിവരങ്ങൾ പൂർത്തിയാക്കുക.',
+  otpVerifiedFields: 'ഒടിപി പരിശോധിച്ചു. ഇനി ഫോം പൂരിപ്പിക്കാം.',
+  verifyOtpEnableFields: 'പ്രൊഫൈൽ ഫീൽഡുകൾ പ്രവർത്തനക്ഷമമാക്കാൻ ഒടിപി പരിശോധിക്കുക.',
   sendOtp: 'ഒടിപി അയയ്ക്കുക',
   verifyButton: 'പരിശോധിക്കുക',
   submitButton: 'സമർപ്പിക്കുക',
+  clear: 'ക്ലിയർ',
+  phoneAlreadyExists: 'ഈ ഫോൺ നമ്പറിന് മെക്കാനിക് പ്രൊഫൈൽ ഇതിനകം നിലവിലുണ്ട്.',
   codeSentBySms: 'കോഡ് എസ്എംഎസ് വഴി അയച്ചു.',
   enterValidPhone: 'ശരിയായ 10 അക്ക ഫോൺ നമ്പർ നൽകുക.',
   sendCodeFirst: 'ആദ്യം നിങ്ങൾക്ക് ഒരു കോഡ് അയയ്ക്കുക.',
@@ -485,11 +581,12 @@ const ml: Record<StringKey, string> = {
   requestChangeNav: 'മാറ്റത്തിനുള്ള അഭ്യർത്ഥന',
   announcementsNav: 'അറിയിപ്പുകൾ',
   communityNav: 'കമ്മ്യൂണിറ്റി',
+  communityTitle: 'അറിയിപ്പുകൾ',
   announcementsTitle: 'അറിയിപ്പുകൾ',
   noAnnouncementsYet: 'ഇതുവരെ അറിയിപ്പുകൾ ഇല്ല.',
   logout: 'ലോഗ് ഔട്ട്',
-  logoutConfirm: 'ടെക്നീഷ്യൻ അക്കൗണ്ടിൽ നിന്ന് ലോഗ് ഔട്ട് ചെയ്യണോ?',
-  jobsTitle: 'ജോലികൾ',
+  logoutConfirm: 'മെക്കാനിക് അക്കൗണ്ടിൽ നിന്ന് ലോഗ് ഔട്ട് ചെയ്യണോ?',
+  jobsTitle: 'നൽകിയ ജോലികൾ',
   noJobsYet: 'ഇതുവരെ ജോലികൾ ഇല്ല.',
   task: 'ജോലി',
   farmerLabel: 'കർഷകൻ',
@@ -513,9 +610,10 @@ const ml: Record<StringKey, string> = {
   village: 'ഗ്രാമം',
   district: 'ജില്ല',
   state: 'സംസ്ഥാനം',
+  searchSelectState: 'സംസ്ഥാനം തിരഞ്ഞ് തിരഞ്ഞെടുക്കുക',
+  noStateFound: 'സംസ്ഥാനം കണ്ടെത്തിയില്ല',
   pincode: 'പിൻകോഡ്',
   address: 'വിലാസം',
-  landmarkOptional: 'ലാൻഡ്‌മാർക്ക് (ഐച്ഛികം)',
   age: 'പ്രായം',
   experience: 'പരിചയം (വർഷങ്ങളിൽ)',
   requestChangeTitle: 'പ്രൊഫൈൽ മാറ്റത്തിനുള്ള അഭ്യർത്ഥന',

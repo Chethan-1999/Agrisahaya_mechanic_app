@@ -5,7 +5,9 @@ import { Textarea, formatDate, type Toast } from '../components/ui';
 import { listPendingProfileUpdateRequests, reviewProfileUpdate } from '../services/profileUpdates';
 import type { Mechanic, MechanicForm, ProfileUpdateRequest } from '../types';
 
-const FIELD_LABELS: Record<keyof MechanicForm, string> = {
+type VisibleProfileField = Exclude<keyof MechanicForm, 'landmark'>;
+
+const FIELD_LABELS: Record<VisibleProfileField, string> = {
   fullName: 'Full Name',
   phoneNumber: 'Phone Number',
   village: 'Village',
@@ -13,10 +15,13 @@ const FIELD_LABELS: Record<keyof MechanicForm, string> = {
   state: 'State',
   pincode: 'Pincode',
   address: 'Address',
-  landmark: 'Landmark',
   age: 'Age',
   experience: 'Experience',
 };
+
+function isVisibleProfileField(field: keyof MechanicForm): field is VisibleProfileField {
+  return field !== 'landmark';
+}
 
 export function AdminProfileRequests({ mechanics, setToast, withLoading }: {
   mechanics: Mechanic[];
@@ -38,7 +43,7 @@ export function AdminProfileRequests({ mechanics, setToast, withLoading }: {
   return (
     <PullToRefresh onRefresh={refresh}>
       <section>
-        <div className="section-heading"><h1>Profile Requests</h1><button className="secondary" onClick={() => void refresh()}>Refresh</button></div>
+        <div className="section-heading"><h1>Profile change request</h1><button className="secondary refresh-button" onClick={() => void refresh()}>Refresh</button></div>
         {requests.length === 0 && <p className="empty">No pending requests.</p>}
         <div className="request-list">
           {requests.map((request) => (
@@ -82,7 +87,7 @@ function RequestCard({ onReviewed, request, setToast, technicianName, withLoadin
     });
   }
 
-  const changeEntries = Object.entries(request.changes) as Array<[keyof MechanicForm, string]>;
+  const changeEntries = (Object.entries(request.changes) as Array<[keyof MechanicForm, string]>).filter((entry): entry is [VisibleProfileField, string] => isVisibleProfileField(entry[0]));
 
   return (
     <article className="card request-card">
@@ -93,7 +98,7 @@ function RequestCard({ onReviewed, request, setToast, technicianName, withLoadin
           <div key={field}><dt>{FIELD_LABELS[field]}</dt><dd>{value}</dd></div>
         ))}
       </dl>
-      <Textarea label="Note (shown to technician if rejected)" onChange={setAdminNote} value={adminNote} />
+         <Textarea label="Note (shown to mechanic if rejected)" onChange={setAdminNote} value={adminNote} />
       <div className="button-row">
         <button className="primary" onClick={() => void approve()} type="button">Approve</button>
         <button className="danger" onClick={() => void reject()} type="button">Reject</button>

@@ -61,7 +61,7 @@ export const submitProfileUpdate = onCall(async (request) => {
     }
   }
 
-  await requireDoc(db.collection('technicians').doc(uid), 'Technician profile not found.');
+  await requireDoc(db.collection('technicians').doc(uid), 'Mechanic profile not found.');
 
   const { count } = (
     await db.collection('profileUpdateRequests').where('technicianId', '==', uid).count().get()
@@ -111,7 +111,7 @@ export const reviewProfileUpdate = onCall(async (request) => {
 
   if (decision === 'approve') {
     const technicianRef = db.collection('technicians').doc(data.technicianId);
-    const before = (await requireDoc(technicianRef, 'Technician not found.')).data() ?? {};
+    const before = (await requireDoc(technicianRef, 'Mechanic not found.')).data() ?? {};
 
     const diffChanges: Record<string, { from: unknown; to: unknown }> = {};
     for (const [field, to] of Object.entries(data.changes)) {

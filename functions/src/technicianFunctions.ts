@@ -16,10 +16,10 @@ export const reviewSignup = onCall(async (request) => {
   }
 
   const ref = db.collection('technicians').doc(technicianId);
-  const snap = await requireDoc(ref, 'Technician not found.');
+  const snap = await requireDoc(ref, 'Mechanic not found.');
 
   if (snap.data()?.status !== 'pending') {
-    throw new HttpsError('failed-precondition', 'This technician has already been reviewed.');
+    throw new HttpsError('failed-precondition', 'This mechanic has already been reviewed.');
   }
 
   await ref.update({
@@ -51,17 +51,16 @@ export const setTechnicianStatus = onCall(async (request) => {
   }
 
   const ref = db.collection('technicians').doc(technicianId);
-  const snap = await requireDoc(ref, 'Technician not found.');
+  const snap = await requireDoc(ref, 'Mechanic not found.');
 
   if (!allowed.includes(snap.data()?.status)) {
     throw new HttpsError(
       'failed-precondition',
-      'Only an already-approved technician can be toggled this way — use reviewSignup for a pending one.',
+      'Only an already-approved mechanic can be toggled this way — use reviewSignup for a pending one.',
     );
   }
 
   await ref.update({
-    status,
     approvedBy: adminUid,
     updatedAt: new Date().toISOString(),
   });
@@ -150,7 +149,7 @@ export const adminUpdateProfile = onCall(async (request) => {
   }
 
   const ref = db.collection('technicians').doc(technicianId);
-  const snap = await requireDoc(ref, 'Technician not found.');
+  const snap = await requireDoc(ref, 'Mechanic not found.');
 
   const updates: Record<string, string> = {};
   for (const field of ADMIN_EDITABLE_FIELDS) {

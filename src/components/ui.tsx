@@ -46,8 +46,10 @@ export function jobStatusMeta(status: JobStatus, t?: (key: StringKey) => string)
   }
 }
 
-export function Input({ autoComplete, error, label, name, onChange, type = 'text', value }: { autoComplete?: string; error?: string; label: string; name?: string; onChange: (value: string) => void; type?: string; value: string }) {
-  return <label className="field"><span>{label}</span><input autoComplete={autoComplete} className={error ? 'invalid' : ''} name={name} onChange={(event) => onChange(event.target.value)} type={type} value={value} />{error && <small>{error}</small>}</label>;
+type TextInputMode = 'none' | 'text' | 'tel' | 'url' | 'email' | 'numeric' | 'decimal' | 'search';
+
+export function Input({ autoComplete, disabled, error, inputMode, label, maxLength, name, onChange, pattern, type = 'text', value }: { autoComplete?: string; disabled?: boolean; error?: string; inputMode?: TextInputMode; label: string; maxLength?: number; name?: string; onChange: (value: string) => void; pattern?: string; type?: string; value: string }) {
+  return <label className="field"><span>{label}</span><input autoComplete={autoComplete} className={error ? 'invalid' : ''} disabled={disabled} inputMode={inputMode} maxLength={maxLength} name={name} onChange={(event) => onChange(event.target.value)} pattern={pattern} type={type} value={value} />{error && <small>{error}</small>}</label>;
 }
 
 export function Textarea({ error, label, onChange, value }: { error?: string; label: string; onChange: (value: string) => void; value: string }) {

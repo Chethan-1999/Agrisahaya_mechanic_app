@@ -39,5 +39,9 @@ export function usePhoneOtp() {
     await session.confirm(otp);
   }
 
-  return { phoneNumber, setPhoneNumber, otp, setOtp, session, sendOtp, confirmOtp };
+  function clearOtpSession() {
+    setSession(null);
+  }
+
+  return { phoneNumber, setPhoneNumber, otp, setOtp, session, sendOtp, confirmOtp, clearOtpSession };
 }

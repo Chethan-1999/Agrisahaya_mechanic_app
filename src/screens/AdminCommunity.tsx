@@ -5,6 +5,19 @@ import { Input, formatDate, type Toast } from '../components/ui';
 import { listAnnouncements, postAnnouncement } from '../services/announcements';
 import type { Announcement } from '../types';
 
+const COMMUNITY_TIMEOUT_MS = 15000;
+
+function withCommunityTimeout<T>(promise: Promise<T>, message: string): Promise<T> {
+  let timeoutId: number | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(message)), COMMUNITY_TIMEOUT_MS);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  });
+}
+
 export function AdminCommunity({ setToast, withLoading }: {
   setToast: (toast: Toast) => void;
   withLoading: (action: () => Promise<void>) => Promise<void>;
@@ -19,18 +32,22 @@ export function AdminCommunity({ setToast, withLoading }: {
   }, []);
 
   async function refresh() {
-    await withLoading(async () => setPosts(await listAnnouncements()));
+    await withLoading(async () => {
+      const announcements = await withCommunityTimeout(listAnnouncements(), 'Loading community posts timed out. Check Firestore or the local emulators, then try again.');
+      setPosts(announcements);
+    });
   }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!canPost) return;
     await withLoading(async () => {
-      await postAnnouncement(title, message);
+      await withCommunityTimeout(postAnnouncement(title, message), 'Posting to community timed out. Check Firebase Functions or the local emulators, then try again.');
       setTitle('');
       setMessage('');
       setToast({ kind: 'success', text: 'Posted to the community.' });
-      setPosts(await listAnnouncements());
+      const announcements = await withCommunityTimeout(listAnnouncements(), 'Post was sent, but refreshing community posts timed out. Pull to refresh after checking Firestore.');
+      setPosts(announcements);
     });
   }
 
@@ -40,12 +57,12 @@ export function AdminCommunity({ setToast, withLoading }: {
         <div className="admin-community-composer card">
           <p className="eyebrow">Broadcast message</p>
           <h1>Community</h1>
-          <p className="muted">Post updates that every technician can read after login.</p>
+          <p className="muted">Post updates that every mechanic can read after login.</p>
           <form onSubmit={(event) => void submit(event)}>
             <Input label="Title" onChange={setTitle} value={title} />
             <label className="field">
               <span>Write post</span>
-              <textarea onChange={(event) => setMessage(event.target.value)} placeholder="Write an update for technicians..." value={message} />
+              <textarea onChange={(event) => setMessage(event.target.value)} placeholder="Write an update for mechanics..." value={message} />
             </label>
             <button className="primary" disabled={!canPost} type="submit">Post update</button>
           </form>
