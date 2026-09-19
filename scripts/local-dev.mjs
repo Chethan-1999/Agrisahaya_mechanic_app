@@ -32,7 +32,7 @@
 // bash-only syntax, so nothing here depends on WSL, Git Bash, or GNU Make.
 
 import { spawnSync, spawn } from 'node:child_process';
-import { existsSync, mkdirSync, openSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, openSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
@@ -185,6 +185,10 @@ function isPortFree(port) {
   });
 }
 
+// `--apk`: build a debug APK for a physical phone (laptop LAN IP baked in), skip the AVD, then run the
+// emulators here. Install dist/agrisahaya-local-*.apk on the phone; its traffic and logs show up in this terminal.
+const PHONE_APK = process.argv.includes('--apk');
+
 const WEB_DEV_PORT = 5173;
 const WEB_DEV_LOG = path.join(os.tmpdir(), 'agrisahaya-vite-dev.log');
 
@@ -309,11 +313,13 @@ async function main() {
     .map((line) => line.trim().split(/\s+/)[0])
     .filter(Boolean);
   const hasPhysicalDevice = connectedSerials.some((serial) => !serial.startsWith('emulator-'));
-  const androidFirebaseHost = hasPhysicalDevice ? lanIp : '10.0.2.2';
+  const androidFirebaseHost = PHONE_APK || hasPhysicalDevice ? lanIp : '10.0.2.2';
 
   log(`This laptop's LAN IP: ${lanIp} (used for the browser dev server and any physical device on Wi-Fi).`);
   log(
-    hasPhysicalDevice
+    PHONE_APK
+      ? 'Building a phone APK — using the LAN IP so the phone can reach this laptop over the shared network.'
+      : hasPhysicalDevice
       ? 'A physical device is connected — building for it with the LAN IP so it can reach this laptop over Wi-Fi.'
       : "Targeting the AVD emulator — building with its 10.0.2.2 host alias, since the LAN IP isn't reachable from inside it.",
   );
@@ -328,25 +334,38 @@ async function main() {
   run('npx', ['cap', 'sync', 'android'], { CAP_LOCAL_DEV: '1' });
   ensureDebugCleartextConfig();
 
-  log('Checking for a connected Android device/emulator...');
-  const hasDevice = connectedSerials.length > 0;
-
-  if (!hasDevice) {
-    bootEmulator(emulatorBin, avdName, { wipeData: false });
+  if (PHONE_APK) {
+    log('Building the phone APK (debug-signed)...');
+    const gradleEnv = javaHome ? { JAVA_HOME: javaHome } : {};
+    const buildResult = runBin(gradlew, ['assembleDebug'], { cwd: androidDir, env: gradleEnv });
+    if (buildResult.status !== 0) fail('Gradle build failed. See output above.');
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..*/, '').replace('T', '-');
+    const apkOut = path.join(repoRoot, 'dist', `agrisahaya-local-${stamp}.apk`);
+    copyFileSync(path.join(androidDir, 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk'), apkOut);
+    log(`Phone APK ready: ${apkOut}`);
+    log(`It talks to ${lanIp} — the phone must be on the same network as this laptop. Rebuild if the IP changes.`);
   } else {
-    log('A device/emulator is already connected.');
+    log('Checking for a connected Android device/emulator...');
+    const hasDevice = connectedSerials.length > 0;
+
+    if (!hasDevice) {
+      bootEmulator(emulatorBin, avdName, { wipeData: false });
+    } else {
+      log('A device/emulator is already connected.');
+    }
+
+    waitForBootOrRecover(adb, emulatorBin, avdName);
+    log('Device ready.');
+
+    log('Building and installing the debug APK...');
+    const gradleEnv = javaHome ? { JAVA_HOME: javaHome } : {};
+    const installResult = runBin(gradlew, ['installDebug'], { cwd: androidDir, env: gradleEnv });
+    if (installResult.status !== 0) fail('Gradle build/install failed. See output above.');
+
+    log('Launching the app...');
+    runBin(adb, ['shell', 'am', 'start', '-n', `${appId}/.MainActivity`]);
+
   }
-
-  waitForBootOrRecover(adb, emulatorBin, avdName);
-  log('Device ready.');
-
-  log('Building and installing the debug APK...');
-  const gradleEnv = javaHome ? { JAVA_HOME: javaHome } : {};
-  const installResult = runBin(gradlew, ['installDebug'], { cwd: androidDir, env: gradleEnv });
-  if (installResult.status !== 0) fail('Gradle build/install failed. See output above.');
-
-  log('Launching the app...');
-  runBin(adb, ['shell', 'am', 'start', '-n', `${appId}/.MainActivity`]);
 
   if (existsSync(path.join(repoRoot, 'functions', 'package.json'))) {
     log('Building Cloud Functions...');
@@ -371,12 +390,38 @@ async function main() {
   const pathWithJava = javaHome
     ? `${path.join(javaHome, 'bin')}${path.delimiter}${process.env.PATH}`
     : process.env.PATH;
-  // Persist Auth + Firestore across restarts: import the last export if there is one, and
-  // export again on a clean exit (Ctrl+C). A hard kill skips the export, so stop with Ctrl+C.
+  // Persist Auth + Firestore across restarts. Import the last export if there is one, export on a
+  // clean exit, AND export every 30s through the emulator hub so a killed terminal or a crash
+  // loses at most the last 30 seconds instead of the whole session.
   const dataDir = path.join(repoRoot, 'emulator-data');
-  const persistArgs = [`--export-on-exit=${dataDir}`];
-  if (existsSync(dataDir)) persistArgs.unshift(`--import=${dataDir}`);
-  run('npx', ['firebase', 'emulators:start', '--only', 'auth,firestore,functions', ...persistArgs], { PATH: pathWithJava });
+  const hasExport = existsSync(path.join(dataDir, 'firebase-export-metadata.json'));
+  const args = ['firebase', 'emulators:start', '--only', 'auth,firestore,functions', `--export-on-exit=${dataDir}`];
+  if (hasExport) args.push(`--import=${dataDir}`);
+  log(hasExport ? `Restoring emulator data from ${dataDir}` : `No saved emulator data yet — will save to ${dataDir}`);
+
+  const emulators = spawn(['npx', ...args].join(' '), {
+    cwd: repoRoot,
+    stdio: 'inherit',
+    shell: true,
+    env: { ...process.env, PATH: pathWithJava },
+  });
+
+  const exportTimer = setInterval(() => {
+    fetch('http://127.0.0.1:4400/_admin/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: dataDir, initiatedBy: 'local-dev-autosave' }),
+    }).catch(() => undefined);
+  }, 30_000);
+
+  // Ctrl+C reaches the emulator too (same process group); stay alive until its export-on-exit finishes.
+  process.on('SIGINT', () => undefined);
+  process.on('SIGTERM', () => emulators.kill('SIGINT'));
+
+  await new Promise((resolve) => emulators.once('close', resolve));
+  clearInterval(exportTimer);
+  log('Emulators stopped; data saved to emulator-data/.');
+  process.exit(0);
 }
 
 main().catch((err) => fail(err.stack || String(err)));

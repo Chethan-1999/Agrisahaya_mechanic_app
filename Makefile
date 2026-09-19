@@ -1,10 +1,11 @@
-.PHONY: web sync emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean
+.PHONY: web sync apk local-phone emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean
 
 # Override any of these on the command line, e.g. `make run AVD_NAME=Pixel_7`
 AVD_NAME     ?= Pixel_6
 APP_ID       ?= com.agrisahaya.mechanic
 BOOT_TIMEOUT ?= 90
 BOOT_RETRIES ?= 3
+APK_LABEL    ?= $(shell date +%Y%m%d-%H%M%S)
 
 JAVA_HOME    ?= /Applications/Android Studio.app/Contents/jbr/Contents/Home
 ANDROID_HOME ?= $(HOME)/Library/Android/sdk
@@ -94,6 +95,22 @@ doctor:
 ## Build the debug APK and install it on the running emulator/device
 install: sync wait-emulator
 	cd android && ./gradlew installDebug
+
+## Build a debug APK for sharing with external testers (no emulator needed).
+## Debug-signed, so it installs on any device with "install unknown apps" enabled.
+## Output: dist/agrisahaya-<label>.apk, where <label> defaults to a timestamp so
+## every run gets a new file. Override with `make apk APK_LABEL=v2`.
+apk: sync
+	cd android && ./gradlew assembleDebug
+	@mkdir -p dist
+	cp android/app/build/outputs/apk/debug/app-debug.apk dist/agrisahaya-$(APK_LABEL).apk
+	@echo "APK ready: dist/agrisahaya-$(APK_LABEL).apk"
+
+## Build a phone APK that talks to Firebase emulators on THIS laptop (over the shared
+## network/hotspot), then run the emulators here so their logs stream in this terminal.
+## Install dist/agrisahaya-local-*.apk on the phone. Rebuild if the laptop's IP changes.
+local-phone:
+	npm run dev:local -- --apk
 
 ## Launch the installed app
 launch:
