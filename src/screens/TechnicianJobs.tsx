@@ -6,10 +6,8 @@ import { useI18n } from '../i18n/I18nContext';
 import { acceptJob, completeJob, declineJob, listOwnJobs } from '../services/jobs';
 import type { Job } from '../types';
 
-const SUPPORT_NUMBER = '9646424964';
 
-export function TechnicianJobs({ onBack, setToast, technicianId, withLoading }: {
-  onBack: () => void;
+export function TechnicianJobs({ setToast, technicianId, withLoading }: {
   setToast: (toast: Toast) => void;
   technicianId: string;
   withLoading: (action: () => Promise<void>) => Promise<void>;
@@ -49,35 +47,42 @@ export function TechnicianJobs({ onBack, setToast, technicianId, withLoading }: 
 
   return (
     <PullToRefresh onRefresh={refresh}>
-      <main className="detail-page">
-        <section className="card profile-card">
-          <button className="text-button" onClick={onBack}>{t('back')}</button>
-          <h1>{t('jobsTitle')}</h1>
-          {numbered.length === 0 && <p className="muted">{t('noJobsYet')}</p>}
-          <div className="job-list">
-            {numbered.map(({ job, taskNumber }) => {
-              const meta = jobStatusMeta(job.status, t);
-              const clickable = isOpenForAction(job);
-              return (
-                <button
-                  className={`job-row-button ${clickable ? '' : 'static'}`}
-                  disabled={!clickable}
-                  key={job.id}
-                  onClick={() => clickable && setSelectedJobId(job.id)}
-                >
-                  <span className="tnum">{t('task')} {taskNumber}</span>
-                  <span className="jinfo">
-                    <b>{job.description}</b>
-                    <span>{t('farmerLabel')}: {job.farmerName || '-'}</span>
-                  </span>
-                  <span className={`pill ${meta.pillClass}`}>{meta.label}</span>
-                </button>
-              );
-            })}
+      <section className="mechanic-jobs-screen">
+        <div className="mechanic-screen-hero jobs-hero">
+          <div>
+            <p className="eyebrow">{t('jobsNav')}</p>
+            <h1>{t('jobsTitle')}</h1>
           </div>
-          <p className="muted">{t('supportLabel')}: <a href={`tel:${SUPPORT_NUMBER}`}>{SUPPORT_NUMBER}</a></p>
-        </section>
-      </main>
+          <span>{numbered.length}</span>
+        </div>
+        {numbered.length === 0 && (
+          <section className="jobs-empty-state">
+            <span aria-hidden="true">🧰</span>
+            <h1>{t('noJobsYet')}</h1>
+          </section>
+        )}
+        <div className="job-list">
+          {numbered.map(({ job, taskNumber }) => {
+            const meta = jobStatusMeta(job.status, t);
+            const clickable = isOpenForAction(job);
+            return (
+              <button
+                className={`job-row-button ${clickable ? '' : 'static'}`}
+                disabled={!clickable}
+                key={job.id}
+                onClick={() => clickable && setSelectedJobId(job.id)}
+              >
+                <span className="tnum">{t('task')} {taskNumber}</span>
+                <span className="jinfo">
+                  <b>{job.description}</b>
+                  <span>{t('farmerLabel')}: {job.farmerName || '-'}</span>
+                </span>
+                <span className={`pill ${meta.pillClass}`}>{meta.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
     </PullToRefresh>
   );
 }

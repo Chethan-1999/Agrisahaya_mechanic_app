@@ -2,14 +2,17 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import { BriefcaseBusiness, Headphones, Megaphone, Store, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
+import agrisahayaLogo from '../image.png';
 import { PullToRefresh } from './components/PullToRefresh';
-import { Input, LanguageSelector, Metric, Select, formatDate, getErrorMessage, type Toast } from './components/ui';
+import { Input, LanguageSelector, Metric, Select, formatDate, getErrorMessage, jobStatusMeta, type Toast } from './components/ui';
 import { auth, db, firebaseConfigured } from './firebase';
 import { usePhoneOtp } from './hooks/usePhoneOtp';
 import { useI18n } from './i18n/I18nContext';
 import { loginAdmin } from './services/adminAuth';
+import { listAnnouncements } from './services/announcements';
 import { completeSignup } from './services/auth';
 import {
   adminUpdateProfile,
@@ -19,8 +22,9 @@ import {
   reviewSignup,
   setTechnicianStatus,
 } from './services/mechanics';
+import { listAllJobs } from './services/jobs';
 import { initNotifications } from './services/notifications';
-import type { AdminProfile, AppSession, Mechanic, MechanicForm } from './types';
+import type { AdminProfile, AppSession, Job, Mechanic, MechanicForm } from './types';
 import { emptyMechanicForm } from './types';
 import { hasErrors, validateProfileForm, type ValidationErrors } from './utils/validation';
 import { AdminAnnouncements } from './screens/AdminAnnouncements';
@@ -30,11 +34,19 @@ import { Announcements } from './screens/Announcements';
 import { RequestProfileChange } from './screens/RequestProfileChange';
 import { TechnicianJobs } from './screens/TechnicianJobs';
 
+type ConfirmDialog = {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  kind?: 'danger' | 'primary';
+  onConfirm: () => void;
+} | null;
+
 type Page =
   | 'landing'
   | 'mechanicAuth'
   | 'mechanicPending'
-  | 'mechanicDashboard'
+  | 'mechanicMarketplace'
   | 'mechanicProfile'
   | 'mechanicJobs'
   | 'mechanicRequestChange'
@@ -60,13 +72,38 @@ const navItems: Array<{ label: string; page: Page }> = [
 
 const SUPPORT_NUMBER = '9646424964';
 
+const mechanicTabs: Array<{ Icon: typeof BriefcaseBusiness; label: string; page: Page }> = [
+  { Icon: BriefcaseBusiness, label: 'Jobs', page: 'mechanicJobs' },
+  { Icon: Megaphone, label: 'Announcements', page: 'mechanicAnnouncements' },
+  { Icon: Store, label: 'Marketplace', page: 'mechanicMarketplace' },
+  { Icon: UserRound, label: 'Profile', page: 'mechanicProfile' },
+];
+
+const announcementsSeenKey = (technicianId: string) => `agrisahaya.announcementsSeenAt.${technicianId}`;
+
+function readAnnouncementsSeenAt(technicianId: string) {
+  try {
+    return window.localStorage.getItem(announcementsSeenKey(technicianId)) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function writeAnnouncementsSeenAt(technicianId: string, value: string) {
+  try {
+    window.localStorage.setItem(announcementsSeenKey(technicianId), value);
+  } catch {
+    // localStorage can throw in private-browsing/blocked-storage contexts — the badge just reappears.
+  }
+}
+
 // Where the Android hardware/gesture back button goes from each page; pages not listed are roots (back exits the app).
 const backTarget: Partial<Record<Page, Page>> = {
   mechanicAuth: 'landing',
   adminLogin: 'landing',
-  mechanicProfile: 'mechanicDashboard',
-  mechanicJobs: 'mechanicDashboard',
-  mechanicAnnouncements: 'mechanicDashboard',
+  mechanicProfile: 'mechanicJobs',
+  mechanicMarketplace: 'mechanicJobs',
+  mechanicAnnouncements: 'mechanicJobs',
   mechanicRequestChange: 'mechanicProfile',
   adminMechanics: 'adminDashboard',
   adminJobs: 'adminDashboard',
@@ -87,6 +124,9 @@ export default function App() {
   const [bootstrapping, setBootstrapping] = useState(true);
   const [toast, setToast] = useState<Toast>(null);
   const [darkMode, setDarkMode] = useState(false);
+  const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog>(null);
   const { t } = useI18n();
 
   useEffect(() => {
@@ -139,7 +179,7 @@ export default function App() {
 
     if (technician) {
       setSession({ role: 'mechanic', mechanicId: user.uid });
-      setPage(technician.status === 'active' ? 'mechanicDashboard' : 'mechanicPending');
+      setPage(technician.status === 'active' ? 'mechanicJobs' : 'mechanicPending');
     }
   }
 
@@ -171,8 +211,31 @@ export default function App() {
 
     if (session?.role === 'admin') {
       void loadMechanics();
+      void loadJobs();
     }
   }, [session]);
+
+  // Unread badge on the Announcements tab: count of announcements newer than the last time this device opened the tab.
+  async function refreshUnreadAnnouncements(technicianId: string) {
+    try {
+      const seenAt = readAnnouncementsSeenAt(technicianId);
+      const announcements = await listAnnouncements();
+      setUnreadAnnouncements(announcements.filter((announcement) => announcement.createdAt > seenAt).length);
+    } catch {
+      // Badge is a nicety — never surface an error for it.
+    }
+  }
+
+  useEffect(() => {
+    if (session?.role !== 'mechanic' || currentMechanic?.status !== 'active') return;
+
+    if (page === 'mechanicAnnouncements') {
+      writeAnnouncementsSeenAt(session.mechanicId, new Date().toISOString());
+      setUnreadAnnouncements(0);
+    } else {
+      void refreshUnreadAnnouncements(session.mechanicId);
+    }
+  }, [page, session, currentMechanic?.status]);
 
   // The pending/inactive screen has no other trigger to notice an admin's decision, so poll quietly.
   useEffect(() => {
@@ -184,7 +247,7 @@ export default function App() {
         .then((technician) => {
           if (!technician) return;
           setCurrentMechanic(technician);
-          if (technician.status === 'active') setPage('mechanicDashboard');
+          if (technician.status === 'active') setPage('mechanicJobs');
         })
         .catch(() => undefined);
     }, 10000);
@@ -205,6 +268,10 @@ export default function App() {
 
   async function loadMechanics() {
     await withLoading(async () => setMechanics(await listMechanics()));
+  }
+
+  async function loadJobs() {
+    await withLoading(async () => setJobs(await listAllJobs()));
   }
 
   async function loadCurrentMechanic(id: string) {
@@ -247,6 +314,17 @@ export default function App() {
       {/* Invisible reCAPTCHA anchor for firebaseOtpProvider's signInWithPhoneNumber — always mounted, never shown. */}
       <div id="recaptcha-container" />
       {loading && <div className="loading"><span />Loading...</div>}
+      {confirmDialog && (
+        <ConfirmModal
+          dialog={confirmDialog}
+          onCancel={() => setConfirmDialog(null)}
+          onConfirm={() => {
+            const { onConfirm } = confirmDialog;
+            setConfirmDialog(null);
+            onConfirm();
+          }}
+        />
+      )}
       {toast && <button className={`toast ${toast.kind}`} onClick={() => setToast(null)}>{toast.text}</button>}
 
       {page === 'landing' && (
@@ -264,7 +342,7 @@ export default function App() {
           <MechanicAuth
             onExisting={(mechanicId, technician) => {
               setSession({ role: 'mechanic', mechanicId });
-              setPage(technician.status === 'active' ? 'mechanicDashboard' : 'mechanicPending');
+              setPage(technician.status === 'active' ? 'mechanicJobs' : 'mechanicPending');
             }}
             onNew={(mechanicId) => {
               setToast({
@@ -297,41 +375,31 @@ export default function App() {
           const technician = await getMechanic(session.mechanicId);
           if (!technician) return;
           setCurrentMechanic(technician);
-          if (technician.status === 'active') setPage('mechanicDashboard');
+          if (technician.status === 'active') setPage('mechanicJobs');
         }}>
           <MechanicPending mechanic={currentMechanic} onLogout={logout} />
         </PullToRefresh>
       )}
 
-      {session?.role === 'mechanic' && currentMechanic && page === 'mechanicDashboard' && (
-        <MechanicDashboard
-          mechanic={currentMechanic}
-          onAnnouncements={() => setPage('mechanicAnnouncements')}
-          onJobs={() => setPage('mechanicJobs')}
-          onLogout={logout}
-          onProfile={() => setPage('mechanicProfile')}
-          onRefresh={() => loadCurrentMechanic(session.mechanicId)}
-          onRequestChange={() => setPage('mechanicRequestChange')}
-        />
-      )}
-
-      {session?.role === 'mechanic' && currentMechanic && page === 'mechanicProfile' && (
-        <DetailPage
-          editable={false}
-          mechanic={currentMechanic}
-          onBack={() => setPage('mechanicDashboard')}
-          onRequestChange={() => setPage('mechanicRequestChange')}
-          title="My Profile"
-        />
-      )}
-
-      {session?.role === 'mechanic' && currentMechanic && page === 'mechanicJobs' && (
-        <TechnicianJobs
-          onBack={() => setPage('mechanicDashboard')}
-          setToast={setToast}
-          technicianId={currentMechanic.id}
-          withLoading={withLoading}
-        />
+      {session?.role === 'mechanic' && currentMechanic && mechanicTabs.some((tab) => tab.page === page) && (
+        <MechanicShell activePage={page} onLogout={logout} onNavigate={setPage} unreadAnnouncements={unreadAnnouncements}>
+          {page === 'mechanicJobs' && (
+            <TechnicianJobs
+              setToast={setToast}
+              technicianId={currentMechanic.id}
+              withLoading={withLoading}
+            />
+          )}
+          {page === 'mechanicAnnouncements' && <Announcements withLoading={withLoading} />}
+          {page === 'mechanicMarketplace' && <MarketplaceComingSoon />}
+          {page === 'mechanicProfile' && (
+            <MechanicProfile
+              mechanic={currentMechanic}
+              onRefresh={() => loadCurrentMechanic(session.mechanicId)}
+              onRequestChange={() => setPage('mechanicRequestChange')}
+            />
+          )}
+        </MechanicShell>
       )}
 
       {session?.role === 'mechanic' && currentMechanic && page === 'mechanicRequestChange' && (
@@ -344,14 +412,10 @@ export default function App() {
         />
       )}
 
-      {session?.role === 'mechanic' && currentMechanic && page === 'mechanicAnnouncements' && (
-        <Announcements onBack={() => setPage('mechanicDashboard')} withLoading={withLoading} />
-      )}
-
       {session?.role === 'admin' && page.startsWith('admin') && (
         <AdminShell activePage={page} darkMode={darkMode} onLogout={logout} onNavigate={setPage} onToggleDarkMode={setDarkMode}>
           {page === 'adminDashboard' && (
-            <AdminDashboard active={activeMechanics} inactive={inactiveMechanics} pending={pendingMechanics} total={mechanics.length} />
+            <AdminDashboard active={activeMechanics} inactive={inactiveMechanics} jobs={jobs} mechanics={mechanics} pending={pendingMechanics} total={mechanics.length} />
           )}
           {page === 'adminMechanics' && (
             <MechanicsTable
@@ -367,21 +431,39 @@ export default function App() {
                 setSelectedMechanic(mechanic);
                 setPage('adminEdit');
               }}
-              onReject={(mechanic) => {
-                if (!confirm(`Reject ${mechanic.fullName}'s signup?`)) return;
-                void withLoading(async () => {
-                  await reviewSignup(mechanic.id, 'reject');
-                  setToast({ kind: 'success', text: `${mechanic.fullName} rejected.` });
-                  setMechanics(await listMechanics());
-                });
-              }}
+              onReject={(mechanic) => setConfirmDialog({
+                title: 'Reject signup?',
+                message: `${mechanic.fullName}'s signup will be rejected.`,
+                confirmLabel: 'Reject',
+                kind: 'danger',
+                onConfirm: () => {
+                  void withLoading(async () => {
+                    await reviewSignup(mechanic.id, 'reject');
+                    setToast({ kind: 'success', text: `${mechanic.fullName} rejected.` });
+                    setMechanics(await listMechanics());
+                  });
+                },
+              })}
               onRefresh={loadMechanics}
               onToggleStatus={(mechanic) => {
                 const next = mechanic.status === 'active' ? 'inactive' : 'active';
-                void withLoading(async () => {
-                  await setTechnicianStatus(mechanic.id, next);
-                  setToast({ kind: 'success', text: `${mechanic.fullName} is now ${next}.` });
-                  setMechanics(await listMechanics());
+                const toggle = () => {
+                  void withLoading(async () => {
+                    await setTechnicianStatus(mechanic.id, next);
+                    setToast({ kind: 'success', text: `${mechanic.fullName} is now ${next}.` });
+                    setMechanics(await listMechanics());
+                  });
+                };
+                if (next === 'active') {
+                  toggle();
+                  return;
+                }
+                setConfirmDialog({
+                  title: 'Deactivate technician?',
+                  message: `${mechanic.fullName} will lose access until reactivated.`,
+                  confirmLabel: 'Deactivate',
+                  kind: 'danger',
+                  onConfirm: toggle,
                 });
               }}
               onView={(mechanic) => {
@@ -421,18 +503,14 @@ function Landing({ darkMode, onAdmin, onMechanicLogin, onMechanicSignup, onToggl
   return (
     <main className="landing-page">
       <div className="top-actions">
-        <button className="admin-link" onClick={onAdmin}>Admin Login</button>
-        <LanguageSelector label={t('languageLabel')} language={language} onChange={setLanguage} />
         <label className="theme-toggle"><span>{darkMode ? 'Dark' : 'Light'} mode</span><span className="switch"><input checked={darkMode} onChange={(event) => onToggleDarkMode(event.target.checked)} type="checkbox" /><span /></span></label>
       </div>
       <section className="hero-panel">
-        <div aria-label="Mechanic Directory logo" className="hero-mark" role="img">
-          <svg className="logo-icon" fill="none" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
-            <path className="logo-gear-ring" d="M48 16 54 21 61.8 20.6 64.4 28 71.2 31.8 69.8 39.5 74 46 69.8 52.5 71.2 60.2 64.4 64 61.8 71.4 54 71 48 76 42 71 34.2 71.4 31.6 64 24.8 60.2 26.2 52.5 22 46 26.2 39.5 24.8 31.8 31.6 28 34.2 20.6 42 21 48 16Z" />
-            <circle className="logo-gear-center" cx="48" cy="46" r="13" />
-            <path className="logo-wrench" d="M64 28 41 51m0 0-6-6-12 12 6 6 12-12Zm23-23 9-9a10 10 0 0 1-12 12Z" />
-          </svg>
+        <div className="landing-card-actions">
+          <button className="admin-link" onClick={onAdmin}>Admin Login</button>
+          <LanguageSelector label={t('languageLabel')} language={language} onChange={setLanguage} />
         </div>
+        <img alt="AgriSahaya logo" className="hero-logo" src={agrisahayaLogo} />
         <p className="eyebrow">Village and district service network</p>
         <h1>Mechanic Directory</h1>
         <p>Maintain a clean, centralized database of technicians, profiles, and admin-managed records.</p>
@@ -580,37 +658,104 @@ function MechanicPending({ mechanic, onLogout }: { mechanic: Mechanic | null; on
   const body = status === 'rejected' ? t('rejectedBody') : status === 'inactive' ? t('inactiveBody') : t('pendingBody');
 
   return (
-    <main className="auth-page">
-      <section className="auth-card card">
-        <h2>{heading}</h2>
-        <p className="muted">{body}</p>
-        <p className="muted">{t('supportLabel')}: <a href={`tel:${SUPPORT_NUMBER}`}>{SUPPORT_NUMBER}</a></p>
-        <button className="danger" onClick={onLogout}>{t('logout')}</button>
+    <main className="mechanic-app-page approval-page">
+      <section className="approval-card">
+        <div className="approval-badge" aria-hidden="true">{status === 'pending' ? '✓' : '!'}</div>
+        <p className="eyebrow">{t('welcome')}</p>
+        <h1>{mechanic?.fullName ?? ''}</h1>
+        <div className="approval-status-pill">{heading}</div>
+        {status === 'pending' && <div className="approval-progress" aria-hidden="true"><span /></div>}
+        <p>{body}</p>
+        <p>{t('supportLabel')}: <a href={`tel:${SUPPORT_NUMBER}`}>{SUPPORT_NUMBER}</a></p>
+        <button className="secondary approval-logout" onClick={onLogout} type="button">{t('logout')}</button>
       </section>
     </main>
   );
 }
 
-function MechanicDashboard({ mechanic, onAnnouncements, onJobs, onLogout, onProfile, onRefresh, onRequestChange }: { mechanic: Mechanic; onAnnouncements: () => void; onJobs: () => void; onLogout: () => void; onProfile: () => void; onRefresh: () => Promise<void>; onRequestChange: () => void }) {
+function MechanicShell({ activePage, children, onLogout, onNavigate, unreadAnnouncements }: { activePage: Page; children: React.ReactNode; onLogout: () => void; onNavigate: (page: Page) => void; unreadAnnouncements: number }) {
+  const { t } = useI18n();
+  const [showSupport, setShowSupport] = useState(false);
+  const labels: Partial<Record<Page, string>> = {
+    mechanicJobs: t('jobsNav'),
+    mechanicAnnouncements: t('announcementsNav'),
+    mechanicProfile: t('profileNav'),
+  };
+
+  return (
+    <main className="mechanic-app-page">
+      <div className="mechanic-app-content">
+        <div className="mechanic-help-area">
+          <button aria-expanded={showSupport} aria-label={t('supportLabel')} className="mechanic-help-button" onClick={() => setShowSupport((isVisible) => !isVisible)} type="button">
+            <Headphones size={20} strokeWidth={2.5} />
+            <span>{t('supportLabel')}</span>
+          </button>
+          {showSupport && (
+            <div className="mechanic-support-popover">
+              <span>{t('supportLabel')}</span>
+              <a href={`tel:${SUPPORT_NUMBER}`}>{SUPPORT_NUMBER}</a>
+            </div>
+          )}
+        </div>
+        {children}
+      </div>
+      <nav className="mechanic-bottom-nav" aria-label="Technician navigation">
+        {mechanicTabs.map(({ Icon, label, page }) => (
+          <button className={activePage === page ? 'active' : ''} key={page} onClick={() => onNavigate(page)} type="button">
+            <span><Icon size={19} strokeWidth={2.4} />{page === 'mechanicAnnouncements' && unreadAnnouncements > 0 && <b>{unreadAnnouncements}</b>}</span>
+            {labels[page] ?? label}
+          </button>
+        ))}
+      </nav>
+      <button className="mechanic-logout" onClick={onLogout} type="button">{t('logout')}</button>
+    </main>
+  );
+}
+
+function MarketplaceComingSoon() {
+  return (
+    <section className="marketplace-soon-page">
+      <div className="marketplace-soon-card">
+        <div className="marketplace-emoji-row" aria-hidden="true">
+          <span>🛠️</span>
+          <span>🚜</span>
+          <span>🛒</span>
+        </div>
+        <p className="eyebrow">Marketplace</p>
+        <h1>Feature coming soon</h1>
+        <p>Buy or sell</p>
+        <div className="marketplace-preview-chips" aria-label="Marketplace preview items">
+          <span>🔧 Tools</span>
+          <span>⚙️ Spare parts</span>
+          <span>🧰 Service kits</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MechanicProfile({ mechanic, onRefresh, onRequestChange }: { mechanic: Mechanic; onRefresh: () => Promise<void>; onRequestChange: () => void }) {
   const { t } = useI18n();
 
   return (
     <PullToRefresh onRefresh={onRefresh}>
-    <main className="dashboard-page mechanic-page">
-      <section className="card profile-card">
-        <p className="eyebrow">{t('welcome')}</p>
-        <h1>{mechanic.fullName}</h1>
-        <DetailGrid compact mechanic={mechanic} />
-        <p className="muted">{t('supportLabel')}: <a href={`tel:${SUPPORT_NUMBER}`}>{SUPPORT_NUMBER}</a></p>
-        <div className="button-row">
-          <button className="primary" onClick={onJobs}>{t('jobsNav')}</button>
-          <button className="secondary" onClick={onProfile}>{t('profileNav')}</button>
-          <button className="secondary" onClick={onRequestChange}>{t('requestChangeNav')}</button>
-          <button className="secondary" onClick={onAnnouncements}>{t('announcementsNav')}</button>
-          <button className="danger" onClick={onLogout}>{t('logout')}</button>
+      <section className="mechanic-profile-screen">
+        <div className="mechanic-profile-hero">
+          <div className="profile-avatar">{getInitials(mechanic.fullName)}</div>
+          <p className="eyebrow">{t('welcome')}</p>
+          <h1>{mechanic.fullName}</h1>
+          <div className="profile-chip-row">
+            <span>{mechanic.status}</span>
+            <span>{mechanic.experience || '0'} yrs</span>
+            <span>{mechanic.district || '-'}</span>
+          </div>
+          <button className="primary profile-edit-button" onClick={onRequestChange} type="button">{t('requestChangeNav')}</button>
         </div>
+        <section className="profile-details-card">
+          <h2>{t('profileNav')}</h2>
+          <DetailGrid mechanic={mechanic} compact />
+        </section>
       </section>
-    </main>
     </PullToRefresh>
   );
 }
@@ -629,17 +774,110 @@ function AdminShell({ activePage, children, darkMode, onLogout, onNavigate, onTo
   );
 }
 
-function AdminDashboard({ active, inactive, pending, total }: { active: number; inactive: number; pending: number; total: number }) {
+function ConfirmModal({ dialog, onCancel, onConfirm }: { dialog: NonNullable<ConfirmDialog>; onCancel: () => void; onConfirm: () => void }) {
   return (
-    <>
-      <h1>Admin Dashboard</h1>
-      <section className="metrics">
+    <div className="modal-backdrop" role="presentation" onMouseDown={onCancel}>
+      <section aria-modal="true" className="confirm-modal" role="dialog" onMouseDown={(event) => event.stopPropagation()}>
+        <h2>{dialog.title}</h2>
+        <p>{dialog.message}</p>
+        <div className="modal-actions">
+          <button className="secondary" onClick={onCancel} type="button">Cancel</button>
+          <button className={dialog.kind === 'danger' ? 'danger' : 'primary'} onClick={onConfirm} type="button">{dialog.confirmLabel}</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+// Jobs count as "assigned" once a technician holds them (assigned → accepted → completed); open/cancelled/declined don't.
+function isAssignedJob(job: Job) {
+  return job.status === 'assigned' || job.status === 'accepted' || job.status === 'completed';
+}
+
+function AdminDashboard({ active, inactive, jobs, mechanics, pending, total }: { active: number; inactive: number; jobs: Job[]; mechanics: Mechanic[]; pending: number; total: number }) {
+  const assignedJobs = jobs.filter(isAssignedJob).length;
+  const openJobs = jobs.filter((job) => job.status === 'open').length;
+  const assignmentRate = jobs.length ? Math.round((assignedJobs / jobs.length) * 100) : 0;
+  const recentJobs = jobs.slice(0, 5);
+  const topMechanics = mechanics
+    .map((mechanic) => ({ mechanic, count: jobs.filter((job) => job.technicianId === mechanic.id && isAssignedJob(job)).length }))
+    .filter((item) => item.count > 0)
+    .sort((first, second) => second.count - first.count)
+    .slice(0, 4);
+
+  return (
+    <section className="admin-dashboard-page">
+      <div className="admin-dashboard-hero">
+        <div>
+          <p className="eyebrow">Operations overview</p>
+          <h1>Admin Dashboard</h1>
+          <p>Track technicians, jobs, and assignments from one place.</p>
+        </div>
+        <div className="dashboard-rate-card">
+          <span>{assignmentRate}%</span>
+          <p>Jobs assigned</p>
+        </div>
+      </div>
+
+      <section className="dashboard-metrics-grid">
         <Metric label="Total Technicians" value={total} />
         <Metric label="Pending Approval" value={pending} />
         <Metric label="Active" value={active} />
         <Metric label="Inactive / Rejected" value={inactive} />
+        <Metric label="Total jobs" value={jobs.length} />
+        <Metric label="Open jobs" value={openJobs} />
       </section>
-    </>
+
+      <section className="dashboard-panels">
+        <article className="dashboard-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Latest work</p>
+              <h2>Recent jobs</h2>
+            </div>
+            <span>{recentJobs.length}</span>
+          </div>
+          <div className="recent-job-list">
+            {recentJobs.map((job) => {
+              const meta = jobStatusMeta(job.status);
+              return (
+                <div className="recent-job-item" key={job.id}>
+                  <div>
+                    <strong>{job.farmerName || '-'}</strong>
+                    <p>{job.description}</p>
+                  </div>
+                  <span className={`pill ${meta.pillClass}`}>{meta.label}</span>
+                </div>
+              );
+            })}
+            {recentJobs.length === 0 && <p className="empty compact-empty">No jobs added yet.</p>}
+          </div>
+        </article>
+
+        <article className="dashboard-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Assignment load</p>
+              <h2>Top technicians</h2>
+            </div>
+            <span>{topMechanics.length}</span>
+          </div>
+          <div className="mechanic-load-list">
+            {topMechanics.map(({ count, mechanic }) => (
+              <div className="mechanic-load-item" key={mechanic.id}>
+                <div className="load-avatar">{getInitials(mechanic.fullName)}</div>
+                <div>
+                  <strong>{mechanic.fullName}</strong>
+                  <p>{mechanic.district || '-'} · {mechanic.experience || '0'} yrs</p>
+                </div>
+                <span>{count}</span>
+              </div>
+            ))}
+            {topMechanics.length === 0 && <p className="empty compact-empty">No assigned jobs yet.</p>}
+          </div>
+        </article>
+      </section>
+    </section>
   );
 }
 
@@ -806,6 +1044,10 @@ function DetailGrid({ compact = false, mechanic }: { compact?: boolean; mechanic
     ['Registration Date', formatDate(mechanic.createdAt)],
   ];
   return <dl className={compact ? 'detail-grid compact' : 'detail-grid'}>{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || '-'}</dd></div>)}</dl>;
+}
+
+function getInitials(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('') || '?';
 }
 
 function trimMechanicForm(form: MechanicForm): MechanicForm {

@@ -6,8 +6,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { listAnnouncements } from '../services/announcements';
 import type { Announcement } from '../types';
 
-export function Announcements({ onBack, withLoading }: {
-  onBack: () => void;
+export function Announcements({ withLoading }: {
   withLoading: (action: () => Promise<void>) => Promise<void>;
 }) {
   const { t } = useI18n();
@@ -23,24 +22,29 @@ export function Announcements({ onBack, withLoading }: {
 
   return (
     <PullToRefresh onRefresh={refresh}>
-      <main className="detail-page">
-        <section className="card profile-card">
-          <button className="text-button" onClick={onBack} type="button">{t('back')}</button>
-          <h1>{t('announcementsTitle')}</h1>
-          {announcements.length === 0 && <p className="muted">{t('noAnnouncementsYet')}</p>}
-          <div className="job-list">
-            {announcements.map((announcement) => (
-              <div className="job-row-button static" key={announcement.id}>
-                <span className="jinfo">
-                  <b>{announcement.title}</b>
-                  <span>{announcement.body}</span>
-                </span>
-                <span className="muted">{formatDate(announcement.createdAt)}</span>
-              </div>
-            ))}
+      <section className="mechanic-community-screen">
+        <div className="mechanic-screen-hero community-hero">
+          <div>
+            <p className="eyebrow">{t('announcementsNav')}</p>
+            <h1>{t('announcementsTitle')}</h1>
           </div>
-        </section>
-      </main>
+          <span>{announcements.length}</span>
+        </div>
+        <div className="community-post-list">
+          {announcements.map((announcement) => (
+            <article className="community-post-card" key={announcement.id}>
+              <div className="community-post-meta"><strong>{announcement.title}</strong><time>{formatDate(announcement.createdAt)}</time></div>
+              <p>{announcement.body}</p>
+            </article>
+          ))}
+          {announcements.length === 0 && (
+            <section className="community-empty-state">
+              <span aria-hidden="true">📢</span>
+              <h1>{t('noAnnouncementsYet')}</h1>
+            </section>
+          )}
+        </div>
+      </section>
     </PullToRefresh>
   );
 }
