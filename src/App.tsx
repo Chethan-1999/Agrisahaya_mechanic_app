@@ -1,3 +1,5 @@
+import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
@@ -58,6 +60,23 @@ const navItems: Array<{ label: string; page: Page }> = [
 
 const SUPPORT_NUMBER = '9646424964';
 
+// Where the Android hardware/gesture back button goes from each page; pages not listed are roots (back exits the app).
+const backTarget: Partial<Record<Page, Page>> = {
+  mechanicAuth: 'landing',
+  adminLogin: 'landing',
+  mechanicProfile: 'mechanicDashboard',
+  mechanicJobs: 'mechanicDashboard',
+  mechanicAnnouncements: 'mechanicDashboard',
+  mechanicRequestChange: 'mechanicProfile',
+  adminMechanics: 'adminDashboard',
+  adminJobs: 'adminDashboard',
+  adminProfileRequests: 'adminDashboard',
+  adminAnnouncements: 'adminDashboard',
+  adminSettings: 'adminDashboard',
+  adminDetails: 'adminMechanics',
+  adminEdit: 'adminMechanics',
+};
+
 export default function App() {
   const [page, setPage] = useState<Page>('landing');
   const [session, setSession] = useState<AppSession>(null);
@@ -73,6 +92,20 @@ export default function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = darkMode ? 'dark' : 'light';
   }, [darkMode]);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const listener = CapacitorApp.addListener('backButton', () => {
+      const target = backTarget[page];
+      if (target) setPage(target);
+      else void CapacitorApp.exitApp();
+    });
+
+    return () => {
+      void listener.then((handle) => handle.remove());
+    };
+  }, [page]);
 
   useEffect(() => {
     if (!toast) return;
@@ -140,6 +173,24 @@ export default function App() {
       void loadMechanics();
     }
   }, [session]);
+
+  // The pending/inactive screen has no other trigger to notice an admin's decision, so poll quietly.
+  useEffect(() => {
+    if (session?.role !== 'mechanic' || page !== 'mechanicPending') return;
+
+    const mechanicId = session.mechanicId;
+    const intervalId = window.setInterval(() => {
+      void getMechanic(mechanicId)
+        .then((technician) => {
+          if (!technician) return;
+          setCurrentMechanic(technician);
+          if (technician.status === 'active') setPage('mechanicDashboard');
+        })
+        .catch(() => undefined);
+    }, 10000);
+
+    return () => window.clearInterval(intervalId);
+  }, [page, session]);
 
   async function withLoading(action: () => Promise<void>) {
     setLoading(true);
@@ -242,7 +293,14 @@ export default function App() {
       )}
 
       {session?.role === 'mechanic' && page === 'mechanicPending' && (
-        <MechanicPending mechanic={currentMechanic} onLogout={logout} />
+        <PullToRefresh onRefresh={async () => {
+          const technician = await getMechanic(session.mechanicId);
+          if (!technician) return;
+          setCurrentMechanic(technician);
+          if (technician.status === 'active') setPage('mechanicDashboard');
+        }}>
+          <MechanicPending mechanic={currentMechanic} onLogout={logout} />
+        </PullToRefresh>
       )}
 
       {session?.role === 'mechanic' && currentMechanic && page === 'mechanicDashboard' && (
