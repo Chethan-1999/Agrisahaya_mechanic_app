@@ -1,4 +1,4 @@
-.PHONY: web sync apk local-phone emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean
+.PHONY: web sync apk local-phone admin emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean
 
 # Override any of these on the command line, e.g. `make run AVD_NAME=Pixel_7`
 AVD_NAME     ?= Pixel_6
@@ -111,6 +111,14 @@ apk: sync
 ## Install dist/agrisahaya-local-*.apk on the phone. Rebuild if the laptop's IP changes.
 local-phone:
 	npm run dev:local -- --apk
+
+## Create the admin in the RUNNING local emulators (one time; it's then saved in emulator-data/).
+## Usage: make admin ADMIN_EMAIL=agrisahay@gmail.com ADMIN_PASSWORD='...' [ADMIN_NAME=Admin]
+ADMIN_NAME ?= Admin
+FIREBASE_PROJECT := $(shell sed -n 's/.*"default": *"\(.*\)".*/\1/p' .firebaserc)
+admin:
+	@test -n "$(ADMIN_EMAIL)" -a -n "$(ADMIN_PASSWORD)" || { echo "Usage: make admin ADMIN_EMAIL=... ADMIN_PASSWORD=... [ADMIN_NAME=...]"; exit 1; }
+	cd functions && FIRESTORE_EMULATOR_HOST=localhost:8080 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 GCLOUD_PROJECT=$(FIREBASE_PROJECT) npm run create-admin -- "$(ADMIN_EMAIL)" "$(ADMIN_PASSWORD)" "$(ADMIN_NAME)"
 
 ## Launch the installed app
 launch:

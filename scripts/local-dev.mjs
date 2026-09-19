@@ -32,7 +32,7 @@
 // bash-only syntax, so nothing here depends on WSL, Git Bash, or GNU Make.
 
 import { spawnSync, spawn } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, openSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
@@ -397,7 +397,21 @@ async function main() {
   const hasExport = existsSync(path.join(dataDir, 'firebase-export-metadata.json'));
   const args = ['firebase', 'emulators:start', '--only', 'auth,firestore,functions', `--export-on-exit=${dataDir}`];
   if (hasExport) args.push(`--import=${dataDir}`);
-  log(hasExport ? `Restoring emulator data from ${dataDir}` : `No saved emulator data yet — will save to ${dataDir}`);
+  if (hasExport) {
+    // Keep the previous export: a session that starts from bad/empty data would otherwise overwrite the only good copy.
+    const backupDir = `${dataDir}.bak`;
+    rmSync(backupDir, { recursive: true, force: true });
+    cpSync(dataDir, backupDir, { recursive: true });
+    let users = [];
+    try {
+      users = JSON.parse(readFileSync(path.join(dataDir, 'auth_export', 'accounts.json'), 'utf8')).users ?? [];
+    } catch {
+      // unreadable accounts file: report zero users below
+    }
+    log(`Restoring emulator data from ${dataDir} (${users.length} auth user(s): ${users.map((u) => u.email || u.phoneNumber).join(', ') || 'none'}). Previous copy kept in ${backupDir}.`);
+  } else {
+    log(`No saved emulator data yet — starting empty; will save to ${dataDir}. Create the admin once (see README).`);
+  }
 
   const emulators = spawn(['npx', ...args].join(' '), {
     cwd: repoRoot,
