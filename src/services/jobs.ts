@@ -2,15 +2,21 @@ import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 
 import { db, functions } from '../firebase';
-import type { Job, JobHistoryEntry, JobStatus } from '../types';
+import type { Job, JobFields, JobHistoryEntry, JobStatus } from '../types';
 
 const collectionName = 'jobs';
 
 const toJob = (id: string, data: Record<string, unknown>): Job => ({
   id,
+  jobCode: String(data.jobCode ?? ''),
   technicianId: (data.technicianId as string | null) ?? null,
   farmerName: String(data.farmerName ?? ''),
   farmerPhone: String(data.farmerPhone ?? ''),
+  // Jobs logged before equipment/issue/district existed only carry `description`.
+  equipment: String(data.equipment ?? ''),
+  issue: String(data.issue ?? ''),
+  district: String(data.district ?? ''),
+  additionalNotes: String(data.additionalNotes ?? ''),
   description: String(data.description ?? ''),
   status: (data.status as JobStatus) ?? 'open',
   createdAt: String(data.createdAt ?? ''),
@@ -36,20 +42,31 @@ export async function listAllJobs() {
   return snapshot.docs.map((d) => toJob(d.id, d.data()));
 }
 
-const createJobFn = httpsCallable<
-  { technicianId?: string; farmerName?: string; farmerPhone?: string; description: string },
-  { status: string; jobId: string }
->(functions, 'createJob');
-
+const createJobFn = httpsCallable<JobFields & { technicianId?: string }, { status: string; jobId: string; jobCode: string }>(functions, 'createJob');
+const updateJobFn = httpsCallable<JobFields & { jobId: string }, { status: string }>(functions, 'updateJob');
+const deleteJobFn = httpsCallable<{ jobId: string }, { status: string }>(functions, 'deleteJob');
 const assignJobFn = httpsCallable<{ jobId: string; technicianId: string }, { status: string }>(functions, 'assignJob');
 const acceptJobFn = httpsCallable<{ jobId: string }, { status: string }>(functions, 'acceptJob');
 const declineJobFn = httpsCallable<{ jobId: string }, { status: string }>(functions, 'declineJob');
 const completeJobFn = httpsCallable<{ jobId: string }, { status: string }>(functions, 'completeJob');
+const completeJobAsAdminFn = httpsCallable<{ jobId: string }, { status: string }>(functions, 'completeJobAsAdmin');
 const cancelJobFn = httpsCallable<{ jobId: string; reason?: string }, { status: string }>(functions, 'cancelJob');
 
-export async function createJob(input: { technicianId?: string; farmerName?: string; farmerPhone?: string; description: string }) {
+export async function createJob(input: JobFields & { technicianId?: string }) {
   const result = await createJobFn(input);
-  return result.data.jobId;
+  return result.data.jobCode;
+}
+
+export async function updateJob(jobId: string, fields: JobFields) {
+  await updateJobFn({ jobId, ...fields });
+}
+
+export async function deleteJob(jobId: string) {
+  await deleteJobFn({ jobId });
+}
+
+export async function completeJobAsAdmin(jobId: string) {
+  await completeJobAsAdminFn({ jobId });
 }
 
 export async function assignJob(jobId: string, technicianId: string) {

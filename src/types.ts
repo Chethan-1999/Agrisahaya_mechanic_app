@@ -50,17 +50,34 @@ export const PROFILE_UPDATE_LIFETIME_CAP_DISPLAY = 2;
 export type JobStatus = 'open' | 'assigned' | 'accepted' | 'declined' | 'completed' | 'cancelled';
 
 export type JobHistoryEntry = {
-  action: 'create' | 'assign' | 'accept' | 'decline' | 'complete' | 'cancel';
+  action: 'create' | 'edit' | 'assign' | 'accept' | 'decline' | 'complete' | 'cancel';
   by: string;
   at: string;
   [extra: string]: unknown;
 };
 
-export type Job = {
-  id: string;
-  technicianId: string | null;
+export type JobFields = {
   farmerName: string;
   farmerPhone: string;
+  equipment: string;
+  issue: string;
+  district: string;
+  additionalNotes: string;
+};
+
+export const emptyJobFields: JobFields = {
+  farmerName: '',
+  farmerPhone: '',
+  equipment: '',
+  issue: '',
+  district: '',
+  additionalNotes: '',
+};
+
+export type Job = JobFields & {
+  id: string;
+  jobCode: string;
+  technicianId: string | null;
   description: string;
   status: JobStatus;
   createdAt: string;

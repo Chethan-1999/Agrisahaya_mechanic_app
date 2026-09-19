@@ -28,30 +28,81 @@ async function bumpJobStats(technicianId: string, delta: JobStatsDelta): Promise
   });
 }
 
+type JobFields = {
+  farmerName: string;
+  farmerPhone: string;
+  equipment: string;
+  issue: string;
+  district: string;
+  additionalNotes: string;
+};
+
+const trimmed = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
+
+/** Validates the six admin-entered job fields; the client form checks the same rules, but never trust the client alone. */
+function parseJobFields(data: Record<string, unknown>): JobFields {
+  const fields: JobFields = {
+    farmerName: trimmed(data.farmerName),
+    farmerPhone: trimmed(data.farmerPhone),
+    equipment: trimmed(data.equipment),
+    issue: trimmed(data.issue),
+    district: trimmed(data.district),
+    additionalNotes: trimmed(data.additionalNotes),
+  };
+
+  if (!fields.farmerName || !fields.farmerPhone || !fields.equipment || !fields.issue || !fields.district) {
+    throw new HttpsError('invalid-argument', 'Customer name, phone number, equipment, issue, and district are required.');
+  }
+  if (!/^\d{10}$/.test(fields.farmerPhone)) {
+    throw new HttpsError('invalid-argument', 'Phone number must be exactly 10 digits.');
+  }
+
+  return fields;
+}
+
+/** `description` stays a single derived line so technician screens and push bodies keep working for every job. */
+const describeJob = ({ equipment, issue }: Pick<JobFields, 'equipment' | 'issue'>) => `${equipment} — ${issue}`;
+
+/** Human-readable id like "#26091901" (YYMMDD + per-day sequence), allocated in a transaction so concurrent creates never collide. */
+async function nextJobCode(now: Date): Promise<string> {
+  const day = `${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+  const ref = db.collection('counters').doc(`jobs-${day}`);
+
+  const sequence = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const next = ((snap.data()?.value as number | undefined) ?? 0) + 1;
+    tx.set(ref, { value: next });
+    return next;
+  });
+
+  return `#${day}${String(sequence).padStart(2, '0')}`;
+}
+
 /** Admin logs a call. With a technicianId it's assigned immediately; without one it's left "open" for assignJob later. */
 export const createJob = onCall(async (request) => {
   const adminUid = await requireAdmin(request);
-  const { technicianId, farmerName, farmerPhone, description } = request.data ?? {};
-
-  if (typeof description !== 'string' || !description.trim()) {
-    throw new HttpsError('invalid-argument', 'A job description is required.');
-  }
+  const data = request.data ?? {};
+  const fields = parseJobFields(data);
+  const { technicianId } = data;
 
   const isAssigning = typeof technicianId === 'string' && technicianId;
   if (isAssigning) {
     await requireActiveTechnician(technicianId);
   }
 
-  const now = new Date().toISOString();
+  const now = new Date();
+  const createdAt = now.toISOString();
+  const jobCode = await nextJobCode(now);
+  const description = describeJob(fields);
   const ref = db.collection('jobs').doc();
 
   await ref.set({
+    ...fields,
+    jobCode,
+    description,
     technicianId: isAssigning ? technicianId : null,
-    farmerName: typeof farmerName === 'string' ? farmerName.trim() : '',
-    farmerPhone: typeof farmerPhone === 'string' ? farmerPhone.trim() : '',
-    description: description.trim(),
     status: isAssigning ? 'assigned' : 'open',
-    createdAt: now,
+    createdAt,
     createdBy: adminUid,
     cancelledBy: null,
     cancelReason: null,
@@ -66,15 +117,68 @@ export const createJob = onCall(async (request) => {
     await bumpJobStats(technicianId, { pending: 1 });
     await pushToTechnician(technicianId, {
       title: 'New job assigned',
-      body: description.trim().slice(0, 120),
+      body: description.slice(0, 120),
       data: { type: 'job-assigned', jobId: ref.id },
     });
   }
 
-  return { status: 'ok', jobId: ref.id };
+  return { status: 'ok', jobId: ref.id, jobCode };
 });
 
-/** Admin assigns (or re-assigns, after a decline) an open job to a technician. */
+/** Admin edits the six entered fields. Finished jobs (completed/cancelled) are frozen. */
+export const updateJob = onCall(async (request) => {
+  const adminUid = await requireAdmin(request);
+  const { jobId } = request.data ?? {};
+
+  if (typeof jobId !== 'string') throw new HttpsError('invalid-argument', 'jobId is required.');
+
+  const fields = parseJobFields(request.data);
+  const ref = db.collection('jobs').doc(jobId);
+  const snap = await requireDoc(ref, 'Job not found.');
+  const data = snap.data() as { status: string };
+
+  if (data.status === 'completed' || data.status === 'cancelled') {
+    throw new HttpsError('failed-precondition', 'A finished job can no longer be edited.');
+  }
+
+  await ref.update({
+    ...fields,
+    description: describeJob(fields),
+    history: FieldValue.arrayUnion(historyEntry('edit', adminUid)),
+  });
+
+  return { status: 'ok' };
+});
+
+/**
+ * Admin removes a job. A completed job stays (it backs the technician's completed count and history);
+ * one still held by a technician releases that technician's pending count and clears their notification.
+ */
+export const deleteJob = onCall(async (request) => {
+  await requireAdmin(request);
+  const { jobId } = request.data ?? {};
+
+  if (typeof jobId !== 'string') throw new HttpsError('invalid-argument', 'jobId is required.');
+
+  const ref = db.collection('jobs').doc(jobId);
+  const snap = await requireDoc(ref, 'Job not found.');
+  const data = snap.data() as { technicianId: string | null; status: string };
+
+  if (data.status === 'completed') {
+    throw new HttpsError('failed-precondition', 'A completed job cannot be deleted.');
+  }
+
+  await ref.delete();
+
+  if (data.technicianId && (data.status === 'assigned' || data.status === 'accepted')) {
+    await bumpJobStats(data.technicianId, { pending: -1 });
+    await pushDismiss(data.technicianId, jobId);
+  }
+
+  return { status: 'ok' };
+});
+
+/** Admin assigns an open job, or re-assigns one that was declined or is still held by another technician (who must accept again). */
 export const assignJob = onCall(async (request) => {
   const adminUid = await requireAdmin(request);
   const { jobId, technicianId } = request.data ?? {};
@@ -87,21 +191,31 @@ export const assignJob = onCall(async (request) => {
   const snap = await requireDoc(ref, 'Job not found.');
   const data = snap.data() as { technicianId: string | null; status: string; description: string };
 
-  if (data.status !== 'open' && data.status !== 'declined') {
-    throw new HttpsError('failed-precondition', 'Only an open or declined job can be (re)assigned.');
+  if (data.status === 'completed' || data.status === 'cancelled') {
+    throw new HttpsError('failed-precondition', 'A finished job cannot be (re)assigned.');
+  }
+
+  const previousTechnicianId = data.technicianId;
+  const previouslyHeld = data.status === 'assigned' || data.status === 'accepted';
+
+  if (previouslyHeld && previousTechnicianId === technicianId) {
+    throw new HttpsError('failed-precondition', 'This job is already assigned to that technician.');
   }
 
   await requireActiveTechnician(technicianId);
 
-  const previousTechnicianId = data.technicianId;
-
   await ref.update({
     technicianId,
     status: 'assigned',
+    acceptedAt: null,
     history: FieldValue.arrayUnion(historyEntry('assign', adminUid, { technicianId, reassignedFrom: previousTechnicianId })),
   });
   await bumpJobStats(technicianId, { pending: 1 });
 
+  // A declined job already released its pending count in declineJob; a held one releases it here.
+  if (previousTechnicianId && previouslyHeld) {
+    await bumpJobStats(previousTechnicianId, { pending: -1 });
+  }
   if (previousTechnicianId && previousTechnicianId !== technicianId) {
     await pushDismiss(previousTechnicianId, jobId);
   }
@@ -111,6 +225,32 @@ export const assignJob = onCall(async (request) => {
     body: data.description.slice(0, 120),
     data: { type: 'job-assigned', jobId },
   });
+
+  return { status: 'ok' };
+});
+
+/** Admin closes a job on the technician's behalf (e.g. done by phone). Same end state and stats as completeJob, flagged in history. */
+export const completeJobAsAdmin = onCall(async (request) => {
+  const adminUid = await requireAdmin(request);
+  const { jobId } = request.data ?? {};
+
+  if (typeof jobId !== 'string') throw new HttpsError('invalid-argument', 'jobId is required.');
+
+  const ref = db.collection('jobs').doc(jobId);
+  const snap = await requireDoc(ref, 'Job not found.');
+  const data = snap.data() as { technicianId: string | null; status: string };
+
+  if ((data.status !== 'assigned' && data.status !== 'accepted') || !data.technicianId) {
+    throw new HttpsError('failed-precondition', 'Only a job held by a technician can be marked complete.');
+  }
+
+  await ref.update({
+    status: 'completed',
+    completedAt: new Date().toISOString(),
+    history: FieldValue.arrayUnion(historyEntry('complete', adminUid, { adminOverride: true })),
+  });
+  await bumpJobStats(data.technicianId, { pending: -1, completed: 1 });
+  await pushDismiss(data.technicianId, jobId);
 
   return { status: 'ok' };
 });

@@ -2,12 +2,12 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { BriefcaseBusiness, Headphones, Megaphone, Store, UserRound } from 'lucide-react';
+import { BriefcaseBusiness, Headphones, UsersRound, Store, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import agrisahayaLogo from '../image.png';
 import { PullToRefresh } from './components/PullToRefresh';
-import { Input, LanguageSelector, Metric, Select, formatDate, getErrorMessage, jobStatusMeta, type Toast } from './components/ui';
+import { ConfirmModal, Input, LanguageSelector, Metric, Select, formatDate, getErrorMessage, jobStatusMeta, type ConfirmDialog, type Toast } from './components/ui';
 import { auth, db, firebaseConfigured } from './firebase';
 import { usePhoneOtp } from './hooks/usePhoneOtp';
 import { useI18n } from './i18n/I18nContext';
@@ -27,20 +27,13 @@ import { initNotifications } from './services/notifications';
 import type { AdminProfile, AppSession, Job, Mechanic, MechanicForm } from './types';
 import { emptyMechanicForm } from './types';
 import { hasErrors, validateProfileForm, type ValidationErrors } from './utils/validation';
-import { AdminAnnouncements } from './screens/AdminAnnouncements';
-import { AdminJobBoard } from './screens/AdminJobBoard';
+import { AdminAddJobs } from './screens/AdminAddJobs';
+import { AdminAssignJobs } from './screens/AdminAssignJobs';
+import { AdminCommunity } from './screens/AdminCommunity';
 import { AdminProfileRequests } from './screens/AdminProfileRequests';
-import { Announcements } from './screens/Announcements';
+import { Community } from './screens/Community';
 import { RequestProfileChange } from './screens/RequestProfileChange';
 import { TechnicianJobs } from './screens/TechnicianJobs';
-
-type ConfirmDialog = {
-  title: string;
-  message: string;
-  confirmLabel: string;
-  kind?: 'danger' | 'primary';
-  onConfirm: () => void;
-} | null;
 
 type Page =
   | 'landing'
@@ -50,13 +43,14 @@ type Page =
   | 'mechanicProfile'
   | 'mechanicJobs'
   | 'mechanicRequestChange'
-  | 'mechanicAnnouncements'
+  | 'mechanicCommunity'
   | 'adminLogin'
   | 'adminDashboard'
   | 'adminMechanics'
-  | 'adminJobs'
+  | 'adminAddJobs'
+  | 'adminAssignJobs'
+  | 'adminCommunity'
   | 'adminProfileRequests'
-  | 'adminAnnouncements'
   | 'adminSettings'
   | 'adminDetails'
   | 'adminEdit';
@@ -64,9 +58,10 @@ type Page =
 const navItems: Array<{ label: string; page: Page }> = [
   { label: 'Dashboard', page: 'adminDashboard' },
   { label: 'Mechanics', page: 'adminMechanics' },
-  { label: 'Jobs', page: 'adminJobs' },
+  { label: 'Add new jobs', page: 'adminAddJobs' },
+  { label: 'Assign jobs', page: 'adminAssignJobs' },
+  { label: 'Community', page: 'adminCommunity' },
   { label: 'Profile Requests', page: 'adminProfileRequests' },
-  { label: 'Announcements', page: 'adminAnnouncements' },
   { label: 'Settings', page: 'adminSettings' },
 ];
 
@@ -74,7 +69,7 @@ const SUPPORT_NUMBER = '9646424964';
 
 const mechanicTabs: Array<{ Icon: typeof BriefcaseBusiness; label: string; page: Page }> = [
   { Icon: BriefcaseBusiness, label: 'Jobs', page: 'mechanicJobs' },
-  { Icon: Megaphone, label: 'Announcements', page: 'mechanicAnnouncements' },
+  { Icon: UsersRound, label: 'Community', page: 'mechanicCommunity' },
   { Icon: Store, label: 'Marketplace', page: 'mechanicMarketplace' },
   { Icon: UserRound, label: 'Profile', page: 'mechanicProfile' },
 ];
@@ -103,12 +98,13 @@ const backTarget: Partial<Record<Page, Page>> = {
   adminLogin: 'landing',
   mechanicProfile: 'mechanicJobs',
   mechanicMarketplace: 'mechanicJobs',
-  mechanicAnnouncements: 'mechanicJobs',
+  mechanicCommunity: 'mechanicJobs',
   mechanicRequestChange: 'mechanicProfile',
   adminMechanics: 'adminDashboard',
-  adminJobs: 'adminDashboard',
+  adminAddJobs: 'adminDashboard',
+  adminAssignJobs: 'adminDashboard',
+  adminCommunity: 'adminDashboard',
   adminProfileRequests: 'adminDashboard',
-  adminAnnouncements: 'adminDashboard',
   adminSettings: 'adminDashboard',
   adminDetails: 'adminMechanics',
   adminEdit: 'adminMechanics',
@@ -229,7 +225,7 @@ export default function App() {
   useEffect(() => {
     if (session?.role !== 'mechanic' || currentMechanic?.status !== 'active') return;
 
-    if (page === 'mechanicAnnouncements') {
+    if (page === 'mechanicCommunity') {
       writeAnnouncementsSeenAt(session.mechanicId, new Date().toISOString());
       setUnreadAnnouncements(0);
     } else {
@@ -390,7 +386,7 @@ export default function App() {
               withLoading={withLoading}
             />
           )}
-          {page === 'mechanicAnnouncements' && <Announcements withLoading={withLoading} />}
+          {page === 'mechanicCommunity' && <Community withLoading={withLoading} />}
           {page === 'mechanicMarketplace' && <MarketplaceComingSoon />}
           {page === 'mechanicProfile' && (
             <MechanicProfile
@@ -472,9 +468,10 @@ export default function App() {
               }}
             />
           )}
-          {page === 'adminJobs' && <AdminJobBoard mechanics={mechanics} setToast={setToast} withLoading={withLoading} />}
+          {page === 'adminAddJobs' && <AdminAddJobs askConfirm={setConfirmDialog} jobs={jobs} onRefresh={loadJobs} setToast={setToast} withLoading={withLoading} />}
+          {page === 'adminAssignJobs' && <AdminAssignJobs askConfirm={setConfirmDialog} jobs={jobs} mechanics={mechanics} onRefresh={loadJobs} setToast={setToast} withLoading={withLoading} />}
           {page === 'adminProfileRequests' && <AdminProfileRequests mechanics={mechanics} setToast={setToast} withLoading={withLoading} />}
-          {page === 'adminAnnouncements' && <AdminAnnouncements setToast={setToast} withLoading={withLoading} />}
+          {page === 'adminCommunity' && <AdminCommunity setToast={setToast} withLoading={withLoading} />}
           {page === 'adminSettings' && <Settings darkMode={darkMode} onToggleDarkMode={setDarkMode} />}
           {page === 'adminDetails' && selectedMechanic && (
             <DetailPage editable mechanic={selectedMechanic} onBack={() => setPage('adminMechanics')} onEdit={() => setPage('adminEdit')} title="Mechanic Details" />
@@ -678,7 +675,7 @@ function MechanicShell({ activePage, children, onLogout, onNavigate, unreadAnnou
   const [showSupport, setShowSupport] = useState(false);
   const labels: Partial<Record<Page, string>> = {
     mechanicJobs: t('jobsNav'),
-    mechanicAnnouncements: t('announcementsNav'),
+    mechanicCommunity: t('communityNav'),
     mechanicProfile: t('profileNav'),
   };
 
@@ -702,7 +699,7 @@ function MechanicShell({ activePage, children, onLogout, onNavigate, unreadAnnou
       <nav className="mechanic-bottom-nav" aria-label="Technician navigation">
         {mechanicTabs.map(({ Icon, label, page }) => (
           <button className={activePage === page ? 'active' : ''} key={page} onClick={() => onNavigate(page)} type="button">
-            <span><Icon size={19} strokeWidth={2.4} />{page === 'mechanicAnnouncements' && unreadAnnouncements > 0 && <b>{unreadAnnouncements}</b>}</span>
+            <span><Icon size={19} strokeWidth={2.4} />{page === 'mechanicCommunity' && unreadAnnouncements > 0 && <b>{unreadAnnouncements}</b>}</span>
             {labels[page] ?? label}
           </button>
         ))}
@@ -774,21 +771,6 @@ function AdminShell({ activePage, children, darkMode, onLogout, onNavigate, onTo
   );
 }
 
-function ConfirmModal({ dialog, onCancel, onConfirm }: { dialog: NonNullable<ConfirmDialog>; onCancel: () => void; onConfirm: () => void }) {
-  return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={onCancel}>
-      <section aria-modal="true" className="confirm-modal" role="dialog" onMouseDown={(event) => event.stopPropagation()}>
-        <h2>{dialog.title}</h2>
-        <p>{dialog.message}</p>
-        <div className="modal-actions">
-          <button className="secondary" onClick={onCancel} type="button">Cancel</button>
-          <button className={dialog.kind === 'danger' ? 'danger' : 'primary'} onClick={onConfirm} type="button">{dialog.confirmLabel}</button>
-        </div>
-      </section>
-    </div>
-  );
-}
-
 // Jobs count as "assigned" once a technician holds them (assigned → accepted → completed); open/cancelled/declined don't.
 function isAssignedJob(job: Job) {
   return job.status === 'assigned' || job.status === 'accepted' || job.status === 'completed';
@@ -843,8 +825,8 @@ function AdminDashboard({ active, inactive, jobs, mechanics, pending, total }: {
               return (
                 <div className="recent-job-item" key={job.id}>
                   <div>
-                    <strong>{job.farmerName || '-'}</strong>
-                    <p>{job.description}</p>
+                    <strong>{job.jobCode || job.farmerName || '-'}</strong>
+                    <p>{job.equipment ? `${job.equipment} - ${job.issue}` : job.description}</p>
                   </div>
                   <span className={`pill ${meta.pillClass}`}>{meta.label}</span>
                 </div>

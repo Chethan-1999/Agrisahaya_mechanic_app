@@ -47,6 +47,7 @@ export type StringKey =
   | 'profileNav'
   | 'requestChangeNav'
   | 'announcementsNav'
+  | 'communityNav'
   | 'announcementsTitle'
   | 'noAnnouncementsYet'
   | 'logout'
@@ -118,6 +119,7 @@ const en: Record<StringKey, string> = {
   profileNav: 'Profile',
   requestChangeNav: 'Request Change',
   announcementsNav: 'Announcements',
+  communityNav: 'Community',
   announcementsTitle: 'Announcements',
   noAnnouncementsYet: 'No announcements yet.',
   logout: 'Logout',
@@ -190,6 +192,7 @@ const hi: Record<StringKey, string> = {
   profileNav: 'प्रोफाइल',
   requestChangeNav: 'बदलाव का अनुरोध',
   announcementsNav: 'घोषणाएं',
+  communityNav: 'समुदाय',
   announcementsTitle: 'घोषणाएं',
   noAnnouncementsYet: 'अभी तक कोई घोषणा नहीं है।',
   logout: 'लॉगआउट',
@@ -262,6 +265,7 @@ const kn: Record<StringKey, string> = {
   profileNav: 'ಪ್ರೊಫೈಲ್',
   requestChangeNav: 'ಬದಲಾವಣೆ ಕೋರಿಕೆ',
   announcementsNav: 'ಪ್ರಕಟಣೆಗಳು',
+  communityNav: 'ಸಮುದಾಯ',
   announcementsTitle: 'ಪ್ರಕಟಣೆಗಳು',
   noAnnouncementsYet: 'ಇನ್ನೂ ಯಾವುದೇ ಪ್ರಕಟಣೆ ಇಲ್ಲ.',
   logout: 'ಲಾಗ್ ಔಟ್',
@@ -334,6 +338,7 @@ const ta: Record<StringKey, string> = {
   profileNav: 'சுயவிவரம்',
   requestChangeNav: 'மாற்றம் கோரிக்கை',
   announcementsNav: 'அறிவிப்புகள்',
+  communityNav: 'சமூகம்',
   announcementsTitle: 'அறிவிப்புகள்',
   noAnnouncementsYet: 'இதுவரை அறிவிப்புகள் இல்லை.',
   logout: 'லாக் அவுட்',
@@ -406,6 +411,7 @@ const te: Record<StringKey, string> = {
   profileNav: 'ప్రొఫైల్',
   requestChangeNav: 'మార్పు అభ్యర్థన',
   announcementsNav: 'ప్రకటనలు',
+  communityNav: 'సంఘం',
   announcementsTitle: 'ప్రకటనలు',
   noAnnouncementsYet: 'ఇంకా ప్రకటనలు లేవు.',
   logout: 'లాగ్ అవుట్',
@@ -478,6 +484,7 @@ const ml: Record<StringKey, string> = {
   profileNav: 'പ്രൊഫൈൽ',
   requestChangeNav: 'മാറ്റത്തിനുള്ള അഭ്യർത്ഥന',
   announcementsNav: 'അറിയിപ്പുകൾ',
+  communityNav: 'കമ്മ്യൂണിറ്റി',
   announcementsTitle: 'അറിയിപ്പുകൾ',
   noAnnouncementsYet: 'ഇതുവരെ അറിയിപ്പുകൾ ഇല്ല.',
   logout: 'ലോഗ് ഔട്ട്',

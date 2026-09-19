@@ -3,6 +3,14 @@ import type { JobStatus } from '../types';
 
 export type Toast = { kind: 'success' | 'error'; text: string } | null;
 
+export type ConfirmDialog = {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  kind?: 'danger' | 'primary';
+  onConfirm: () => void;
+} | null;
+
 export function LanguageSelector({ label, language, onChange }: { label: string; language: LanguageCode; onChange: (value: LanguageCode) => void }) {
   return (
     <label className="language-select">
@@ -60,4 +68,19 @@ export function formatDate(value: string) {
 
 export function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Something went wrong.';
+}
+
+export function ConfirmModal({ dialog, onCancel, onConfirm }: { dialog: NonNullable<ConfirmDialog>; onCancel: () => void; onConfirm: () => void }) {
+  return (
+    <div className="modal-backdrop" role="presentation" onMouseDown={onCancel}>
+      <section aria-modal="true" className="confirm-modal" role="dialog" onMouseDown={(event) => event.stopPropagation()}>
+        <h2>{dialog.title}</h2>
+        <p>{dialog.message}</p>
+        <div className="modal-actions">
+          <button className="secondary" onClick={onCancel} type="button">Cancel</button>
+          <button className={dialog.kind === 'danger' ? 'danger' : 'primary'} onClick={onConfirm} type="button">{dialog.confirmLabel}</button>
+        </div>
+      </section>
+    </div>
+  );
 }

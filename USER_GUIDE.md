@@ -100,7 +100,7 @@ Log in from **Admin Login** on the landing screen with the email/password an
 admin account was created with (see the README's "Bootstrap the first admin"
 section — there's no self-service admin signup).
 
-The admin console has five sections in the side/top nav:
+The admin console has these sections in the side/top nav:
 
 ### Dashboard
 
@@ -118,18 +118,29 @@ status). For each technician you can:
 - **Edit** their record directly (as opposed to a technician's own
   request-and-approve flow)
 
-### Jobs (Job Board)
+### Add new jobs
 
-- **New Job** — log a job with the farmer's name, phone, and a description,
-  optionally assigning it to an active technician right away, or leaving it
-  unassigned to assign later.
-- Each row shows the job, farmer, assigned technician, status, and when it was
-  logged.
-- **Assign / Reassign** — for any job that's open or was declined, pick a
-  technician from the dropdown and tap **Assign**.
-- **Cancel** — available for open, assigned, or accepted jobs. You'll be asked
-  for an optional reason. **Only admins can cancel a job** — technicians can
-  accept, decline, or complete, but never cancel.
+- **Add job** — log a job with the customer's name, a 10-digit phone number,
+  equipment, issue, district and optional notes. Each job gets an ID like
+  `#26091901` (date + daily sequence).
+- **Edit** any job that isn't completed or cancelled; **Delete** any job that
+  isn't completed (a technician holding it is released and notified).
+
+### Assign jobs
+
+- Pick an active technician from the dropdown and tap **Save**. A job that's
+  open or was declined can be assigned directly; a job already held by a
+  technician is unlocked with **Edit** and **reassigned** (the new technician
+  must accept it again, and the previous one's job is withdrawn).
+- Tick **Completed** to close a job on the technician's behalf.
+- **Cancel job** — available until a job is completed or cancelled. **Only
+  admins can cancel a job** — technicians can accept, decline, or complete,
+  but never cancel.
+
+### Community
+
+Post a title and message that every active technician sees in the app's
+Community tab (and receives as a push notification).
 
 ### Profile Requests
 

@@ -6,7 +6,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { listAnnouncements } from '../services/announcements';
 import type { Announcement } from '../types';
 
-export function Announcements({ withLoading }: {
+export function Community({ withLoading }: {
   withLoading: (action: () => Promise<void>) => Promise<void>;
 }) {
   const { t } = useI18n();
@@ -25,8 +25,8 @@ export function Announcements({ withLoading }: {
       <section className="mechanic-community-screen">
         <div className="mechanic-screen-hero community-hero">
           <div>
-            <p className="eyebrow">{t('announcementsNav')}</p>
-            <h1>{t('announcementsTitle')}</h1>
+            <p className="eyebrow">{t('communityNav')}</p>
+            <h1>{t('communityNav')}</h1>
           </div>
           <span>{announcements.length}</span>
         </div>
