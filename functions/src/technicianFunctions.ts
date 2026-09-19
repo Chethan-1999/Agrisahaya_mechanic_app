@@ -4,6 +4,7 @@ import { requireAdmin } from './lib/authz';
 import { requireDoc } from './lib/docHelpers';
 import { auth, db } from './lib/firebaseAdmin';
 import { pushToTechnician } from './lib/push';
+import { assertValidProfile, type ProfileInput } from './lib/validation';
 
 /** Admin approves or rejects a pending technician. This is the activation gate. */
 export const reviewSignup = onCall(async (request) => {
@@ -123,6 +124,51 @@ export const revokeOtherSessions = onCall(async (request) => {
   } catch (err) {
     console.warn(`revokeOtherSessions failed for ${uid}:`, err);
   }
+
+  return { status: 'ok' };
+});
+
+const ADMIN_EDITABLE_FIELDS = [
+  'fullName',
+  'village',
+  'district',
+  'state',
+  'pincode',
+  'address',
+  'landmark',
+  'age',
+  'experience',
+] as const;
+
+/** Admin edits a technician's profile fields directly (phone number and status are not editable here). */
+export const adminUpdateProfile = onCall(async (request) => {
+  const adminUid = await requireAdmin(request);
+  const { technicianId, profile } = request.data ?? {};
+
+  if (typeof technicianId !== 'string' || !profile || typeof profile !== 'object') {
+    throw new HttpsError('invalid-argument', 'technicianId and profile are required.');
+  }
+
+  const ref = db.collection('technicians').doc(technicianId);
+  const snap = await requireDoc(ref, 'Technician not found.');
+
+  const updates: Record<string, string> = {};
+  for (const field of ADMIN_EDITABLE_FIELDS) {
+    const value = (profile as Record<string, unknown>)[field];
+    if (value === undefined) continue;
+    if (typeof value !== 'string') {
+      throw new HttpsError('invalid-argument', `"${field}" must be text.`);
+    }
+    updates[field] = value.trim();
+  }
+
+  try {
+    assertValidProfile({ ...(snap.data() as ProfileInput), ...updates });
+  } catch (err) {
+    throw new HttpsError('invalid-argument', err instanceof Error ? err.message : 'Invalid profile.');
+  }
+
+  await ref.update({ ...updates, editedBy: adminUid, updatedAt: new Date().toISOString() });
 
   return { status: 'ok' };
 });

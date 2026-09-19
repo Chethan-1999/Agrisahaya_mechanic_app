@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, orderBy, query, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, orderBy, query } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 
 import { db, functions } from '../firebase';
@@ -51,18 +51,13 @@ export async function listMechanics() {
   return snapshot.docs.map((mechanicDoc) => toMechanic(mechanicDoc.id, mechanicDoc.data()));
 }
 
-/**
- * Admin-only direct edit of profile fields (name, address, etc — not status).
- * Interim only: firestore.rules already denies this to anyone but the Admin
- * SDK, so this call starts failing the moment the new rules are deployed.
- * TODO(M3): move behind a reviewed Cloud Function once profile-update
- * review exists for admin edits too, not just technician-submitted ones.
- */
-export async function adminUpdateProfile(id: string, form: Partial<MechanicForm>) {
-  await updateDoc(doc(db, collectionName, id), {
-    ...form,
-    updatedAt: new Date().toISOString(),
-  });
+const adminUpdateProfileFn = httpsCallable<
+  { technicianId: string; profile: Partial<MechanicForm> },
+  { status: 'ok' }
+>(functions, 'adminUpdateProfile');
+
+export async function adminUpdateProfile(technicianId: string, profile: Partial<MechanicForm>) {
+  await adminUpdateProfileFn({ technicianId, profile });
 }
 
 const reviewSignupFn = httpsCallable<

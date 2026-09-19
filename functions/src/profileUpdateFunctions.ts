@@ -4,6 +4,7 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { requireAdmin } from './lib/authz';
 import { requireDoc } from './lib/docHelpers';
 import { db } from './lib/firebaseAdmin';
+import { isIndianState } from './lib/indianStates';
 import { PROFILE_UPDATE_LIFETIME_CAP } from './lib/params';
 import { profileHistoryEntry } from './lib/profileHistory';
 import { pushToTechnician } from './lib/push';
@@ -54,6 +55,9 @@ export const submitProfileUpdate = onCall(async (request) => {
     }
     if (typeof value !== 'string') {
       throw new HttpsError('invalid-argument', `"${field}" must be text.`);
+    }
+    if (field === 'state' && !isIndianState(value)) {
+      throw new HttpsError('invalid-argument', 'Select a valid Indian state.');
     }
   }
 

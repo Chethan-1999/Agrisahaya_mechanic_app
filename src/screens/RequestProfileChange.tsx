@@ -90,7 +90,7 @@ export function RequestProfileChange({ mechanic, onBack, onSubmitted, setToast, 
         <Input error={errors.fullName} label={t('fullName')} onChange={(value) => updateField('fullName', value)} value={form.fullName} />
         <Input error={errors.village} label={t('village')} onChange={(value) => updateField('village', value)} value={form.village} />
         <Input error={errors.district} label={t('district')} onChange={(value) => updateField('district', value)} value={form.district} />
-        <Input label={t('state')} onChange={(value) => updateField('state', value)} value={form.state} />
+        <Input error={errors.state} label={t('state')} onChange={(value) => updateField('state', value)} value={form.state} />
         <Input error={errors.pincode} label={t('pincode')} onChange={(value) => updateField('pincode', value)} value={form.pincode} />
         <Input label={t('address')} onChange={(value) => updateField('address', value)} value={form.address} />
         <Input label={t('landmarkOptional')} onChange={(value) => updateField('landmark', value)} value={form.landmark} />
