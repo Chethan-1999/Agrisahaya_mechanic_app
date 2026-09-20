@@ -53,7 +53,7 @@ export const PROFILE_UPDATE_LIFETIME_CAP_DISPLAY = 2;
 export type JobStatus = 'open' | 'assigned' | 'reassigned' | 'accepted' | 'declined' | 'completed' | 'cancelled';
 
 export type JobHistoryEntry = {
-  action: 'create' | 'edit' | 'assign' | 'reassign' | 'accept' | 'decline' | 'complete' | 'cancel' | 'delete';
+  action: 'create' | 'edit' | 'assign' | 'reassign' | 'release' | 'accept' | 'decline' | 'complete' | 'cancel' | 'delete';
   by: string;
   at: string;
   [extra: string]: unknown;
@@ -95,6 +95,8 @@ export type Job = JobFields & {
   statusUpdatedAt: string;
   /** Soft-deleted jobs are kept for the counts and history but hidden from every list. */
   deleted: boolean;
+  /** Taken back from a deactivated technician and waiting to be assigned again. */
+  needsReassignment: boolean;
   history: JobHistoryEntry[];
 };
 

@@ -369,3 +369,9 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; }
 .pull-indicator { display: flex; align-items: center; justify-content: center; overflow: hidden; transition: height 150ms ease; }
 .pull-indicator span { width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; }
 .pull-indicator span.spin { animation: spin 800ms linear infinite; }
+
+/* A job taken back from a deactivated mechanic: light-red frame so it stands out until it is assigned again. */
+tr.needs-reassign td { background: #fff5f5; border-top: 2px solid #f3b7b7; border-bottom: 2px solid #f3b7b7; }
+tr.needs-reassign td:first-child { border-left: 2px solid #f3b7b7; }
+tr.needs-reassign td:last-child { border-right: 2px solid #f3b7b7; }
+.needs-reassign-note { display: block; margin-top: 4px; color: #b42318; font-weight: 700; }

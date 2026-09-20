@@ -88,7 +88,7 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
                 : activeTechnicians;
 
               return (
-                <tr key={job.id}>
+                <tr className={job.needsReassignment && job.status === 'open' ? 'needs-reassign' : undefined} key={job.id}>
                   <td>{job.jobCode || '-'}</td>
                   <td>{job.farmerName || '-'}</td>
                   <td>{job.farmerPhone || '-'}</td>
@@ -98,7 +98,7 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
                   <td>
                     {currentName || finished
                       ? <span className={job.status === 'completed' ? 'assignment-status completed' : 'assignment-status'}><strong>{meta.label.toUpperCase()}</strong>{currentName && <small>{currentName}</small>}</span>
-                      : <span className="not-assigned">{job.status === 'declined' ? 'Declined — reassign' : 'Not assigned'}</span>}
+                      : <span className="not-assigned">{job.status === 'declined' ? 'Declined — reassign' : job.needsReassignment ? 'Mechanic deactivated — reassign' : 'Not assigned'}</span>}
                   </td>
                   <td>
                     <select aria-label={`Assign mechanic for ${job.jobCode || job.farmerName}`} disabled={locked} onChange={(event) => setSelected((current) => ({ ...current, [job.id]: event.target.value }))} value={technicianId}>

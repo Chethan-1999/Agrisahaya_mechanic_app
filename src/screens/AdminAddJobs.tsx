@@ -136,7 +136,7 @@ export function AdminAddJobs({ askConfirm, jobs, onRefresh, setToast, withLoadin
                 const meta = jobStatusMeta(job.status);
                 const finished = job.status === 'completed' || job.status === 'cancelled';
                 return (
-                  <tr key={job.id}>
+                  <tr className={job.needsReassignment && job.status === 'open' ? 'needs-reassign' : undefined} key={job.id}>
                     <td>{job.jobCode || '-'}</td>
                     <td>{job.farmerName || '-'}</td>
                     <td>{job.farmerPhone || '-'}</td>
@@ -144,7 +144,7 @@ export function AdminAddJobs({ askConfirm, jobs, onRefresh, setToast, withLoadin
                     <td>{job.issue || '-'}</td>
                     <td>{job.district || '-'}</td>
                     <td>{job.additionalNotes || '-'}</td>
-                    <td><span className={`pill ${meta.pillClass}`}>{meta.label}</span></td>
+                    <td><span className={`pill ${meta.pillClass}`}>{meta.label}</span>{job.needsReassignment && job.status === 'open' && <small className="needs-reassign-note">Needs reassignment</small>}</td>
                     <td>{formatDate(job.createdAt)}</td>
                     <td className="actions">
                       {!finished && <button onClick={() => startEdit(job)} type="button">Edit</button>}

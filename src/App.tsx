@@ -514,7 +514,7 @@ export default function App() {
                 }
                 setConfirmDialog({
                   title: 'Deactivate mechanic?',
-                  message: `${mechanic.fullName} will lose access until reactivated.`,
+                  message: `${mechanic.fullName} will lose access until reactivated. Any jobs they hold are taken back and marked for reassignment.`,
                   confirmLabel: 'Deactivate',
                   kind: 'danger',
                   onConfirm: toggle,

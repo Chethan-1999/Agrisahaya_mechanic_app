@@ -29,6 +29,7 @@ const toJob = (id: string, data: Record<string, unknown>): Job => ({
   statusUpdatedByRole: data.statusUpdatedByRole === 'admin' || data.statusUpdatedByRole === 'technician' ? data.statusUpdatedByRole : '',
   statusUpdatedAt: String(data.statusUpdatedAt ?? ''),
   deleted: data.deleted === true,
+  needsReassignment: data.needsReassignment === true,
   history: (data.history as JobHistoryEntry[] | undefined) ?? [],
 });
 
