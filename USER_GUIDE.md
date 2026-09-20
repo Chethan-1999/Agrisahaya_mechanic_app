@@ -138,6 +138,9 @@ status). For each technician you can:
   open or was declined can be assigned directly; a job already held by a
   technician is unlocked with **Edit** and **reassigned** (the new technician
   must accept it again, and the previous one is told it was reassigned).
+- Deactivating a technician takes back every job they hold. Those jobs go back
+  to open with a light-red frame and "reassign" label until you assign them
+  again (they then show as reassigned); the technician is told.
 - Tick **Completed** to assign and close a job in one step, or to close a job
   the technician already holds; the technician is told it was completed.
 - **Cancel job** — available until a job is completed or cancelled. **Only
