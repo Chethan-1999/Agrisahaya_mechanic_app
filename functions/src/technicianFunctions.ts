@@ -71,6 +71,7 @@ export const setTechnicianStatus = onCall(async (request) => {
   }
 
   await ref.update({
+    status,
     approvedBy: adminUid,
     updatedAt: new Date().toISOString(),
   });
