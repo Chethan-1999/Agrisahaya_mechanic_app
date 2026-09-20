@@ -33,7 +33,9 @@ support number shown on screen is tap-to-call.
 
 If an admin rejects the signup or later deactivates the account, this same
 screen shows **Account not approved** or **Account deactivated** instead, with
-the reason and the support number to call.
+the reason and the support number to call. A rejected signup shows an
+**Apply again** button: your details are already filled in (and kept on your
+phone), so fix whatever was wrong and send it again — as many times as you need.
 
 ### Logging in
 
@@ -123,16 +125,21 @@ status). For each technician you can:
 - **Add job** — log a job with the customer's name, a 10-digit phone number,
   equipment, issue, district and optional notes. Each job gets an ID like
   `#26091901` (date + daily sequence).
-- **Edit** any job that isn't completed or cancelled; **Delete** any job that
-  isn't completed (a technician holding it is released and notified).
+- **Edit** any job that isn't completed or cancelled (a technician holding it is
+  told the details changed). **Delete** only a declined, cancelled or completed
+  job — cancel a live job first. A deleted job leaves the boards but is kept on
+  record and counted as deleted for the admin and the technician.
+- Pending jobs (open, declined, assigned, accepted) sit at the top of both job
+  boards; completed jobs follow, cancelled ones last.
 
 ### Assign jobs
 
 - Pick an active technician from the dropdown and tap **Save**. A job that's
   open or was declined can be assigned directly; a job already held by a
   technician is unlocked with **Edit** and **reassigned** (the new technician
-  must accept it again, and the previous one's job is withdrawn).
-- Tick **Completed** to close a job on the technician's behalf.
+  must accept it again, and the previous one is told it was reassigned).
+- Tick **Completed** to assign and close a job in one step, or to close a job
+  the technician already holds; the technician is told it was completed.
 - **Cancel job** — available until a job is completed or cancelled. **Only
   admins can cancel a job** — technicians can accept, decline, or complete,
   but never cancel.
