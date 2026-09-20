@@ -52,6 +52,11 @@ export type StringKey =
   | 'inactiveHeading'
   | 'pendingBody'
   | 'rejectedBody'
+  | 'reapplyButton'
+  | 'reapplyTitle'
+  | 'reapplyHint'
+  | 'reapplySubmittedToast'
+  | 'rejectionReasonLabel'
   | 'inactiveBody'
   | 'supportLabel'
   | 'welcome'
@@ -138,6 +143,11 @@ const en: Record<StringKey, string> = {
   inactiveHeading: 'Account deactivated',
   pendingBody: "You'll be notified in the app once your payment and details are verified by admin.",
   rejectedBody: 'Your registration was not approved. Contact support for details.',
+  reapplyButton: 'Apply again',
+  reapplyTitle: 'Apply again',
+  reapplyHint: 'Correct your details if needed, then send them to the admin again.',
+  reapplySubmittedToast: 'Application sent again. Wait for the admin to review it.',
+  rejectionReasonLabel: 'Reason from admin',
   inactiveBody: 'Your account has been deactivated. Contact support to reactivate it.',
   supportLabel: 'Support',
   welcome: 'Welcome',
@@ -225,6 +235,11 @@ const hi: Record<StringKey, string> = {
   inactiveHeading: 'खाता निष्क्रिय कर दिया गया है',
   pendingBody: 'एडमिन द्वारा भुगतान और जानकारी सत्यापित होने पर ऐप में सूचना मिलेगी।',
   rejectedBody: 'आपका रजिस्ट्रेशन स्वीकृत नहीं हुआ। जानकारी के लिए सहायता से संपर्क करें।',
+  reapplyButton: 'फिर से आवेदन करें',
+  reapplyTitle: 'फिर से आवेदन करें',
+  reapplyHint: 'ज़रूरत हो तो अपनी जानकारी सुधारें और दोबारा भेजें।',
+  reapplySubmittedToast: 'आवेदन दोबारा भेज दिया गया। एडमिन की समीक्षा का इंतज़ार करें।',
+  rejectionReasonLabel: 'एडमिन का कारण',
   inactiveBody: 'आपका खाता निष्क्रिय कर दिया गया है। दोबारा चालू करने के लिए सहायता से संपर्क करें।',
   supportLabel: 'सहायता',
   welcome: 'स्वागत है',
@@ -312,6 +327,11 @@ const kn: Record<StringKey, string> = {
   inactiveHeading: 'ಖಾತೆ ನಿಷ್ಕ್ರಿಯಗೊಂಡಿದೆ',
   pendingBody: 'ಅಡ್ಮಿನ್ ಪಾವತಿ ಮತ್ತು ವಿವರಗಳನ್ನು ಪರಿಶೀಲಿಸಿದ ನಂತರ ಆ್ಯಪ್‌ನಲ್ಲಿ ನಿಮಗೆ ತಿಳಿಸಲಾಗುವುದು.',
   rejectedBody: 'ನಿಮ್ಮ ನೋಂದಣಿ ಅನುಮೋದನೆಯಾಗಿಲ್ಲ. ವಿವರಗಳಿಗಾಗಿ ಸಹಾಯವಾಣಿಯನ್ನು ಸಂಪರ್ಕಿಸಿ.',
+  reapplyButton: 'ಮತ್ತೆ ಅರ್ಜಿ ಸಲ್ಲಿಸಿ',
+  reapplyTitle: 'ಮತ್ತೆ ಅರ್ಜಿ ಸಲ್ಲಿಸಿ',
+  reapplyHint: 'ಅಗತ್ಯವಿದ್ದರೆ ನಿಮ್ಮ ವಿವರಗಳನ್ನು ಸರಿಪಡಿಸಿ ಮತ್ತೆ ಕಳುಹಿಸಿ.',
+  reapplySubmittedToast: 'ಅರ್ಜಿಯನ್ನು ಮತ್ತೆ ಕಳುಹಿಸಲಾಗಿದೆ. ನಿರ್ವಾಹಕರ ಪರಿಶೀಲನೆಗಾಗಿ ಕಾಯಿರಿ.',
+  rejectionReasonLabel: 'ನಿರ್ವಾಹಕರ ಕಾರಣ',
   inactiveBody: 'ನಿಮ್ಮ ಖಾತೆಯನ್ನು ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ. ಮರುಸಕ್ರಿಯಗೊಳಿಸಲು ಸಹಾಯವಾಣಿಯನ್ನು ಸಂಪರ್ಕಿಸಿ.',
   supportLabel: 'ಸಹಾಯವಾಣಿ',
   welcome: 'ಸ್ವಾಗತ',
@@ -399,6 +419,11 @@ const ta: Record<StringKey, string> = {
   inactiveHeading: 'கணக்கு முடக்கப்பட்டது',
   pendingBody: 'நிர்வாகி பணம் மற்றும் விவரங்களை சரிபார்த்தவுடன் ஆப்பில் உங்களுக்கு தெரிவிக்கப்படும்.',
   rejectedBody: 'உங்கள் பதிவு ஏற்கப்படவில்லை. விவரங்களுக்கு உதவி மையத்தை தொடர்பு கொள்ளவும்.',
+  reapplyButton: 'மீண்டும் விண்ணப்பிக்கவும்',
+  reapplyTitle: 'மீண்டும் விண்ணப்பிக்கவும்',
+  reapplyHint: 'தேவைப்பட்டால் உங்கள் விவரங்களைத் திருத்தி மீண்டும் அனுப்பவும்.',
+  reapplySubmittedToast: 'விண்ணப்பம் மீண்டும் அனுப்பப்பட்டது. நிர்வாகியின் சரிபார்ப்புக்காகக் காத்திருக்கவும்.',
+  rejectionReasonLabel: 'நிர்வாகியின் காரணம்',
   inactiveBody: 'உங்கள் கணக்கு முடக்கப்பட்டுள்ளது. மீண்டும் இயக்க உதவி மையத்தை தொடர்பு கொள்ளவும்.',
   supportLabel: 'உதவி மையம்',
   welcome: 'வரவேற்பு',
@@ -486,6 +511,11 @@ const te: Record<StringKey, string> = {
   inactiveHeading: 'ఖాతా నిష్క్రియం చేయబడింది',
   pendingBody: 'అడ్మిన్ చెల్లింపు మరియు వివరాలను ధృవీకరించిన తర్వాత యాప్‌లో మీకు తెలియజేయబడుతుంది.',
   rejectedBody: 'మీ నమోదు ఆమోదించబడలేదు. వివరాల కోసం సహాయ కేంద్రాన్ని సంప్రదించండి.',
+  reapplyButton: 'మళ్లీ దరఖాస్తు చేయండి',
+  reapplyTitle: 'మళ్లీ దరఖాస్తు చేయండి',
+  reapplyHint: 'అవసరమైతే మీ వివరాలను సరిచేసి మళ్లీ పంపండి.',
+  reapplySubmittedToast: 'దరఖాస్తు మళ్లీ పంపబడింది. అడ్మిన్ సమీక్ష కోసం వేచి ఉండండి.',
+  rejectionReasonLabel: 'అడ్మిన్ కారణం',
   inactiveBody: 'మీ ఖాతా నిష్క్రియం చేయబడింది. మళ్లీ సక్రియం చేయడానికి సహాయ కేంద్రాన్ని సంప్రదించండి.',
   supportLabel: 'సహాయ కేంద్రం',
   welcome: 'స్వాగతం',
@@ -573,6 +603,11 @@ const ml: Record<StringKey, string> = {
   inactiveHeading: 'അക്കൗണ്ട് നിർജ്ജീവമാക്കി',
   pendingBody: 'അഡ്മിൻ പേയ്‌മെന്റും വിവരങ്ങളും പരിശോധിച്ച ശേഷം ആപ്പിൽ നിങ്ങളെ അറിയിക്കും.',
   rejectedBody: 'നിങ്ങളുടെ രജിസ്ട്രേഷൻ അംഗീകരിച്ചില്ല. വിവരങ്ങൾക്ക് സപ്പോർട്ടുമായി ബന്ധപ്പെടുക.',
+  reapplyButton: 'വീണ്ടും അപേക്ഷിക്കുക',
+  reapplyTitle: 'വീണ്ടും അപേക്ഷിക്കുക',
+  reapplyHint: 'ആവശ്യമെങ്കിൽ നിങ്ങളുടെ വിവരങ്ങൾ തിരുത്തി വീണ്ടും അയയ്ക്കുക.',
+  reapplySubmittedToast: 'അപേക്ഷ വീണ്ടും അയച്ചു. അഡ്മിന്റെ പരിശോധനയ്ക്കായി കാത്തിരിക്കുക.',
+  rejectionReasonLabel: 'അഡ്മിന്റെ കാരണം',
   inactiveBody: 'നിങ്ങളുടെ അക്കൗണ്ട് നിർജ്ജീവമാക്കിയിരിക്കുന്നു. വീണ്ടും സജീവമാക്കാൻ സപ്പോർട്ടുമായി ബന്ധപ്പെടുക.',
   supportLabel: 'സപ്പോർട്ട്',
   welcome: 'സ്വാഗതം',

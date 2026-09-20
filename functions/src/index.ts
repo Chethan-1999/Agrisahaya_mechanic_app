@@ -12,5 +12,5 @@ export {
   updateJob,
 } from './jobFunctions';
 export { reviewProfileUpdate, submitProfileUpdate } from './profileUpdateFunctions';
-export { completeSignup } from './signupFunctions';
+export { completeSignup, reapplySignup } from './signupFunctions';
 export { adminUpdateProfile, revokeOtherSessions, reviewSignup, setTechnicianStatus, updateDeviceInfo } from './technicianFunctions';

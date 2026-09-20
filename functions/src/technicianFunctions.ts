@@ -1,3 +1,4 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 import { requireAdmin } from './lib/authz';
@@ -9,7 +10,7 @@ import { assertValidProfile, type ProfileInput } from './lib/validation';
 /** Admin approves or rejects a pending technician. This is the activation gate. */
 export const reviewSignup = onCall(async (request) => {
   const adminUid = await requireAdmin(request);
-  const { technicianId, decision, paymentVerified } = request.data ?? {};
+  const { technicianId, decision, paymentVerified, reason } = request.data ?? {};
 
   if (typeof technicianId !== 'string' || (decision !== 'approve' && decision !== 'reject')) {
     throw new HttpsError('invalid-argument', 'technicianId and a valid decision are required.');
@@ -22,11 +23,20 @@ export const reviewSignup = onCall(async (request) => {
     throw new HttpsError('failed-precondition', 'This mechanic has already been reviewed.');
   }
 
+  const now = new Date().toISOString();
+  const approved = decision === 'approve';
+  const rejectionReason = !approved && typeof reason === 'string' && reason.trim() ? reason.trim().slice(0, 300) : null;
+
   await ref.update({
-    status: decision === 'approve' ? 'active' : 'rejected',
+    status: approved ? 'active' : 'rejected',
     paymentVerified: typeof paymentVerified === 'boolean' ? paymentVerified : (snap.data()?.paymentVerified ?? false),
-    approvedBy: adminUid,
-    updatedAt: new Date().toISOString(),
+    ...(approved ? { approvedBy: adminUid } : {}),
+    reviewedBy: adminUid,
+    reviewedAt: now,
+    rejectionReason,
+    // Every decision is kept, so a technician who is rejected and re-applies several times leaves a full trail.
+    reviewHistory: FieldValue.arrayUnion({ decision, by: adminUid, at: now, reason: rejectionReason }),
+    updatedAt: now,
   });
 
   if (decision === 'approve') {

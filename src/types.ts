@@ -33,6 +33,7 @@ export type Mechanic = MechanicForm & {
   id: string;
   status: MechanicStatus;
   paymentVerified: boolean;
+  rejectionReason: string | null;
   jobStats: JobStats;
   profileHistory: ProfileHistoryEntry[];
   createdAt: string;
@@ -88,13 +89,13 @@ export type Job = JobFields & {
   cancelReason: string | null;
   acceptedAt: string | null;
   completedAt: string | null;
-  history: JobHistoryEntry[];
   /** Who last moved the job into its current status, and when. */
   statusUpdatedBy: string;
   statusUpdatedByRole: 'admin' | 'technician' | '';
   statusUpdatedAt: string;
   /** Soft-deleted jobs are kept for the counts and history but hidden from every list. */
   deleted: boolean;
+  history: JobHistoryEntry[];
 };
 
 export type ProfileUpdateStatus = 'pending' | 'approved' | 'rejected';

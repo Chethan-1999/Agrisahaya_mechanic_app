@@ -13,7 +13,7 @@ import { usePhoneOtp } from './hooks/usePhoneOtp';
 import { useI18n } from './i18n/I18nContext';
 import { loginAdmin } from './services/adminAuth';
 import { listAnnouncements } from './services/announcements';
-import { completeSignup } from './services/auth';
+import { completeSignup, reapplySignup } from './services/auth';
 import {
   adminUpdateProfile,
   getMechanic,
@@ -27,6 +27,7 @@ import { initNotifications } from './services/notifications';
 import type { AdminProfile, AppSession, Job, Mechanic, MechanicForm } from './types';
 import { emptyMechanicForm } from './types';
 import { indianStates } from './utils/indianStates';
+import { clearReapplyDraft, clearSignupDraft, loadReapplyDraft, loadSignupDraft, saveReapplyDraft, saveSignupDraft } from './utils/signupDraft';
 import { hasErrors, validateProfileForm, type ValidationErrors } from './utils/validation';
 import { AdminAddJobs } from './screens/AdminAddJobs';
 import { AdminAssignJobs } from './screens/AdminAssignJobs';
@@ -40,6 +41,7 @@ type Page =
   | 'landing'
   | 'mechanicAuth'
   | 'mechanicPending'
+  | 'mechanicReapply'
   | 'mechanicMarketplace'
   | 'mechanicProfile'
   | 'mechanicJobs'
@@ -104,6 +106,7 @@ function withTimeout<T>(promise: Promise<T>, message: string): Promise<T> {
 
 // Where the Android hardware/gesture back button goes from each page; pages not listed are roots (back exits the app).
 const backTarget: Partial<Record<Page, Page>> = {
+  mechanicReapply: 'mechanicPending',
   mechanicAuth: 'landing',
   adminLogin: 'landing',
   mechanicProfile: 'mechanicJobs',
@@ -344,10 +347,10 @@ export default function App() {
         <ConfirmModal
           dialog={confirmDialog}
           onCancel={() => setConfirmDialog(null)}
-          onConfirm={() => {
+          onConfirm={(value) => {
             const { onConfirm } = confirmDialog;
             setConfirmDialog(null);
-            onConfirm();
+            onConfirm(value);
           }}
         />
       )}
@@ -412,8 +415,22 @@ export default function App() {
           setCurrentMechanic(technician);
           if (technician.status === 'active') setPage('mechanicJobs');
         }}>
-          <MechanicPending mechanic={currentMechanic} onLogout={logout} />
+          <MechanicPending mechanic={currentMechanic} onLogout={logout} onReapply={() => setPage('mechanicReapply')} />
         </PullToRefresh>
+      )}
+
+      {session?.role === 'mechanic' && currentMechanic && page === 'mechanicReapply' && (
+        <ReapplyForm
+          mechanic={currentMechanic}
+          onBack={() => setPage('mechanicPending')}
+          onSubmitted={async () => {
+            setToast({ kind: 'success', text: t('reapplySubmittedToast') });
+            setCurrentMechanic(await getMechanic(currentMechanic.id));
+            setPage('mechanicPending');
+          }}
+          setToast={setToast}
+          withLoading={withLoading}
+        />
       )}
 
       {session?.role === 'mechanic' && currentMechanic && mechanicTabs.some((tab) => tab.page === page) && (
@@ -467,6 +484,20 @@ export default function App() {
                 setSelectedMechanic(mechanic);
                 setPage('adminEdit');
               }}
+              onReject={(mechanic) => setConfirmDialog({
+                title: 'Reject signup?',
+                message: `${mechanic.fullName}'s signup will be rejected. They can correct their details and apply again.`,
+                confirmLabel: 'Reject',
+                kind: 'danger',
+                inputLabel: 'Reason (optional, shown to the mechanic)',
+                onConfirm: (reason) => {
+                  void withLoading(async () => {
+                    await reviewSignup(mechanic.id, 'reject', undefined, reason);
+                    setToast({ kind: 'success', text: `${mechanic.fullName} rejected.` });
+                    setMechanics(await listMechanics());
+                  });
+                },
+              })}
               onRefresh={loadMechanics}
               onToggleStatus={(mechanic) => {
                 const next = mechanic.status === 'active' ? 'inactive' : 'active';
@@ -586,14 +617,21 @@ function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }: {
 
   useEffect(() => {
     setStep('verify');
-    setForm(emptyMechanicForm);
+    setForm(mode === 'signup' ? { ...emptyMechanicForm, ...loadSignupDraft() } : emptyMechanicForm);
     setSentOtp(null);
     setOtpVerified(false);
     setErrors({});
   }, [mode]);
 
   function updateField(key: keyof MechanicForm, value: string) {
-    setForm((current) => ({ ...current, [key]: key === 'phoneNumber' ? toPhoneDigits(value) : value }));
+    setForm((current) => {
+      const next = { ...current, [key]: key === 'phoneNumber' ? toPhoneDigits(value) : value };
+      if (mode === 'signup') {
+        const { phoneNumber: _phoneNumber, ...draft } = next;
+        saveSignupDraft(draft);
+      }
+      return next;
+    });
   }
 
   function updatePhoneNumber(value: string) {
@@ -606,6 +644,7 @@ function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }: {
   }
 
   function clearSignupForm() {
+    clearSignupDraft();
     setPhoneNumber('');
     setOtp('');
     setForm(emptyMechanicForm);
@@ -702,6 +741,7 @@ function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }: {
       await withTimeout(completeSignup(profile), 'Signup timed out. Check that Firebase Functions are running, then try again.');
       const uid = auth.currentUser?.uid;
       if (!uid) throw new Error('Registration failed. Try again.');
+      clearSignupDraft();
       void revokeOtherSessions();
       onNew(uid);
     });
@@ -766,7 +806,7 @@ function AdminLogin({ onLogin, withLoading }: { onLogin: (admin: AdminProfile) =
   );
 }
 
-function MechanicPending({ mechanic, onLogout }: { mechanic: Mechanic | null; onLogout: () => void }) {
+function MechanicPending({ mechanic, onLogout, onReapply }: { mechanic: Mechanic | null; onLogout: () => void; onReapply: () => void }) {
   const { t } = useI18n();
   const status = mechanic?.status ?? 'pending';
   const heading = status === 'rejected' ? t('rejectedHeading') : status === 'inactive' ? t('inactiveHeading') : t('pendingHeading');
@@ -781,9 +821,55 @@ function MechanicPending({ mechanic, onLogout }: { mechanic: Mechanic | null; on
         <div className="approval-status-pill">{heading}</div>
         {status === 'pending' && <div className="approval-progress" aria-hidden="true"><span /></div>}
         <p>{body}</p>
+        {status === 'rejected' && mechanic?.rejectionReason && <p><strong>{t('rejectionReasonLabel')}:</strong> {mechanic.rejectionReason}</p>}
+        {status === 'rejected' && <button className="primary" onClick={onReapply} type="button">{t('reapplyButton')}</button>}
         <p className="support-call-line"><PhoneCall size={16} strokeWidth={2.5} /> For Support Call: <a href={`tel:${SUPPORT_NUMBER}`}>{SUPPORT_NUMBER}</a></p>
         <button className="secondary approval-logout" onClick={onLogout} type="button">{t('logout')}</button>
       </section>
+    </main>
+  );
+}
+
+/** A rejected technician corrects their details and sends the signup to the admin again — as many times as needed. */
+function ReapplyForm({ mechanic, onBack, onSubmitted, setToast, withLoading }: { mechanic: Mechanic; onBack: () => void; onSubmitted: () => Promise<void>; setToast: (toast: Toast) => void; withLoading: (action: () => Promise<void>) => Promise<void> }) {
+  const { t } = useI18n();
+  // Whatever they were last typing on this phone wins; otherwise start from the details on their rejected application.
+  const [form, setForm] = useState<MechanicForm>(() => ({ ...toMechanicForm(mechanic), ...loadReapplyDraft(mechanic.id) }));
+  const [errors, setErrors] = useState<ValidationErrors>({});
+
+  function updateField(key: keyof MechanicForm, value: string) {
+    setForm((current) => {
+      const next = { ...current, [key]: value };
+      const { phoneNumber: _phoneNumber, ...draft } = next;
+      saveReapplyDraft(mechanic.id, draft);
+      return next;
+    });
+  }
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    const { phoneNumber: _phoneNumber, ...profile } = trimMechanicForm(form);
+    const nextErrors = validateProfileForm(profile);
+    setErrors(nextErrors);
+    if (hasErrors(nextErrors)) return;
+
+    await withLoading(async () => {
+      await withTimeout(reapplySignup(profile), 'Request timed out. Check your connection, then try again.');
+      clearReapplyDraft(mechanic.id);
+      await onSubmitted();
+    });
+  }
+
+  return (
+    <main className="detail-page">
+      <form className="card form-grid edit-card" onSubmit={(event) => void submit(event)}>
+        <button className="text-button back-button" onClick={onBack} type="button"><ArrowLeft size={18} aria-hidden="true" />{t('back')}</button>
+        <h1>{t('reapplyTitle')}</h1>
+        <p className="muted">{t('reapplyHint')}</p>
+        {mechanic.rejectionReason && <p className="error-text">{t('rejectionReasonLabel')}: {mechanic.rejectionReason}</p>}
+        <MechanicFields errors={errors} form={form} onChange={updateField} translated />
+        <button className="primary" type="submit">{t('reapplyButton')}</button>
+      </form>
     </main>
   );
 }
@@ -1006,7 +1092,7 @@ function AdminDashboard({ active, inactive, jobs, mechanics, pending, total }: {
   );
 }
 
-function MechanicsTable({ mechanics, onApprove, onEdit, onRefresh, onToggleStatus, onView }: { mechanics: Mechanic[]; onApprove: (mechanic: Mechanic) => void; onEdit: (mechanic: Mechanic) => void; onRefresh: () => Promise<void>; onToggleStatus: (mechanic: Mechanic) => void; onView: (mechanic: Mechanic) => void }) {
+function MechanicsTable({ mechanics, onApprove, onEdit, onReject, onRefresh, onToggleStatus, onView }: { mechanics: Mechanic[]; onApprove: (mechanic: Mechanic) => void; onEdit: (mechanic: Mechanic) => void; onReject: (mechanic: Mechanic) => void; onRefresh: () => Promise<void>; onToggleStatus: (mechanic: Mechanic) => void; onView: (mechanic: Mechanic) => void }) {
   const [search, setSearch] = useState('');
   const query = search.trim().toLowerCase();
 
@@ -1050,6 +1136,7 @@ function MechanicsTable({ mechanics, onApprove, onEdit, onRefresh, onToggleStatu
                   {mechanic.status === 'pending' && (
                     <>
                       <button onClick={() => onApprove(mechanic)}>Approve</button>
+                      <button className="danger-text" onClick={() => onReject(mechanic)}>Reject</button>
                     </>
                   )}
                   {(mechanic.status === 'active' || mechanic.status === 'inactive') && (
