@@ -4,6 +4,8 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { requireAdmin } from './lib/authz';
 import { requireDoc } from './lib/docHelpers';
 import { auth, db } from './lib/firebaseAdmin';
+import { historyEntry } from './lib/jobHistory';
+import { isHeld, statusStamp } from './lib/jobStatus';
 import { pushToTechnician } from './lib/push';
 import { assertValidProfile, type ProfileInput } from './lib/validation';
 
@@ -70,13 +72,59 @@ export const setTechnicianStatus = onCall(async (request) => {
     );
   }
 
-  await ref.update({
-    status,
-    approvedBy: adminUid,
-    updatedAt: new Date().toISOString(),
+  // Deactivating takes back every job the technician still holds, in the same transaction as the status change.
+  const heldJobIds = status === 'inactive'
+    ? (await db.collection('jobs').where('technicianId', '==', technicianId).get()).docs
+        .filter((doc) => !doc.data().deleted && isHeld(doc.data().status))
+        .map((doc) => doc.id)
+    : [];
+
+  const released = await db.runTransaction(async (tx) => {
+    const technician = await tx.get(ref);
+    const jobs = await Promise.all(heldJobIds.map((id) => tx.get(db.collection('jobs').doc(id))));
+    // Re-check inside the transaction: the job may have been declined, completed or moved since the query ran.
+    const stillHeld = jobs.filter((job) => {
+      const data = job.data();
+      return data && !data.deleted && data.technicianId === technicianId && isHeld(data.status);
+    });
+    const now = new Date().toISOString();
+
+    for (const job of stillHeld) {
+      tx.update(job.ref, {
+        status: 'open',
+        technicianId: null,
+        acceptedAt: null,
+        needsReassignment: true,
+        releasedFrom: technicianId,
+        releasedAt: now,
+        ...statusStamp(adminUid, 'admin'),
+        history: FieldValue.arrayUnion(
+          historyEntry('release', adminUid, { technicianId, reason: 'technician-deactivated', fromStatus: job.data()?.status }),
+        ),
+      });
+    }
+
+    const stats = (technician.data()?.jobStats ?? { pending: 0, completed: 0, cancelled: 0, deleted: 0 }) as Record<string, number>;
+
+    tx.update(ref, {
+      status,
+      approvedBy: adminUid,
+      updatedAt: now,
+      ...(stillHeld.length ? { jobStats: { ...stats, pending: Math.max(0, (stats.pending ?? 0) - stillHeld.length) } } : {}),
+    });
+
+    return stillHeld.length;
   });
 
-  return { status: 'ok' };
+  if (released > 0) {
+    await pushToTechnician(technicianId, {
+      title: 'Jobs taken back',
+      body: `Your account was deactivated, so ${released} job${released === 1 ? ' was' : 's were'} taken back and will be reassigned.`,
+      data: { type: 'jobs-released' },
+    });
+  }
+
+  return { status: 'ok', released };
 });
 
 /** Self-service: a signed-in technician registers/refreshes their push token. */

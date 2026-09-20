@@ -1,4 +1,4 @@
-export type JobAction = 'create' | 'edit' | 'assign' | 'reassign' | 'accept' | 'decline' | 'complete' | 'cancel' | 'delete';
+export type JobAction = 'create' | 'edit' | 'assign' | 'reassign' | 'release' | 'accept' | 'decline' | 'complete' | 'cancel' | 'delete';
 
 export type JobHistoryEntry = {
   action: JobAction;

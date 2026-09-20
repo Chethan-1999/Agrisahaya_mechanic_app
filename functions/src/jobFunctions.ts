@@ -15,6 +15,8 @@ type JobDoc = {
   jobCode?: string;
   description: string;
   deleted?: boolean;
+  /** Set when the job was taken back from a deactivated technician; cleared as soon as it is assigned again. */
+  needsReassignment?: boolean;
 };
 
 const technicianRef = (id: string) => db.collection('technicians').doc(id);
@@ -140,6 +142,7 @@ export const createJob = onCall(async (request) => {
       createdBy: adminUid,
       ...statusStamp(adminUid, 'admin'),
       deleted: false,
+      needsReassignment: false,
       cancelledBy: null,
       cancelReason: null,
       acceptedAt: null,
@@ -277,17 +280,20 @@ export const assignJob = onCall(async (request) => {
       throw new HttpsError('failed-precondition', 'Only an active mechanic can be assigned a job.');
     }
 
-    const status: JobStatus = completeNow ? 'completed' : current.status === 'open' ? 'assigned' : 'reassigned';
+    // A job released from a deactivated technician is open again, but assigning it is still a reassignment.
+    const isReassign = current.status !== 'open' || current.needsReassignment === true;
+    const status: JobStatus = completeNow ? 'completed' : isReassign ? 'reassigned' : 'assigned';
     const now = new Date().toISOString();
 
     tx.update(ref, {
       technicianId,
       status,
       acceptedAt: null,
+      needsReassignment: false,
       ...(completeNow ? { completedAt: now, completedByAdmin: true } : {}),
       ...statusStamp(adminUid, 'admin'),
       history: FieldValue.arrayUnion(
-        historyEntry(current.status === 'open' ? 'assign' : 'reassign', adminUid, { technicianId, reassignedFrom: previousId }),
+        historyEntry(isReassign ? 'reassign' : 'assign', adminUid, { technicianId, reassignedFrom: previousId }),
         ...(completeNow ? [historyEntry('complete', adminUid, { adminOverride: true })] : []),
       ),
     });
