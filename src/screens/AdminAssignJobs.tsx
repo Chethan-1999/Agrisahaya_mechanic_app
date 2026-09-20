@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { PullToRefresh } from '../components/PullToRefresh';
 import { jobStatusMeta, type ConfirmDialog, type Toast } from '../components/ui';
-import { assignJob, cancelJob, completeJobAsAdmin } from '../services/jobs';
+import { assignJob, cancelJob, completeJobAsAdmin, sortForAdmin, visibleJobs } from '../services/jobs';
 import type { Job, Mechanic } from '../types';
 
 export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToast, withLoading }: {
@@ -21,6 +21,8 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
     void onRefresh();
   }, []);
 
+  // Pending work stays at the top as a standing reminder; completed jobs follow, cancelled ones last.
+  const board = useMemo(() => sortForAdmin(visibleJobs(jobs)), [jobs]);
   const activeTechnicians = useMemo(() => mechanics.filter((mechanic) => mechanic.status === 'active'), [mechanics]);
   const technicianName = (id: string | null) => (id ? (mechanics.find((mechanic) => mechanic.id === id)?.fullName ?? 'Unknown') : '');
 
@@ -33,9 +35,9 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
   function save(job: Job, technicianId: string, markCompleted: boolean) {
     void withLoading(async () => {
       if (technicianId !== (job.technicianId ?? '') || job.status === 'open' || job.status === 'declined') {
-        await assignJob(job.id, technicianId);
-      }
-      if (markCompleted) {
+        // Assign and (optionally) close in one call, so a failure can't leave the job assigned but not completed.
+        await assignJob(job.id, technicianId, markCompleted);
+      } else if (markCompleted) {
         await completeJobAsAdmin(job.id);
       }
       setToast({ kind: 'success', text: markCompleted ? 'Job assigned and completed.' : 'Job assigned.' });
@@ -71,10 +73,10 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
         <table className="assign-table">
           <thead><tr><th>Job ID</th><th>Customer</th><th>Phone number</th><th>Equipment</th><th>Issue</th><th>District</th><th>Current mechanic</th><th>Assign mechanic</th><th>Job completed</th><th>Actions</th></tr></thead>
           <tbody>
-            {jobs.map((job) => {
+            {board.map((job) => {
               const meta = jobStatusMeta(job.status);
               const finished = job.status === 'completed' || job.status === 'cancelled';
-              const held = job.status === 'assigned' || job.status === 'accepted';
+              const held = job.status === 'assigned' || job.status === 'reassigned' || job.status === 'accepted';
               const isEditing = Boolean(editing[job.id]);
               const locked = finished || (held && !isEditing);
               const technicianId = selected[job.id] ?? job.technicianId ?? '';
@@ -125,7 +127,7 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
             })}
           </tbody>
         </table>
-        {jobs.length === 0 && <p className="empty">No jobs available to assign.</p>}
+        {board.length === 0 && <p className="empty">No jobs available to assign.</p>}
         {activeTechnicians.length === 0 && <p className="empty">No active mechanics available. Approve mechanics before assigning jobs.</p>}
       </div>
     </section>

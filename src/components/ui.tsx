@@ -40,7 +40,9 @@ export function jobStatusMeta(status: JobStatus, t?: (key: StringKey) => string)
     case 'accepted':
       return { pillClass: 'pending', label: label('statusAccepted', 'Accepted') };
     case 'assigned':
-      return { pillClass: 'pending', label: label('statusPending', 'Pending') };
+      return { pillClass: 'pending', label: label('statusPending', 'Assigned') };
+    case 'reassigned':
+      return { pillClass: 'pending', label: label('statusPending', 'Reassigned') };
     default:
       return { pillClass: 'inactive', label: label('statusOpen', 'Open') };
   }

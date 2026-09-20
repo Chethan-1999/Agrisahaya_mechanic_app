@@ -28,6 +28,7 @@ const toMechanic = (id: string, data: Record<string, unknown>): Mechanic => {
       completed: Number(jobStats.completed ?? 0),
       cancelled: Number(jobStats.cancelled ?? 0),
     },
+      deleted: Number(jobStats.deleted ?? 0),
     profileHistory: (data.profileHistory as ProfileHistoryEntry[] | undefined) ?? [],
     createdAt: String(data.createdAt ?? ''),
     updatedAt: String(data.updatedAt ?? ''),

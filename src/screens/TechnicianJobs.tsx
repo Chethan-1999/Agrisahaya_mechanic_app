@@ -82,9 +82,9 @@ export function TechnicianJobs({ setToast, technicianId, withLoading }: {
                     </dl>
                   </div>
                 )}
-                {(job.status === 'assigned' || job.status === 'accepted') && (
+                {(job.status === 'assigned' || job.status === 'reassigned' || job.status === 'accepted') && (
                   <div className="button-row" style={{ marginTop: 14 }}>
-                    {job.status === 'assigned' && (
+                    {(job.status === 'assigned' || job.status === 'reassigned') && (
                       <>
                         <button className="primary" onClick={() => void run(() => acceptJob(job.id), t('jobAcceptedToast'))} type="button">{t('accept')}</button>
                         <button className="danger" onClick={() => decline(job)} type="button">{t('decline')}</button>

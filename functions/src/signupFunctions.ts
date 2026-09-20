@@ -56,7 +56,7 @@ export const completeSignup = onCall(async (request) => {
     status: 'pending',
     paymentVerified: false,
     fcmToken: null,
-    jobStats: { pending: 0, completed: 0, cancelled: 0 },
+    jobStats: { pending: 0, completed: 0, cancelled: 0, deleted: 0 },
     profileHistory: [],
     createdAt: now,
     updatedAt: now,

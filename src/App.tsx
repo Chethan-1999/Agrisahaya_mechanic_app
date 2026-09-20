@@ -22,7 +22,7 @@ import {
   reviewSignup,
   setTechnicianStatus,
 } from './services/mechanics';
-import { listAllJobs } from './services/jobs';
+import { listAllJobs, visibleJobs } from './services/jobs';
 import { initNotifications } from './services/notifications';
 import type { AdminProfile, AppSession, Job, Mechanic, MechanicForm } from './types';
 import { emptyMechanicForm } from './types';
@@ -451,7 +451,7 @@ export default function App() {
       {session?.role === 'admin' && page.startsWith('admin') && (
         <AdminShell activePage={page} onLogout={logout} onNavigate={setPage}>
           {page === 'adminDashboard' && (
-            <AdminDashboard active={activeMechanics} inactive={inactiveMechanics} jobs={jobs} mechanics={mechanics} pending={pendingMechanics} total={mechanics.length} />
+            <AdminDashboard active={activeMechanics} inactive={inactiveMechanics} jobs={visibleJobs(jobs)} mechanics={mechanics} pending={pendingMechanics} total={mechanics.length} />
           )}
           {page === 'adminMechanics' && (
             <MechanicsTable
@@ -916,7 +916,7 @@ function AdminShell({ activePage, children, onLogout, onNavigate }: { activePage
 
 // Jobs count as "assigned" once a technician holds them (assigned → accepted → completed); open/cancelled/declined don't.
 function isAssignedJob(job: Job) {
-  return job.status === 'assigned' || job.status === 'accepted' || job.status === 'completed';
+  return job.status === 'assigned' || job.status === 'reassigned' || job.status === 'accepted' || job.status === 'completed';
 }
 
 function AdminDashboard({ active, inactive, jobs, mechanics, pending, total }: { active: number; inactive: number; jobs: Job[]; mechanics: Mechanic[]; pending: number; total: number }) {
@@ -1200,7 +1200,7 @@ function DetailGrid({ compact = false, mechanic }: { compact?: boolean; mechanic
     ['Phone Number', mechanic.phoneNumber], ['Village', mechanic.village], ['District', mechanic.district],
     ['State', mechanic.state], ['Pincode', mechanic.pincode], ['Address', mechanic.address],
     ['Age', mechanic.age], ['Experience', `${mechanic.experience || '0'} years`], ['Status', mechanic.status],
-    ['Jobs', `Pending ${mechanic.jobStats.pending} · Completed ${mechanic.jobStats.completed} · Cancelled ${mechanic.jobStats.cancelled}`],
+    ['Jobs', `Pending ${mechanic.jobStats.pending} · Completed ${mechanic.jobStats.completed} · Cancelled ${mechanic.jobStats.cancelled} · Deleted ${mechanic.jobStats.deleted}`],
     ['Registration Date', formatDate(mechanic.createdAt)],
   ];
   return <dl className={compact ? 'detail-grid compact' : 'detail-grid'}>{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || '-'}</dd></div>)}</dl>;

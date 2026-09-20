@@ -19,6 +19,7 @@ export type JobStats = {
   pending: number;
   completed: number;
   cancelled: number;
+  deleted: number;
 };
 
 export type ProfileHistoryEntry = {
@@ -47,10 +48,11 @@ export type Mechanic = MechanicForm & {
  */
 export const PROFILE_UPDATE_LIFETIME_CAP_DISPLAY = 2;
 
-export type JobStatus = 'open' | 'assigned' | 'accepted' | 'declined' | 'completed' | 'cancelled';
+/** open → assigned → accepted → completed; a declined or moved job comes back as `reassigned` (same as assigned to the technician). See functions/src/lib/jobStatus.ts. */
+export type JobStatus = 'open' | 'assigned' | 'reassigned' | 'accepted' | 'declined' | 'completed' | 'cancelled';
 
 export type JobHistoryEntry = {
-  action: 'create' | 'edit' | 'assign' | 'accept' | 'decline' | 'complete' | 'cancel';
+  action: 'create' | 'edit' | 'assign' | 'reassign' | 'accept' | 'decline' | 'complete' | 'cancel' | 'delete';
   by: string;
   at: string;
   [extra: string]: unknown;
@@ -87,6 +89,12 @@ export type Job = JobFields & {
   acceptedAt: string | null;
   completedAt: string | null;
   history: JobHistoryEntry[];
+  /** Who last moved the job into its current status, and when. */
+  statusUpdatedBy: string;
+  statusUpdatedByRole: 'admin' | 'technician' | '';
+  statusUpdatedAt: string;
+  /** Soft-deleted jobs are kept for the counts and history but hidden from every list. */
+  deleted: boolean;
 };
 
 export type ProfileUpdateStatus = 'pending' | 'approved' | 'rejected';
