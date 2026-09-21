@@ -538,7 +538,6 @@ function Landing({ onAdmin, onMechanicLogin, onMechanicSignup }: { onAdmin: () =
           <button className="primary large" onClick={onMechanicLogin}>{t('technicianLogin')}</button>
           <button className="secondary large" onClick={onMechanicSignup}>{t('technicianSignup')}</button>
         </div>
-        <span className="status-dot">{firebaseConfigured ? 'Firebase connected' : 'Firebase not configured'}</span>
       </section>
     </main>
   );
@@ -762,7 +761,7 @@ function AdminLogin({ onLogin, withLoading }: { onLogin: (admin: AdminProfile) =
       <Input autoComplete="username" label="Email" name="email" onChange={setEmail} type="email" value={email} />
       <Input autoComplete="current-password" label="Password" name="password" onChange={setPassword} type="password" value={password} />
       <button className="primary" type="submit">{t('adminLogin')}</button>
-      <p className="muted">Admin users are created manually in Firebase Authentication and the admins collection.</p>
+      <p className="muted">This login is only for Agrisahay admin.</p>
     </form>
   );
 }
