@@ -861,7 +861,7 @@ function ReapplyForm({ mechanic, onBack, onSubmitted, setToast, withLoading }: {
   }
 
   return (
-    <main className="detail-page">
+    <main className="detail-page mechanic-form-page">
       <form className="card form-grid edit-card" onSubmit={(event) => void submit(event)}>
         <button className="text-button back-button" onClick={onBack} type="button"><ArrowLeft size={18} aria-hidden="true" />{t('back')}</button>
         <h1>{t('reapplyTitle')}</h1>

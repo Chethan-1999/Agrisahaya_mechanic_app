@@ -77,7 +77,7 @@ export function RequestProfileChange({ mechanic, onBack, onSubmitted, setToast, 
   }
 
   return (
-    <main className="detail-page">
+    <main className="detail-page mechanic-form-page">
       <section className="card form-grid edit-card">
         <button className="text-button back-button" onClick={onBack} type="button"><ArrowLeft size={18} aria-hidden="true" />{t('back')}</button>
         <h1>{t('requestChangeTitle')}</h1>
