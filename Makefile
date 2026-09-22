@@ -1,8 +1,10 @@
-.PHONY: web sync apk local-phone admin emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean
+.PHONY: web sync apk local-phone admin emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean \
+	sync-admin apk-admin install-admin launch-admin run-admin logs-admin clean-admin
 
 # Override any of these on the command line, e.g. `make run AVD_NAME=Pixel_7`
 AVD_NAME     ?= Pixel_6
 APP_ID       ?= com.agrisahaya.mechanic
+APP_ID_ADMIN ?= com.agrisahaya.admin
 BOOT_TIMEOUT ?= 90
 BOOT_RETRIES ?= 3
 APK_LABEL    ?= $(shell date +%Y%m%d-%H%M%S)
@@ -19,10 +21,15 @@ EMU_LOG  := /tmp/agrisahaya-emulator.log
 web:
 	docker compose up --build
 
-## Build the web assets and copy them into the native Android project
+## Build the web assets and copy them into the native Android project (mechanic app)
 sync:
 	npm run build
 	npx cap sync android
+
+## Same as `sync`, but for the admin app (separate appId, native project in android-admin/)
+sync-admin:
+	npm run build
+	npx cap sync android --config capacitor.admin.config.ts
 
 ## Boot the Android emulator in the background if it isn't already running.
 ## -no-snapshot forces a clean cold boot every time: the crash mode we've hit
@@ -92,9 +99,13 @@ doctor:
 	@echo "\nadb devices:"; $(ADB) devices
 	@echo "\nEmulator log tail ($(EMU_LOG)):"; tail -n 20 $(EMU_LOG) 2>/dev/null || echo "(no log yet)"
 
-## Build the debug APK and install it on the running emulator/device
+## Build the debug APK and install it on the running emulator/device (mechanic app)
 install: sync wait-emulator
 	cd android && ./gradlew installDebug
+
+## Same as `install`, but for the admin app
+install-admin: sync-admin wait-emulator
+	cd android-admin && ./gradlew installDebug
 
 ## Build a debug APK for sharing with external testers (no emulator needed).
 ## Debug-signed, so it installs on any device with "install unknown apps" enabled.
@@ -105,6 +116,13 @@ apk: sync
 	@mkdir -p dist
 	cp android/app/build/outputs/apk/debug/app-debug.apk dist/agrisahaya-$(APK_LABEL).apk
 	@echo "APK ready: dist/agrisahaya-$(APK_LABEL).apk"
+
+## Same as `apk`, but for the admin app. Output: dist/agrisahaya-admin-<label>.apk
+apk-admin: sync-admin
+	cd android-admin && ./gradlew assembleDebug
+	@mkdir -p dist
+	cp android-admin/app/build/outputs/apk/debug/app-debug.apk dist/agrisahaya-admin-$(APK_LABEL).apk
+	@echo "APK ready: dist/agrisahaya-admin-$(APK_LABEL).apk"
 
 ## Build a phone APK that talks to Firebase emulators on THIS laptop (over the shared
 ## network/hotspot), then run the emulators here so their logs stream in this terminal.
@@ -120,12 +138,19 @@ admin:
 	@test -n "$(ADMIN_EMAIL)" -a -n "$(ADMIN_PASSWORD)" || { echo "Usage: make admin ADMIN_EMAIL=... ADMIN_PASSWORD=... [ADMIN_NAME=...]"; exit 1; }
 	cd functions && FIRESTORE_EMULATOR_HOST=localhost:8080 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 GCLOUD_PROJECT=$(FIREBASE_PROJECT) npm run create-admin -- "$(ADMIN_EMAIL)" "$(ADMIN_PASSWORD)" "$(ADMIN_NAME)"
 
-## Launch the installed app
+## Launch the installed app (mechanic app)
 launch:
 	$(ADB) shell am start -n $(APP_ID)/.MainActivity
 
-## Full flow: build, sync, boot emulator, install, launch
+## Same as `launch`, but for the admin app
+launch-admin:
+	$(ADB) shell am start -n $(APP_ID_ADMIN)/.MainActivity
+
+## Full flow: build, sync, boot emulator, install, launch (mechanic app)
 run: install launch
+
+## Same as `run`, but for the admin app
+run-admin: install-admin launch-admin
 
 ## Test against Firebase running on THIS laptop instead of production: builds with
 ## the laptop's LAN IP baked in, installs + launches on the emulator, then starts
@@ -133,14 +158,22 @@ run: install launch
 local:
 	npm run dev:local
 
-## Stream app logs from the running emulator/device
+## Stream app logs from the running emulator/device (mechanic app)
 logs:
 	$(ADB) logcat --pid=$$($(ADB) shell pidof $(APP_ID))
+
+## Same as `logs`, but for the admin app
+logs-admin:
+	$(ADB) logcat --pid=$$($(ADB) shell pidof $(APP_ID_ADMIN))
 
 ## Stop the running emulator
 stop-emulator:
 	$(ADB) emu kill || true
 
-## Clean native Android build output
+## Clean native Android build output (mechanic app)
 clean:
 	cd android && ./gradlew clean
+
+## Same as `clean`, but for the admin app
+clean-admin:
+	cd android-admin && ./gradlew clean

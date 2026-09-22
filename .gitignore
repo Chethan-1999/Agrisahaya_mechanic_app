@@ -51,9 +51,11 @@ push-github-api.ps1
 # Cloud Functions build output
 functions/lib/
 
-# generated native folders
+# generated native folders — mechanic app lives in /android (npx cap add android,
+# default capacitor.config.ts), admin app in /android-admin (capacitor.admin.config.ts)
 /ios
 /android
+/android-admin
 
 /package-lock.json
 /package.json

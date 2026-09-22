@@ -16,6 +16,7 @@
     "rewrites": [
       { "source": "/privacy-policy.html", "destination": "/privacy-policy.html" },
       { "source": "/data-deletion.html", "destination": "/data-deletion.html" },
+      { "source": "/admin/**", "destination": "/admin/index.html" },
       { "source": "**", "destination": "/index.html" }
     ]
   },
