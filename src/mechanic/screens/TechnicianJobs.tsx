@@ -1,11 +1,11 @@
 import { ChevronDown } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
-import { PullToRefresh } from '../components/PullToRefresh';
-import { formatDate, jobStatusMeta, type Toast } from '../components/ui';
-import { useI18n } from '../i18n/I18nContext';
-import { acceptJob, completeJob, declineJob, listOwnJobs } from '../services/jobs';
-import type { Job } from '../types';
+import { PullToRefresh } from '../../components/PullToRefresh';
+import { formatDate, jobStatusMeta, type Toast } from '../../components/ui';
+import { useI18n } from '../../i18n/I18nContext';
+import { acceptJob, completeJob, declineJob, listOwnJobs } from '../../services/jobs';
+import type { Job } from '../../types';
 
 export function TechnicianJobs({ setToast, technicianId, withLoading }: {
   setToast: (toast: Toast) => void;
