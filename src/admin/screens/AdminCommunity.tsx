@@ -1,9 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
 
-import { PullToRefresh } from '../components/PullToRefresh';
-import { Input, formatDate, type Toast } from '../components/ui';
-import { listAnnouncements, postAnnouncement } from '../services/announcements';
-import type { Announcement } from '../types';
+import { PullToRefresh } from '../../components/PullToRefresh';
+import { Input, formatDate, type Toast } from '../../components/ui';
+import { listAnnouncements, postAnnouncement } from '../../services/announcements';
+import type { Announcement } from '../../types';
 
 const COMMUNITY_TIMEOUT_MS = 15000;
 

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 
-import { PullToRefresh } from '../components/PullToRefresh';
-import { Textarea, formatDate, type Toast } from '../components/ui';
-import { listPendingProfileUpdateRequests, reviewProfileUpdate } from '../services/profileUpdates';
-import type { Mechanic, MechanicForm, ProfileUpdateRequest } from '../types';
+import { PullToRefresh } from '../../components/PullToRefresh';
+import { Textarea, formatDate, type Toast } from '../../components/ui';
+import { listPendingProfileUpdateRequests, reviewProfileUpdate } from '../../services/profileUpdates';
+import type { Mechanic, MechanicForm, ProfileUpdateRequest } from '../../types';
 
 type VisibleProfileField = Exclude<keyof MechanicForm, 'landmark'>;
 
