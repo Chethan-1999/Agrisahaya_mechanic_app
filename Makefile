@@ -1,4 +1,4 @@
-.PHONY: web sync apk local-phone admin emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean
+.PHONY: web sync apk local-phone prod-phone admin admin-prod emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean
 
 # Override any of these on the command line, e.g. `make run AVD_NAME=Pixel_7`
 AVD_NAME     ?= Pixel_6
@@ -112,6 +112,26 @@ apk: sync
 local-phone:
 	npm run dev:local -- --apk
 
+## PRODUCTION: deploy the backend to the Firebase project named in .env, then build a
+## phone APK against that same project. Nothing here touches the local emulators.
+##   1. deploys Cloud Functions + Firestore rules/indexes to VITE_FIREBASE_PROJECT_ID
+##   2. builds the web assets with .env (emulator host forced empty, push enabled unless
+##      .env says otherwise), syncs to Android, assembles the APK
+## Output: dist/agrisahaya-prod-<label>.apk. Requires `firebase login` and android/app/google-services.json.
+PROD_PROJECT = $(shell sed -n 's/^VITE_FIREBASE_PROJECT_ID=\(.*\)/\1/p' .env | tr -d '"\r ')
+prod-phone:
+	@test -n "$(PROD_PROJECT)" || { echo "VITE_FIREBASE_PROJECT_ID missing in .env"; exit 1; }
+	@echo "==> Deploying backend to Firebase project '$(PROD_PROJECT)' (from .env)"
+	cd functions && npm install && npm run build
+	npx firebase-tools deploy --only functions,firestore --project $(PROD_PROJECT)
+	@echo "==> Building production APK against '$(PROD_PROJECT)'"
+	VITE_FIREBASE_EMULATOR_HOST= npm run build
+	npx cap sync android
+	cd android && ./gradlew assembleDebug
+	@mkdir -p dist
+	cp android/app/build/outputs/apk/debug/app-debug.apk dist/agrisahaya-prod-$(APK_LABEL).apk
+	@echo "Production APK ready: dist/agrisahaya-prod-$(APK_LABEL).apk"
+
 ## Create the admin in the RUNNING local emulators (one time; it's then saved in emulator-data/).
 ## Usage: make admin ADMIN_EMAIL=agrisahay@gmail.com ADMIN_PASSWORD='...' [ADMIN_NAME=Admin]
 ADMIN_NAME ?= Admin
@@ -119,6 +139,15 @@ FIREBASE_PROJECT := $(shell sed -n 's/.*"default": *"\(.*\)".*/\1/p' .firebaserc
 admin:
 	@test -n "$(ADMIN_EMAIL)" -a -n "$(ADMIN_PASSWORD)" || { echo "Usage: make admin ADMIN_EMAIL=... ADMIN_PASSWORD=... [ADMIN_NAME=...]"; exit 1; }
 	cd functions && FIRESTORE_EMULATOR_HOST=localhost:8080 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 GCLOUD_PROJECT=$(FIREBASE_PROJECT) npm run create-admin -- "$(ADMIN_EMAIL)" "$(ADMIN_PASSWORD)" "$(ADMIN_NAME)"
+
+## Create the admin in the PRODUCTION Firebase project from .env (project id = VITE_FIREBASE_PROJECT_ID).
+## Needs GOOGLE_APPLICATION_CREDENTIALS (service account key) in functions/.env.
+## Usage: make admin-prod ADMIN_EMAIL=... ADMIN_PASSWORD='...' [ADMIN_NAME=Admin]
+admin-prod:
+	@test -n "$(ADMIN_EMAIL)" -a -n "$(ADMIN_PASSWORD)" || { echo "Usage: make admin-prod ADMIN_EMAIL=... ADMIN_PASSWORD=... [ADMIN_NAME=...]"; exit 1; }
+	@test -n "$(PROD_PROJECT)" || { echo "VITE_FIREBASE_PROJECT_ID missing in .env"; exit 1; }
+	@echo "Creating admin in PRODUCTION project '$(PROD_PROJECT)'"
+	cd functions && env -u FIRESTORE_EMULATOR_HOST -u FIREBASE_AUTH_EMULATOR_HOST GCLOUD_PROJECT=$(PROD_PROJECT) npm run create-admin -- "$(ADMIN_EMAIL)" "$(ADMIN_PASSWORD)" "$(ADMIN_NAME)"
 
 ## Launch the installed app
 launch:
