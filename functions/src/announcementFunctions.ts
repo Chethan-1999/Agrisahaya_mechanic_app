@@ -4,6 +4,27 @@ import { requireAdmin } from './lib/authz';
 import { db } from './lib/firebaseAdmin';
 import { pushBroadcast } from './lib/push';
 
+const PUSH_BROADCAST_TIMEOUT_MS = 5000;
+
+async function pushBroadcastBestEffort(tokens: string[], payload: Parameters<typeof pushBroadcast>[1]): Promise<void> {
+  if (tokens.length === 0) return;
+
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<void>((resolve) => {
+    timeoutId = setTimeout(() => {
+      console.warn('broadcast push timed out; announcement was still posted');
+      resolve();
+    }, PUSH_BROADCAST_TIMEOUT_MS);
+  });
+
+  await Promise.race([
+    pushBroadcast(tokens, payload).catch((err) => console.warn('broadcast push failed:', err)),
+    timeout,
+  ]).finally(() => {
+    if (timeoutId !== undefined) clearTimeout(timeoutId);
+  });
+}
+
 /** Admin posts a community broadcast — stored for the technician-facing inbox, then pushed to every active technician's device. */
 export const postAnnouncement = onCall(async (request) => {
   const adminUid = await requireAdmin(request);
@@ -32,7 +53,7 @@ export const postAnnouncement = onCall(async (request) => {
     .map((doc) => doc.data().fcmToken as string | undefined)
     .filter((token): token is string => Boolean(token));
 
-  await pushBroadcast(tokens, {
+  await pushBroadcastBestEffort(tokens, {
     title: trimmedTitle,
     body: trimmedBody.slice(0, 120),
     data: { type: 'announcement', announcementId: ref.id },

@@ -33,7 +33,9 @@ support number shown on screen is tap-to-call.
 
 If an admin rejects the signup or later deactivates the account, this same
 screen shows **Account not approved** or **Account deactivated** instead, with
-the reason and the support number to call.
+the reason and the support number to call. A rejected signup shows an
+**Apply again** button: your details are already filled in (and kept on your
+phone), so fix whatever was wrong and send it again — as many times as you need.
 
 ### Logging in
 
@@ -100,7 +102,7 @@ Log in from **Admin Login** on the landing screen with the email/password an
 admin account was created with (see the README's "Bootstrap the first admin"
 section — there's no self-service admin signup).
 
-The admin console has five sections in the side/top nav:
+The admin console has these sections in the side/top nav:
 
 ### Dashboard
 
@@ -111,25 +113,44 @@ Totals for active, inactive, and pending technicians.
 A searchable, filterable list of every technician (by district, village,
 status). For each technician you can:
 
-- **Approve or reject** a pending signup
+- **Approve** a pending signup
 - **Activate / deactivate** an existing technician
 - **View** full details, including their running job stats (completed,
   cancelled, pending)
 - **Edit** their record directly (as opposed to a technician's own
   request-and-approve flow)
 
-### Jobs (Job Board)
+### Add new jobs
 
-- **New Job** — log a job with the farmer's name, phone, and a description,
-  optionally assigning it to an active technician right away, or leaving it
-  unassigned to assign later.
-- Each row shows the job, farmer, assigned technician, status, and when it was
-  logged.
-- **Assign / Reassign** — for any job that's open or was declined, pick a
-  technician from the dropdown and tap **Assign**.
-- **Cancel** — available for open, assigned, or accepted jobs. You'll be asked
-  for an optional reason. **Only admins can cancel a job** — technicians can
-  accept, decline, or complete, but never cancel.
+- **Add job** — log a job with the customer's name, a 10-digit phone number,
+  equipment, issue, district and optional notes. Each job gets an ID like
+  `#26091901` (date + daily sequence).
+- **Edit** any job that isn't completed or cancelled (a technician holding it is
+  told the details changed). **Delete** only a declined, cancelled or completed
+  job — cancel a live job first. A deleted job leaves the boards but is kept on
+  record and counted as deleted for the admin and the technician.
+- Pending jobs (open, declined, assigned, accepted) sit at the top of both job
+  boards; completed jobs follow, cancelled ones last.
+
+### Assign jobs
+
+- Pick an active technician from the dropdown and tap **Save**. A job that's
+  open or was declined can be assigned directly; a job already held by a
+  technician is unlocked with **Edit** and **reassigned** (the new technician
+  must accept it again, and the previous one is told it was reassigned).
+- Deactivating a technician takes back every job they hold. Those jobs go back
+  to open with a light-red frame and "reassign" label until you assign them
+  again (they then show as reassigned); the technician is told.
+- Tick **Completed** to assign and close a job in one step, or to close a job
+  the technician already holds; the technician is told it was completed.
+- **Cancel job** — available until a job is completed or cancelled. **Only
+  admins can cancel a job** — technicians can accept, decline, or complete,
+  but never cancel.
+
+### Community
+
+Post a title and message that every active technician sees in the app's
+Community tab (and receives as a push notification).
 
 ### Profile Requests
 
@@ -139,10 +160,6 @@ changed, their stated reason, and:
 - **Approve** — applies the change immediately.
 - **Reject** — leave a note (shown to the technician) explaining why, then
   reject.
-
-### Settings
-
-Light/dark mode toggle.
 
 ## Known caveats
 

@@ -1,22 +1,20 @@
+import { ChevronDown } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { PullToRefresh } from '../components/PullToRefresh';
-import { jobStatusMeta, type Toast } from '../components/ui';
+import { formatDate, jobStatusMeta, type Toast } from '../components/ui';
 import { useI18n } from '../i18n/I18nContext';
 import { acceptJob, completeJob, declineJob, listOwnJobs } from '../services/jobs';
 import type { Job } from '../types';
 
-const SUPPORT_NUMBER = '9646424964';
-
-export function TechnicianJobs({ onBack, setToast, technicianId, withLoading }: {
-  onBack: () => void;
+export function TechnicianJobs({ setToast, technicianId, withLoading }: {
   setToast: (toast: Toast) => void;
   technicianId: string;
   withLoading: (action: () => Promise<void>) => Promise<void>;
 }) {
   const { t } = useI18n();
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [expandedJobIds, setExpandedJobIds] = useState<string[]>([]);
 
   useEffect(() => {
     void refresh();
@@ -28,116 +26,84 @@ export function TechnicianJobs({ onBack, setToast, technicianId, withLoading }: 
 
   // List order (oldest first) doubles as the "Task N" ordinal — not a stored field.
   const numbered = useMemo(() => jobs.map((job, index) => ({ job, taskNumber: index + 1 })), [jobs]);
-  const selected = numbered.find((entry) => entry.job.id === selectedJobId);
-  const isOpenForAction = (job: Job) => job.status === 'assigned' || job.status === 'accepted';
 
-  if (selected && isOpenForAction(selected.job)) {
-    return (
-      <JobDetail
-        job={selected.job}
-        onBack={() => setSelectedJobId(null)}
-        onChanged={async () => {
-          setSelectedJobId(null);
-          await refresh();
-        }}
-        setToast={setToast}
-        taskNumber={selected.taskNumber}
-        withLoading={withLoading}
-      />
-    );
+  function toggle(jobId: string) {
+    setExpandedJobIds((current) => (current.includes(jobId) ? current.filter((id) => id !== jobId) : [...current, jobId]));
+  }
+
+  async function run(action: () => Promise<void>, toast: string) {
+    await withLoading(async () => {
+      await action();
+      setToast({ kind: 'success', text: toast });
+      setJobs(await listOwnJobs(technicianId));
+    });
+  }
+
+  function decline(job: Job) {
+    if (!confirm(t('declineConfirm'))) return;
+    void run(() => declineJob(job.id), t('jobDeclinedToast'));
   }
 
   return (
     <PullToRefresh onRefresh={refresh}>
-      <main className="detail-page">
-        <section className="card profile-card">
-          <button className="text-button" onClick={onBack}>{t('back')}</button>
-          <h1>{t('jobsTitle')}</h1>
-          {numbered.length === 0 && <p className="muted">{t('noJobsYet')}</p>}
-          <div className="job-list">
-            {numbered.map(({ job, taskNumber }) => {
-              const meta = jobStatusMeta(job.status, t);
-              const clickable = isOpenForAction(job);
-              return (
-                <button
-                  className={`job-row-button ${clickable ? '' : 'static'}`}
-                  disabled={!clickable}
-                  key={job.id}
-                  onClick={() => clickable && setSelectedJobId(job.id)}
-                >
-                  <span className="tnum">{t('task')} {taskNumber}</span>
-                  <span className="jinfo">
-                    <b>{job.description}</b>
-                    <span>{t('farmerLabel')}: {job.farmerName || '-'}</span>
-                  </span>
-                  <span className={`pill ${meta.pillClass}`}>{meta.label}</span>
-                </button>
-              );
-            })}
+      <section className="mechanic-jobs-screen">
+        <div className="mechanic-screen-hero jobs-hero">
+          <div>
+            <p className="eyebrow">{t('jobsNav')}</p>
+            <h1>{t('jobsTitle')}</h1>
           </div>
-          <p className="muted">{t('supportLabel')}: <a href={`tel:${SUPPORT_NUMBER}`}>{SUPPORT_NUMBER}</a></p>
-        </section>
-      </main>
-    </PullToRefresh>
-  );
-}
-
-function JobDetail({ job, onBack, onChanged, setToast, taskNumber, withLoading }: {
-  job: Job;
-  onBack: () => void;
-  onChanged: () => Promise<void>;
-  setToast: (toast: Toast) => void;
-  taskNumber: number;
-  withLoading: (action: () => Promise<void>) => Promise<void>;
-}) {
-  const { t } = useI18n();
-
-  async function accept() {
-    await withLoading(async () => {
-      await acceptJob(job.id);
-      setToast({ kind: 'success', text: t('jobAcceptedToast') });
-      await onChanged();
-    });
-  }
-
-  async function decline() {
-    if (!confirm(t('declineConfirm'))) return;
-    await withLoading(async () => {
-      await declineJob(job.id);
-      setToast({ kind: 'success', text: t('jobDeclinedToast') });
-      await onChanged();
-    });
-  }
-
-  async function complete() {
-    await withLoading(async () => {
-      await completeJob(job.id);
-      setToast({ kind: 'success', text: t('jobCompletedToast') });
-      await onChanged();
-    });
-  }
-
-  return (
-    <main className="detail-page">
-      <section className="card profile-card">
-        <button className="text-button" onClick={onBack} type="button">{t('back')}</button>
-        <h1>{t('task')} {taskNumber}</h1>
-        <dl className="detail-grid">
-          <div><dt>{t('descriptionLabel')}</dt><dd>{job.description}</dd></div>
-          <div><dt>{t('farmerLabel')}</dt><dd>{job.farmerName || '-'}</dd></div>
-          <div><dt>{t('farmerPhoneLabel')}</dt><dd>{job.farmerPhone ? <a href={`tel:${job.farmerPhone}`}>{job.farmerPhone}</a> : '-'}</dd></div>
-          <div><dt>{t('statusLabel')}</dt><dd>{jobStatusMeta(job.status, t).label}</dd></div>
-        </dl>
-        <div className="button-row">
-          {job.status === 'assigned' && (
-            <>
-              <button className="primary" onClick={() => void accept()} type="button">{t('accept')}</button>
-              <button className="danger" onClick={() => void decline()} type="button">{t('decline')}</button>
-            </>
+          <span>{numbered.length}</span>
+        </div>
+        <div className="mechanic-job-list">
+          {numbered.map(({ job, taskNumber }) => {
+            const meta = jobStatusMeta(job.status, t);
+            const isExpanded = expandedJobIds.includes(job.id);
+            return (
+              <article className={job.status === 'completed' ? 'mechanic-job-card completed' : 'mechanic-job-card'} key={job.id}>
+                <div className="job-card-summary">
+                  <div>
+                    <div className="job-card-topline"><span>{job.jobCode || `${t('task')} ${taskNumber}`}</span><time>{formatDate(job.createdAt)}</time></div>
+                    <h2><span>Equipment</span>{job.equipment || job.description}</h2>
+                    {job.issue && <p><span>Issue</span>{job.issue}</p>}
+                  </div>
+                  <button aria-expanded={isExpanded} aria-label={isExpanded ? 'Hide job details' : 'Show job details'} className="job-show-more" onClick={() => toggle(job.id)} type="button">
+                    <span>{isExpanded ? 'Less' : 'More'}</span>
+                    <ChevronDown className={isExpanded ? 'open' : ''} size={20} strokeWidth={2.6} />
+                  </button>
+                </div>
+                {isExpanded && (
+                  <div className="job-card-details">
+                    <dl>
+                      <div><dt>{t('farmerLabel')}</dt><dd>{job.farmerName || '-'}</dd></div>
+                      <div><dt>{t('farmerPhoneLabel')}</dt><dd>{job.farmerPhone ? <a href={`tel:${job.farmerPhone}`}>{job.farmerPhone}</a> : '-'}</dd></div>
+                      <div><dt>District</dt><dd>{job.district || '-'}</dd></div>
+                      <div><dt>Notes</dt><dd>{job.additionalNotes || '-'}</dd></div>
+                      <div><dt>{t('statusLabel')}</dt><dd><span className={`pill ${meta.pillClass}`}>{meta.label}</span></dd></div>
+                    </dl>
+                  </div>
+                )}
+                {(job.status === 'assigned' || job.status === 'reassigned' || job.status === 'accepted') && (
+                  <div className="button-row" style={{ marginTop: 14 }}>
+                    {(job.status === 'assigned' || job.status === 'reassigned') && (
+                      <>
+                        <button className="primary" onClick={() => void run(() => acceptJob(job.id), t('jobAcceptedToast'))} type="button">{t('accept')}</button>
+                        <button className="danger" onClick={() => decline(job)} type="button">{t('decline')}</button>
+                      </>
+                    )}
+                    {job.status === 'accepted' && <button className="primary" onClick={() => void run(() => completeJob(job.id), t('jobCompletedToast'))} type="button">{t('markComplete')}</button>}
+                  </div>
+                )}
+              </article>
+            );
+          })}
+          {numbered.length === 0 && (
+            <section className="jobs-empty-state">
+              <span aria-hidden="true">🧰</span>
+              <h1>{t('noJobsYet')}</h1>
+            </section>
           )}
-          {job.status === 'accepted' && <button className="primary" onClick={() => void complete()} type="button">{t('markComplete')}</button>}
         </div>
       </section>
-    </main>
+    </PullToRefresh>
   );
 }

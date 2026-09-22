@@ -28,7 +28,7 @@ client and server.
 
 ```
 src/                   Web app (technician + admin UI)
-  screens/             Job board, profile-update review, technician jobs, etc.
+  screens/             Add/assign jobs, community, profile-update review, technician jobs, etc.
   services/            Thin wrappers around Firestore reads + Cloud Function calls
   services/otp/        Phone OTP — real Firebase Phone Auth in prod, a local
                         random-code stand-in in the emulator (see below)

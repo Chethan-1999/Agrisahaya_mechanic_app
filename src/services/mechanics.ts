@@ -23,10 +23,12 @@ const toMechanic = (id: string, data: Record<string, unknown>): Mechanic => {
     experience: String(data.experience ?? ''),
     status: (data.status as MechanicStatus) ?? 'pending',
     paymentVerified: Boolean(data.paymentVerified ?? false),
+    rejectionReason: typeof data.rejectionReason === 'string' && data.rejectionReason ? data.rejectionReason : null,
     jobStats: {
       pending: Number(jobStats.pending ?? 0),
       completed: Number(jobStats.completed ?? 0),
       cancelled: Number(jobStats.cancelled ?? 0),
+      deleted: Number(jobStats.deleted ?? 0),
     },
     profileHistory: (data.profileHistory as ProfileHistoryEntry[] | undefined) ?? [],
     createdAt: String(data.createdAt ?? ''),
@@ -61,7 +63,7 @@ export async function adminUpdateProfile(technicianId: string, profile: Partial<
 }
 
 const reviewSignupFn = httpsCallable<
-  { technicianId: string; decision: 'approve' | 'reject'; paymentVerified?: boolean },
+  { technicianId: string; decision: 'approve' | 'reject'; paymentVerified?: boolean; reason?: string },
   { status: 'ok' }
 >(functions, 'reviewSignup');
 
@@ -70,8 +72,8 @@ const setTechnicianStatusFn = httpsCallable<
   { status: 'ok' }
 >(functions, 'setTechnicianStatus');
 
-export async function reviewSignup(technicianId: string, decision: 'approve' | 'reject', paymentVerified?: boolean) {
-  await reviewSignupFn({ technicianId, decision, paymentVerified });
+export async function reviewSignup(technicianId: string, decision: 'approve' | 'reject', paymentVerified?: boolean, reason?: string) {
+  await reviewSignupFn({ technicianId, decision, paymentVerified, reason });
 }
 
 export async function setTechnicianStatus(technicianId: string, status: 'active' | 'inactive') {
