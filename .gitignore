@@ -41,8 +41,11 @@ CLAUDE.md
 
 # local env files (see .env.example / functions/.env.example for the template)
 .env
-.env*.local
+.env.*
+!.env.example
 functions/.env
+functions/.env.*
+!functions/.env.example
 push-github-api.ps1
 
 # typescript
@@ -62,3 +65,4 @@ functions/lib/
 # Persisted Firebase emulator data (Auth users incl. password hashes, Firestore)
 emulator-data/
 emulator-data.bak/
+keys/
