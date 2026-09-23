@@ -7,8 +7,10 @@ import { useEffect, useState } from 'react';
 import { ConfirmModal, type ConfirmDialog } from '../components/ui';
 import { auth, db } from '../firebase';
 import { useLoadingState } from '../hooks/useLoadingState';
+import { logoutAdmin, registerAdminDevice } from '../services/adminAuth';
 import { listAllJobs, visibleJobs } from '../services/jobs';
 import { listMechanics, reviewSignup, setTechnicianStatus } from '../services/mechanics';
+import { initNotifications } from '../services/notifications';
 import type { AdminProfile, Job, Mechanic } from '../types';
 import { withTimeout } from '../utils/withTimeout';
 import { AdminAddJobs } from './screens/AdminAddJobs';
@@ -142,6 +144,7 @@ export default function AdminApp() {
     if (session) {
       void loadMechanics();
       void loadJobs();
+      void initNotifications(registerAdminDevice);
     }
   }, [session]);
 
@@ -160,7 +163,7 @@ export default function AdminApp() {
       confirmLabel: 'Logout',
       kind: 'danger',
       onConfirm: () => {
-        void signOut(auth);
+        void logoutAdmin();
         setSession(null);
         setSelectedMechanic(null);
         setPage('adminLogin');

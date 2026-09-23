@@ -9,7 +9,7 @@ import { auth } from '../firebase';
 import { useLoadingState } from '../hooks/useLoadingState';
 import { useI18n } from '../i18n/I18nContext';
 import { listAnnouncements } from '../services/announcements';
-import { getMechanic } from '../services/mechanics';
+import { getMechanic, updateDeviceInfo } from '../services/mechanics';
 import { initNotifications } from '../services/notifications';
 import type { Mechanic } from '../types';
 import { withTimeout } from '../utils/withTimeout';
@@ -155,7 +155,7 @@ export default function MechanicApp() {
   useEffect(() => {
     if (session) {
       void loadCurrentMechanic(session.mechanicId);
-      void initNotifications();
+      void initNotifications(updateDeviceInfo);
     }
   }, [session]);
 

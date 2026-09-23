@@ -1,8 +1,18 @@
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 
-import { auth, db } from '../firebase';
+import { auth, db, functions } from '../firebase';
 import type { AdminProfile } from '../types';
+import { currentPushToken } from './notifications';
+
+const registerAdminDeviceFn = httpsCallable<{ fcmToken: string }, { status: 'ok' }>(functions, 'registerAdminDevice');
+const unregisterAdminDeviceFn = httpsCallable<{ fcmToken: string }, { status: 'ok' }>(functions, 'unregisterAdminDevice');
+
+/** Registers this device for admin pushes (new signups, job accept/decline/complete, profile-change requests). */
+export async function registerAdminDevice(fcmToken: string) {
+  await registerAdminDeviceFn({ fcmToken });
+}
 
 export async function loginAdmin(email: string, password: string): Promise<AdminProfile> {
   let credentials;
@@ -30,7 +40,14 @@ export async function loginAdmin(email: string, password: string): Promise<Admin
   };
 }
 
+/** Stops this device's admin pushes (best-effort — a failure must never block logging out), then signs out. */
 export async function logoutAdmin() {
+  const fcmToken = currentPushToken();
+
+  if (fcmToken) {
+    await unregisterAdminDeviceFn({ fcmToken }).catch((err: unknown) => console.warn('failed to unregister push token:', err));
+  }
+
   await signOut(auth);
 }
 

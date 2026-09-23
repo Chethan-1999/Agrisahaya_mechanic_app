@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 // language selector (admin UI stays English-only — see MechanicFields.tsx).
 export function AdminLoginLayout({ children, title }: { children: ReactNode; title: string }) {
   return (
-    <main className="auth-page">
+    <main className="auth-page admin-login-page">
       <section className="auth-card card">
         <h2>{title}</h2>
         {children}
