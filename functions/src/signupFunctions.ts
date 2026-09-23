@@ -2,6 +2,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 import { db } from './lib/firebaseAdmin';
+import { pushToAdmins } from './lib/push';
 import { assertValidProfile, type ProfileInput } from './lib/validation';
 
 /**
@@ -64,6 +65,12 @@ export const completeSignup = onCall(async (request) => {
     approvedBy: null,
   });
 
+  await pushToAdmins({
+    title: '🆕 New mechanic signup',
+    body: `${profile.fullName.trim()} · ${profile.village.trim()}, ${profile.district.trim()} — tap to review`,
+    data: { type: 'admin-signup', technicianId: uid },
+  });
+
   return { status: 'created' };
 });
 
@@ -120,6 +127,12 @@ export const reapplySignup = onCall(async (request) => {
       reappliedAt: now,
       updatedAt: now,
     });
+  });
+
+  await pushToAdmins({
+    title: '🔁 Signup sent again',
+    body: `${profile.fullName.trim()} updated their rejected signup — tap to review`,
+    data: { type: 'admin-signup', technicianId: uid },
   });
 
   return { status: 'ok' };

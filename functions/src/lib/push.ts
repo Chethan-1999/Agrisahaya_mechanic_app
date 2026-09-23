@@ -1,3 +1,4 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 
 import { app, db } from './firebaseAdmin';
@@ -66,5 +67,41 @@ export async function pushDismiss(technicianId: string, jobId: string): Promise<
     });
   } catch (err) {
     console.warn(`dismiss push failed for technician ${technicianId}:`, err);
+  }
+}
+
+// FCM error codes meaning the token will never work again (app uninstalled, data cleared, token rotated).
+const DEAD_TOKEN_CODES = new Set(['messaging/registration-token-not-registered', 'messaging/invalid-registration-token']);
+
+/**
+ * Best-effort push to every admin's registered devices (`admins/{uid}.fcmTokens` — an admin can be signed in on
+ * several). Never throws, same ethos as pushToTechnician. Tokens FCM reports as dead are pruned so they don't pile up.
+ */
+export async function pushToAdmins(payload: PushPayload): Promise<void> {
+  try {
+    const admins = await db.collection('admins').get();
+    const targets = admins.docs.flatMap((doc) =>
+      ((doc.data().fcmTokens as string[] | undefined) ?? []).map((token) => ({ ref: doc.ref, token })),
+    );
+
+    if (targets.length === 0) return;
+
+    const { responses } = await messaging.sendEach(
+      targets.map(({ token }) => ({
+        token,
+        notification: { title: payload.title, body: payload.body },
+        data: payload.data,
+        android: { priority: 'high' as const },
+      })),
+    );
+
+    await Promise.all(
+      responses.map(async (response, i) => {
+        if (response.success || !DEAD_TOKEN_CODES.has(response.error?.code ?? '')) return;
+        await targets[i].ref.update({ fcmTokens: FieldValue.arrayRemove(targets[i].token) });
+      }),
+    );
+  } catch (err) {
+    console.warn('admin push failed:', err);
   }
 }

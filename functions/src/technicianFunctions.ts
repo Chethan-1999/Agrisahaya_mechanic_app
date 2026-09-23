@@ -43,8 +43,8 @@ export const reviewSignup = onCall(async (request) => {
 
   if (decision === 'approve') {
     await pushToTechnician(technicianId, {
-      title: 'Account activated',
-      body: 'Your AgriSahaya account is verified — you can now receive jobs.',
+      title: '🎉 Welcome to AgriSahaya!',
+      body: "You're verified and ready to go. New jobs will land right here — keep the app handy!",
       data: { type: 'account-activated' },
     });
   }
@@ -119,7 +119,7 @@ export const setTechnicianStatus = onCall(async (request) => {
   if (released > 0) {
     await pushToTechnician(technicianId, {
       title: 'Jobs taken back',
-      body: `Your account was deactivated, so ${released} job${released === 1 ? ' was' : 's were'} taken back and will be reassigned.`,
+      body: `Your account was deactivated, so ${released} job${released === 1 ? ' was' : 's were'} taken back and will be reassigned. Contact support if this looks wrong.`,
       data: { type: 'jobs-released' },
     });
   }

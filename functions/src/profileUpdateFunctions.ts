@@ -7,7 +7,7 @@ import { db } from './lib/firebaseAdmin';
 import { isIndianState } from './lib/indianStates';
 import { PROFILE_UPDATE_LIFETIME_CAP } from './lib/params';
 import { profileHistoryEntry } from './lib/profileHistory';
-import { pushToTechnician } from './lib/push';
+import { pushToAdmins, pushToTechnician } from './lib/push';
 
 // Mirrors MechanicForm's keys (src/types.ts) minus phoneNumber, which is
 // never technician-editable. Kept as a plain list rather than a shared
@@ -61,7 +61,7 @@ export const submitProfileUpdate = onCall(async (request) => {
     }
   }
 
-  await requireDoc(db.collection('technicians').doc(uid), 'Mechanic profile not found.');
+  const technician = await requireDoc(db.collection('technicians').doc(uid), 'Mechanic profile not found.');
 
   const { count } = (
     await db.collection('profileUpdateRequests').where('technicianId', '==', uid).count().get()
@@ -84,6 +84,12 @@ export const submitProfileUpdate = onCall(async (request) => {
     reviewedBy: null,
     reviewedAt: null,
     adminNote: null,
+  });
+
+  await pushToAdmins({
+    title: '✏️ Profile change request',
+    body: `${String(technician.data()?.fullName ?? 'A mechanic')} wants to change: ${entries.map(([field]) => field).join(', ')}`,
+    data: { type: 'admin-profile-request', requestId: ref.id },
   });
 
   return { status: 'submitted', requestId: ref.id };
@@ -134,11 +140,11 @@ export const reviewProfileUpdate = onCall(async (request) => {
   });
 
   await pushToTechnician(data.technicianId, {
-    title: decision === 'approve' ? 'Profile update approved' : 'Profile update needs changes',
+    title: decision === 'approve' ? '✅ Profile updated!' : '📝 Profile update needs changes',
     body:
       decision === 'approve'
-        ? 'Your requested changes are now live on your profile.'
-        : note ?? 'Your admin rejected this change — open the app for details.',
+        ? 'Your changes are live on your profile. Looking good!'
+        : note ?? 'Your admin needs a change to this request — open the app for details.',
     data: { type: 'profile-update-reviewed', requestId },
   });
 
