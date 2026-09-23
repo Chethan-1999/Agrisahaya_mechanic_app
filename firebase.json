@@ -10,6 +10,15 @@
       "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log", "scripts"]
     }
   ],
+  "hosting": {
+    "public": "dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      { "source": "/privacy-policy.html", "destination": "/privacy-policy.html" },
+      { "source": "/data-deletion.html", "destination": "/data-deletion.html" },
+      { "source": "**", "destination": "/index.html" }
+    ]
+  },
   "emulators": {
     "auth": { "host": "0.0.0.0", "port": 9099 },
     "firestore": { "host": "0.0.0.0", "port": 8080 },

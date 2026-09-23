@@ -1,8 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import { PullToRefresh } from '../components/PullToRefresh';
 import { formatDate, jobStatusMeta, type ConfirmDialog, type Toast } from '../components/ui';
-import { createJob, deleteJob, updateJob } from '../services/jobs';
+import { createJob, deleteJob, sortForAdmin, updateJob, visibleJobs } from '../services/jobs';
 import { emptyJobFields, type Job, type JobFields } from '../types';
 
 const toDigits = (value: string) => value.replace(/\D/g, '').slice(0, 10);
@@ -31,6 +31,9 @@ export function AdminAddJobs({ askConfirm, jobs, onRefresh, setToast, withLoadin
   useEffect(() => {
     void onRefresh();
   }, []);
+
+  const board = useMemo(() => sortForAdmin(visibleJobs(jobs)), [jobs]);
+  const deletedCount = jobs.filter((job) => job.deleted).length;
 
   function updateField(key: keyof JobFields, value: string) {
     setForm((current) => ({ ...current, [key]: key === 'farmerPhone' ? toDigits(value) : value }));
@@ -87,7 +90,7 @@ export function AdminAddJobs({ askConfirm, jobs, onRefresh, setToast, withLoadin
   function confirmDelete(job: Job) {
     askConfirm({
       title: 'Delete job?',
-      message: `${job.jobCode || 'This job'} will be permanently removed${job.technicianId ? ' and taken off the technician\'s list' : ''}.`,
+      message: `${job.jobCode || 'This job'} will be removed from the boards. The record is kept and counted as deleted${job.technicianId ? ' for the mechanic too' : ''}.`,
       confirmLabel: 'Delete',
       kind: 'danger',
       onConfirm: () => {
@@ -129,11 +132,11 @@ export function AdminAddJobs({ askConfirm, jobs, onRefresh, setToast, withLoadin
                   <td className="actions"><button className="icon-save" title="Save job" type="submit" aria-label="Save job">Save</button><button className="danger-text" onClick={closeForm} type="button">Cancel</button></td>
                 </tr>
               )}
-              {jobs.map((job) => {
+              {board.map((job) => {
                 const meta = jobStatusMeta(job.status);
                 const finished = job.status === 'completed' || job.status === 'cancelled';
                 return (
-                  <tr key={job.id}>
+                  <tr className={job.needsReassignment && job.status === 'open' ? 'needs-reassign' : undefined} key={job.id}>
                     <td>{job.jobCode || '-'}</td>
                     <td>{job.farmerName || '-'}</td>
                     <td>{job.farmerPhone || '-'}</td>
@@ -141,18 +144,19 @@ export function AdminAddJobs({ askConfirm, jobs, onRefresh, setToast, withLoadin
                     <td>{job.issue || '-'}</td>
                     <td>{job.district || '-'}</td>
                     <td>{job.additionalNotes || '-'}</td>
-                    <td><span className={`pill ${meta.pillClass}`}>{meta.label}</span></td>
+                    <td><span className={`pill ${meta.pillClass}`}>{meta.label}</span>{job.needsReassignment && job.status === 'open' && <small className="needs-reassign-note">Needs reassignment</small>}</td>
                     <td>{formatDate(job.createdAt)}</td>
                     <td className="actions">
                       {!finished && <button onClick={() => startEdit(job)} type="button">Edit</button>}
-                      {job.status !== 'completed' && <button className="danger-text" onClick={() => confirmDelete(job)} type="button">Delete</button>}
+                      {(job.status === 'declined' || job.status === 'cancelled' || job.status === 'completed') && <button className="danger-text" onClick={() => confirmDelete(job)} type="button">Delete</button>}
                     </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-          {jobs.length === 0 && <p className="empty">No jobs saved yet.</p>}
+          {board.length === 0 && <p className="empty">No jobs saved yet.</p>}
+          {deletedCount > 0 && <p className="muted">{deletedCount} deleted {deletedCount === 1 ? 'job' : 'jobs'} on record.</p>}
         </div>
         {error && <p className="error-text">{error}</p>}
       </form>

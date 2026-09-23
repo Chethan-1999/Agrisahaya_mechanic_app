@@ -18,3 +18,10 @@ const completeSignupFn = httpsCallable<{ profile: Omit<MechanicForm, 'phoneNumbe
 export async function completeSignup(profile: Omit<MechanicForm, 'phoneNumber'>): Promise<void> {
   await completeSignupFn({ profile });
 }
+
+const reapplySignupFn = httpsCallable<{ profile: Omit<MechanicForm, 'phoneNumber'> }, { status: string }>(functions, 'reapplySignup');
+
+/** A rejected technician sends their (possibly corrected) details to the admin again. */
+export async function reapplySignup(profile: Omit<MechanicForm, 'phoneNumber'>): Promise<void> {
+  await reapplySignupFn({ profile });
+}

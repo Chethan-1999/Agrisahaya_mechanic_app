@@ -25,6 +25,11 @@ const toJob = (id: string, data: Record<string, unknown>): Job => ({
   cancelReason: (data.cancelReason as string | null) ?? null,
   acceptedAt: (data.acceptedAt as string | null) ?? null,
   completedAt: (data.completedAt as string | null) ?? null,
+  statusUpdatedBy: String(data.statusUpdatedBy ?? ''),
+  statusUpdatedByRole: data.statusUpdatedByRole === 'admin' || data.statusUpdatedByRole === 'technician' ? data.statusUpdatedByRole : '',
+  statusUpdatedAt: String(data.statusUpdatedAt ?? ''),
+  deleted: data.deleted === true,
+  needsReassignment: data.needsReassignment === true,
   history: (data.history as JobHistoryEntry[] | undefined) ?? [],
 });
 
@@ -32,10 +37,13 @@ const toJob = (id: string, data: Record<string, unknown>): Job => ({
 export async function listOwnJobs(technicianId: string) {
   const q = query(collection(db, collectionName), where('technicianId', '==', technicianId), orderBy('createdAt', 'asc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((d) => toJob(d.id, d.data()));
+  return snapshot.docs.map((d) => toJob(d.id, d.data())).filter((job) => !job.deleted);
 }
 
-/** Admin's full job board — every job regardless of status. */
+/**
+ * Admin's full job board — every job regardless of status, deleted ones included so the deleted count stays available.
+ * Screens show `visibleJobs(jobs)`; the dashboard/summary counts read `jobs.filter(job => job.deleted)`.
+ */
 export async function listAllJobs() {
   const q = query(collection(db, collectionName), orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
@@ -45,7 +53,7 @@ export async function listAllJobs() {
 const createJobFn = httpsCallable<JobFields & { technicianId?: string }, { status: string; jobId: string; jobCode: string }>(functions, 'createJob');
 const updateJobFn = httpsCallable<JobFields & { jobId: string }, { status: string }>(functions, 'updateJob');
 const deleteJobFn = httpsCallable<{ jobId: string }, { status: string }>(functions, 'deleteJob');
-const assignJobFn = httpsCallable<{ jobId: string; technicianId: string }, { status: string }>(functions, 'assignJob');
+const assignJobFn = httpsCallable<{ jobId: string; technicianId: string; markCompleted?: boolean }, { status: string }>(functions, 'assignJob');
 const acceptJobFn = httpsCallable<{ jobId: string }, { status: string }>(functions, 'acceptJob');
 const declineJobFn = httpsCallable<{ jobId: string }, { status: string }>(functions, 'declineJob');
 const completeJobFn = httpsCallable<{ jobId: string }, { status: string }>(functions, 'completeJob');
@@ -69,8 +77,9 @@ export async function completeJobAsAdmin(jobId: string) {
   await completeJobAsAdminFn({ jobId });
 }
 
-export async function assignJob(jobId: string, technicianId: string) {
-  await assignJobFn({ jobId, technicianId });
+/** `markCompleted` assigns and closes the job in one step (work already done by phone), so it can't be left half-applied. */
+export async function assignJob(jobId: string, technicianId: string, markCompleted = false) {
+  await assignJobFn({ jobId, technicianId, markCompleted });
 }
 
 export async function acceptJob(jobId: string) {
@@ -87,4 +96,23 @@ export async function completeJob(jobId: string) {
 
 export async function cancelJob(jobId: string, reason?: string) {
   await cancelJobFn({ jobId, reason });
+}
+
+/** Jobs the admin should still see on the boards (soft-deleted ones are hidden). */
+export const visibleJobs = (jobs: Job[]) => jobs.filter((job) => !job.deleted);
+
+/** Awaiting the admin's attention first (unassigned or declined), then jobs out with a technician, then completed, then cancelled. */
+const statusRank: Record<JobStatus, number> = {
+  open: 0,
+  declined: 0,
+  assigned: 1,
+  reassigned: 1,
+  accepted: 1,
+  completed: 2,
+  cancelled: 3,
+};
+
+/** Admin board order: pending work floats to the top as a standing reminder, completed jobs follow, newest first within each group. */
+export function sortForAdmin(jobs: Job[]): Job[] {
+  return [...jobs].sort((a, b) => statusRank[a.status] - statusRank[b.status] || b.createdAt.localeCompare(a.createdAt));
 }

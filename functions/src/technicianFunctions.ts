@@ -1,32 +1,44 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 import { requireAdmin } from './lib/authz';
 import { requireDoc } from './lib/docHelpers';
 import { auth, db } from './lib/firebaseAdmin';
+import { historyEntry } from './lib/jobHistory';
+import { isHeld, statusStamp } from './lib/jobStatus';
 import { pushToTechnician } from './lib/push';
 import { assertValidProfile, type ProfileInput } from './lib/validation';
 
 /** Admin approves or rejects a pending technician. This is the activation gate. */
 export const reviewSignup = onCall(async (request) => {
   const adminUid = await requireAdmin(request);
-  const { technicianId, decision, paymentVerified } = request.data ?? {};
+  const { technicianId, decision, paymentVerified, reason } = request.data ?? {};
 
   if (typeof technicianId !== 'string' || (decision !== 'approve' && decision !== 'reject')) {
     throw new HttpsError('invalid-argument', 'technicianId and a valid decision are required.');
   }
 
   const ref = db.collection('technicians').doc(technicianId);
-  const snap = await requireDoc(ref, 'Technician not found.');
+  const snap = await requireDoc(ref, 'Mechanic not found.');
 
   if (snap.data()?.status !== 'pending') {
-    throw new HttpsError('failed-precondition', 'This technician has already been reviewed.');
+    throw new HttpsError('failed-precondition', 'This mechanic has already been reviewed.');
   }
 
+  const now = new Date().toISOString();
+  const approved = decision === 'approve';
+  const rejectionReason = !approved && typeof reason === 'string' && reason.trim() ? reason.trim().slice(0, 300) : null;
+
   await ref.update({
-    status: decision === 'approve' ? 'active' : 'rejected',
+    status: approved ? 'active' : 'rejected',
     paymentVerified: typeof paymentVerified === 'boolean' ? paymentVerified : (snap.data()?.paymentVerified ?? false),
-    approvedBy: adminUid,
-    updatedAt: new Date().toISOString(),
+    ...(approved ? { approvedBy: adminUid } : {}),
+    reviewedBy: adminUid,
+    reviewedAt: now,
+    rejectionReason,
+    // Every decision is kept, so a technician who is rejected and re-applies several times leaves a full trail.
+    reviewHistory: FieldValue.arrayUnion({ decision, by: adminUid, at: now, reason: rejectionReason }),
+    updatedAt: now,
   });
 
   if (decision === 'approve') {
@@ -51,22 +63,68 @@ export const setTechnicianStatus = onCall(async (request) => {
   }
 
   const ref = db.collection('technicians').doc(technicianId);
-  const snap = await requireDoc(ref, 'Technician not found.');
+  const snap = await requireDoc(ref, 'Mechanic not found.');
 
   if (!allowed.includes(snap.data()?.status)) {
     throw new HttpsError(
       'failed-precondition',
-      'Only an already-approved technician can be toggled this way — use reviewSignup for a pending one.',
+      'Only an already-approved mechanic can be toggled this way — use reviewSignup for a pending one.',
     );
   }
 
-  await ref.update({
-    status,
-    approvedBy: adminUid,
-    updatedAt: new Date().toISOString(),
+  // Deactivating takes back every job the technician still holds, in the same transaction as the status change.
+  const heldJobIds = status === 'inactive'
+    ? (await db.collection('jobs').where('technicianId', '==', technicianId).get()).docs
+        .filter((doc) => !doc.data().deleted && isHeld(doc.data().status))
+        .map((doc) => doc.id)
+    : [];
+
+  const released = await db.runTransaction(async (tx) => {
+    const technician = await tx.get(ref);
+    const jobs = await Promise.all(heldJobIds.map((id) => tx.get(db.collection('jobs').doc(id))));
+    // Re-check inside the transaction: the job may have been declined, completed or moved since the query ran.
+    const stillHeld = jobs.filter((job) => {
+      const data = job.data();
+      return data && !data.deleted && data.technicianId === technicianId && isHeld(data.status);
+    });
+    const now = new Date().toISOString();
+
+    for (const job of stillHeld) {
+      tx.update(job.ref, {
+        status: 'open',
+        technicianId: null,
+        acceptedAt: null,
+        needsReassignment: true,
+        releasedFrom: technicianId,
+        releasedAt: now,
+        ...statusStamp(adminUid, 'admin'),
+        history: FieldValue.arrayUnion(
+          historyEntry('release', adminUid, { technicianId, reason: 'technician-deactivated', fromStatus: job.data()?.status }),
+        ),
+      });
+    }
+
+    const stats = (technician.data()?.jobStats ?? { pending: 0, completed: 0, cancelled: 0, deleted: 0 }) as Record<string, number>;
+
+    tx.update(ref, {
+      status,
+      approvedBy: adminUid,
+      updatedAt: now,
+      ...(stillHeld.length ? { jobStats: { ...stats, pending: Math.max(0, (stats.pending ?? 0) - stillHeld.length) } } : {}),
+    });
+
+    return stillHeld.length;
   });
 
-  return { status: 'ok' };
+  if (released > 0) {
+    await pushToTechnician(technicianId, {
+      title: 'Jobs taken back',
+      body: `Your account was deactivated, so ${released} job${released === 1 ? ' was' : 's were'} taken back and will be reassigned.`,
+      data: { type: 'jobs-released' },
+    });
+  }
+
+  return { status: 'ok', released };
 });
 
 /** Self-service: a signed-in technician registers/refreshes their push token. */
@@ -150,7 +208,7 @@ export const adminUpdateProfile = onCall(async (request) => {
   }
 
   const ref = db.collection('technicians').doc(technicianId);
-  const snap = await requireDoc(ref, 'Technician not found.');
+  const snap = await requireDoc(ref, 'Mechanic not found.');
 
   const updates: Record<string, string> = {};
   for (const field of ADMIN_EDITABLE_FIELDS) {

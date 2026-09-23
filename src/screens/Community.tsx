@@ -26,7 +26,7 @@ export function Community({ withLoading }: {
         <div className="mechanic-screen-hero community-hero">
           <div>
             <p className="eyebrow">{t('communityNav')}</p>
-            <h1>{t('communityNav')}</h1>
+            <h1>{t('communityTitle')}</h1>
           </div>
           <span>{announcements.length}</span>
         </div>

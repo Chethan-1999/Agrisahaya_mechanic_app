@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { PullToRefresh } from '../components/PullToRefresh';
 import { jobStatusMeta, type ConfirmDialog, type Toast } from '../components/ui';
-import { assignJob, cancelJob, completeJobAsAdmin } from '../services/jobs';
+import { assignJob, cancelJob, completeJobAsAdmin, sortForAdmin, visibleJobs } from '../services/jobs';
 import type { Job, Mechanic } from '../types';
 
 export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToast, withLoading }: {
@@ -21,6 +21,8 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
     void onRefresh();
   }, []);
 
+  // Pending work stays at the top as a standing reminder; completed jobs follow, cancelled ones last.
+  const board = useMemo(() => sortForAdmin(visibleJobs(jobs)), [jobs]);
   const activeTechnicians = useMemo(() => mechanics.filter((mechanic) => mechanic.status === 'active'), [mechanics]);
   const technicianName = (id: string | null) => (id ? (mechanics.find((mechanic) => mechanic.id === id)?.fullName ?? 'Unknown') : '');
 
@@ -33,9 +35,9 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
   function save(job: Job, technicianId: string, markCompleted: boolean) {
     void withLoading(async () => {
       if (technicianId !== (job.technicianId ?? '') || job.status === 'open' || job.status === 'declined') {
-        await assignJob(job.id, technicianId);
-      }
-      if (markCompleted) {
+        // Assign and (optionally) close in one call, so a failure can't leave the job assigned but not completed.
+        await assignJob(job.id, technicianId, markCompleted);
+      } else if (markCompleted) {
         await completeJobAsAdmin(job.id);
       }
       setToast({ kind: 'success', text: markCompleted ? 'Job assigned and completed.' : 'Job assigned.' });
@@ -47,7 +49,7 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
   function confirmCancel(job: Job) {
     askConfirm({
       title: 'Cancel job?',
-      message: `${job.jobCode || 'This job'} will be cancelled${job.technicianId ? ' and the technician will be notified' : ''}.`,
+      message: `${job.jobCode || 'This job'} will be cancelled${job.technicianId ? ' and the mechanic will be notified' : ''}.`,
       confirmLabel: 'Cancel job',
       kind: 'danger',
       onConfirm: () => {
@@ -65,16 +67,16 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
     <section>
       <div className="section-heading jobs-heading">
         <h1>Assign jobs</h1>
-        <p className="muted">Select a technician for each job and save the assignment.</p>
+        <p className="muted">Select a mechanic for each job and save the assignment.</p>
       </div>
       <div className="table-wrap assign-table-wrap">
         <table className="assign-table">
-          <thead><tr><th>Job ID</th><th>Customer</th><th>Phone number</th><th>Equipment</th><th>Issue</th><th>District</th><th>Current technician</th><th>Assign technician</th><th>Job completed</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Job ID</th><th>Customer</th><th>Phone number</th><th>Equipment</th><th>Issue</th><th>District</th><th>Current mechanic</th><th>Assign mechanic</th><th>Job completed</th><th>Actions</th></tr></thead>
           <tbody>
-            {jobs.map((job) => {
+            {board.map((job) => {
               const meta = jobStatusMeta(job.status);
               const finished = job.status === 'completed' || job.status === 'cancelled';
-              const held = job.status === 'assigned' || job.status === 'accepted';
+              const held = job.status === 'assigned' || job.status === 'reassigned' || job.status === 'accepted';
               const isEditing = Boolean(editing[job.id]);
               const locked = finished || (held && !isEditing);
               const technicianId = selected[job.id] ?? job.technicianId ?? '';
@@ -86,7 +88,7 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
                 : activeTechnicians;
 
               return (
-                <tr key={job.id}>
+                <tr className={job.needsReassignment && job.status === 'open' ? 'needs-reassign' : undefined} key={job.id}>
                   <td>{job.jobCode || '-'}</td>
                   <td>{job.farmerName || '-'}</td>
                   <td>{job.farmerPhone || '-'}</td>
@@ -96,11 +98,11 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
                   <td>
                     {currentName || finished
                       ? <span className={job.status === 'completed' ? 'assignment-status completed' : 'assignment-status'}><strong>{meta.label.toUpperCase()}</strong>{currentName && <small>{currentName}</small>}</span>
-                      : <span className="not-assigned">{job.status === 'declined' ? 'Declined — reassign' : 'Not assigned'}</span>}
+                      : <span className="not-assigned">{job.status === 'declined' ? 'Declined — reassign' : job.needsReassignment ? 'Mechanic deactivated — reassign' : 'Not assigned'}</span>}
                   </td>
                   <td>
-                    <select aria-label={`Assign technician for ${job.jobCode || job.farmerName}`} disabled={locked} onChange={(event) => setSelected((current) => ({ ...current, [job.id]: event.target.value }))} value={technicianId}>
-                      <option value="">Select technician</option>
+                    <select aria-label={`Assign mechanic for ${job.jobCode || job.farmerName}`} disabled={locked} onChange={(event) => setSelected((current) => ({ ...current, [job.id]: event.target.value }))} value={technicianId}>
+                      <option value="">Select mechanic</option>
                       {options.map((technician) => <option key={technician.id} value={technician.id}>{technician.fullName} - {technician.district}</option>)}
                     </select>
                   </td>
@@ -125,8 +127,8 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
             })}
           </tbody>
         </table>
-        {jobs.length === 0 && <p className="empty">No jobs available to assign.</p>}
-        {activeTechnicians.length === 0 && <p className="empty">No active technicians available. Approve technicians before assigning jobs.</p>}
+        {board.length === 0 && <p className="empty">No jobs available to assign.</p>}
+        {activeTechnicians.length === 0 && <p className="empty">No active mechanics available. Approve mechanics before assigning jobs.</p>}
       </div>
     </section>
     </PullToRefresh>

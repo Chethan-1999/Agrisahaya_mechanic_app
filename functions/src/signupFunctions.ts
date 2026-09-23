@@ -1,3 +1,4 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 import { db } from './lib/firebaseAdmin';
@@ -56,7 +57,7 @@ export const completeSignup = onCall(async (request) => {
     status: 'pending',
     paymentVerified: false,
     fcmToken: null,
-    jobStats: { pending: 0, completed: 0, cancelled: 0 },
+    jobStats: { pending: 0, completed: 0, cancelled: 0, deleted: 0 },
     profileHistory: [],
     createdAt: now,
     updatedAt: now,
@@ -64,4 +65,62 @@ export const completeSignup = onCall(async (request) => {
   });
 
   return { status: 'created' };
+});
+
+/**
+ * A technician whose signup was rejected sends it again — as often as they like. Same phone, same record: the profile
+ * is overwritten with the (possibly corrected) details and the status goes back to `pending` for the admin to review.
+ */
+export const reapplySignup = onCall(async (request) => {
+  const uid = request.auth?.uid;
+
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Sign in required.');
+  }
+
+  const profile = request.data?.profile as ProfileInput | undefined;
+
+  if (!profile) {
+    throw new HttpsError('invalid-argument', 'Profile is required.');
+  }
+
+  try {
+    assertValidProfile(profile);
+  } catch (err) {
+    throw new HttpsError('invalid-argument', err instanceof Error ? err.message : 'Invalid profile.');
+  }
+
+  const ref = db.collection('technicians').doc(uid);
+
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+
+    if (!snap.exists) {
+      throw new HttpsError('not-found', 'Mechanic profile not found.');
+    }
+    if (snap.data()?.status !== 'rejected') {
+      throw new HttpsError('failed-precondition', 'Only a rejected signup can be sent again.');
+    }
+
+    const now = new Date().toISOString();
+
+    tx.update(ref, {
+      fullName: profile.fullName.trim(),
+      village: profile.village.trim(),
+      district: profile.district.trim(),
+      state: (profile.state ?? '').trim(),
+      pincode: (profile.pincode ?? '').trim(),
+      address: (profile.address ?? '').trim(),
+      landmark: (profile.landmark ?? '').trim() || null,
+      age: String(profile.age).trim(),
+      experience: String(profile.experience).trim(),
+      status: 'pending',
+      rejectionReason: null,
+      reapplyCount: FieldValue.increment(1),
+      reappliedAt: now,
+      updatedAt: now,
+    });
+  });
+
+  return { status: 'ok' };
 });

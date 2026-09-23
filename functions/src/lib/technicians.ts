@@ -7,6 +7,6 @@ export async function requireActiveTechnician(technicianId: string): Promise<voi
   const snap = await db.collection('technicians').doc(technicianId).get();
 
   if (!snap.exists || snap.data()?.status !== 'active') {
-    throw new HttpsError('failed-precondition', 'Only an active technician can be assigned a job.');
+    throw new HttpsError('failed-precondition', 'Only an active mechanic can be assigned a job.');
   }
 }
