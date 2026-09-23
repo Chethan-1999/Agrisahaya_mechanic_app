@@ -1,5 +1,5 @@
 .PHONY: web sync apk local-phone admin emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean \
-	sync-admin apk-admin install-admin launch-admin run-admin logs-admin clean-admin
+	sync-admin apk-admin install-admin launch-admin run-admin logs-admin clean-admin local-phone-admin local-admin prod-phone-admin
 
 # Override any of these on the command line, e.g. `make run AVD_NAME=Pixel_7`
 AVD_NAME     ?= Pixel_6
@@ -29,7 +29,7 @@ sync:
 ## Same as `sync`, but for the admin app (separate appId, native project in android-admin/)
 sync-admin:
 	npm run build
-	npx cap sync android --config capacitor.admin.config.ts
+	CAP_APP=admin npx cap sync android
 
 ## Boot the Android emulator in the background if it isn't already running.
 ## -no-snapshot forces a clean cold boot every time: the crash mode we've hit
@@ -130,6 +130,17 @@ apk-admin: sync-admin
 local-phone:
 	npm run dev:local -- --apk
 
+## Admin app in the AVD emulator + a mechanic phone APK (dist/agrisahaya-local-*.apk),
+## both against the same local Firebase emulators. Phone must share the laptop's network.
+local-phone-admin:
+	npm run dev:local -- --app admin --phone-apk mechanic
+
+## Same as `local-phone-admin`, but both builds talk to PRODUCTION Firebase (the project in .env):
+## admin app in the AVD + a mechanic phone APK (dist/agrisahaya-prod-*.apk). No emulators, no LAN IP;
+## the phone works on any network. Exits once the admin app is running.
+prod-phone-admin:
+	npm run dev:local -- --app admin --phone-apk mechanic --prod
+
 ## Create the admin in the RUNNING local emulators (one time; it's then saved in emulator-data/).
 ## Usage: make admin ADMIN_EMAIL=agrisahay@gmail.com ADMIN_PASSWORD='...' [ADMIN_NAME=Admin]
 ADMIN_NAME ?= Admin
@@ -153,10 +164,18 @@ run: install launch
 run-admin: install-admin launch-admin
 
 ## Test against Firebase running on THIS laptop instead of production: builds with
-## the laptop's LAN IP baked in, installs + launches on the emulator, then starts
-## the Firebase Emulator Suite. Same command on Windows: `npm run dev:local`.
+## the local emulator host baked in, boots the AVD emulator, installs + launches
+## the app, VERIFIES it's still running a few seconds later (not just that install
+## succeeded), also saves an installable APK to dist/, then starts the real
+## Firebase Emulator Suite so the running app is exercised against real local
+## Auth/Firestore/Functions endpoints, not mocks. Same command on Windows:
+## `npm run dev:local`.
 local:
 	npm run dev:local
+
+## Same as `local`, but for the admin app. Output: dist/agrisahaya-admin-local-*.apk
+local-admin:
+	npm run dev:local -- --app admin
 
 ## Stream app logs from the running emulator/device (mechanic app)
 logs:
