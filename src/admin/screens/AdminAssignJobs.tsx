@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { PullToRefresh } from '../components/PullToRefresh';
-import { jobStatusMeta, type ConfirmDialog, type Toast } from '../components/ui';
-import { assignJob, cancelJob, completeJobAsAdmin, sortForAdmin, visibleJobs } from '../services/jobs';
-import type { Job, Mechanic } from '../types';
+import { PullToRefresh } from '../../components/PullToRefresh';
+import { jobStatusMeta, type ConfirmDialog, type Toast } from '../../components/ui';
+import { assignJob, cancelJob, completeJobAsAdmin, sortForAdmin, visibleJobs } from '../../services/jobs';
+import type { Job, Mechanic } from '../../types';
 
 export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToast, withLoading }: {
   askConfirm: (dialog: NonNullable<ConfirmDialog>) => void;

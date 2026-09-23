@@ -3,10 +3,8 @@ import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { PushNotifications, type ActionPerformed, type PushNotificationSchema } from '@capacitor/push-notifications';
 
-import { updateDeviceInfo } from './mechanics';
-
 /**
- * Wraps FCM registration + local-notification tray management, Android-only
+ * Wraps FCM registration + local-notification tray management for both apps, Android-only
  * (every call is a no-op when Capacitor.isNativePlatform() is false, so the
  * app degrades gracefully in the Vite dev server / browser preview).
  *
@@ -29,16 +27,43 @@ const JOB_CHANNEL_ID = 'jobs';
 // PushNotifications.register() hard-crashes the native app (uncatchable from JS) when
 // android/app/google-services.json is missing. Opt in with VITE_ENABLE_PUSH=true only
 // after that file is in place.
+// That applies per native project: the admin app needs its own android-admin/app/google-services.json too.
 const PUSH_ENABLED = import.meta.env.VITE_ENABLE_PUSH === 'true';
 
-export async function initNotifications(): Promise<void> {
+type RegisterToken = (fcmToken: string) => Promise<void>;
+
+// The device's FCM token and who to hand it to. Listeners are added once per app launch; a later sign-in
+// (e.g. logout → login as someone else) just swaps the callback and re-sends the token it already has.
+let pushToken: string | null = null;
+let registerToken: RegisterToken | null = null;
+let listenersAdded = false;
+
+/** Sets up push for the signed-in user; `register` sends the device's token to the backend (each app has its own call). */
+export async function initNotifications(register: RegisterToken): Promise<void> {
   if (!Capacitor.isNativePlatform() || !PUSH_ENABLED) return;
+
+  registerToken = register;
+
+  if (listenersAdded) {
+    if (pushToken) sendToken(pushToken);
+    return;
+  }
+  listenersAdded = true;
 
   try {
     await registerNotifications();
   } catch (err) {
     console.warn('notification setup failed:', err);
   }
+}
+
+/** This device's FCM token, once registration has delivered one — used to unregister it on logout. */
+export function currentPushToken(): string | null {
+  return pushToken;
+}
+
+function sendToken(token: string): void {
+  void registerToken?.(token).catch((err: unknown) => console.warn('failed to register push token:', err));
 }
 
 async function registerNotifications(): Promise<void> {
@@ -57,7 +82,8 @@ async function registerNotifications(): Promise<void> {
   await PushNotifications.register();
 
   PushNotifications.addListener('registration', (token) => {
-    void updateDeviceInfo(token.value).catch((err: unknown) => console.warn('failed to register push token:', err));
+    pushToken = token.value;
+    sendToken(token.value);
   });
 
   PushNotifications.addListener('registrationError', (err) => {

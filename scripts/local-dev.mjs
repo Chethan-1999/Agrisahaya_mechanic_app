@@ -1,7 +1,16 @@
 #!/usr/bin/env node
-// One command to test the app against a Firebase Emulator Suite running on THIS
-// laptop, from a device/emulator on the same network:
-//   npm run dev:local
+// One command to test the mechanic OR admin app against a Firebase Emulator
+// Suite running on THIS laptop, from a device/emulator on the same network:
+//   npm run dev:local                  # mechanic app (default)
+//   npm run dev:local -- --app admin   # admin app
+//   npm run dev:local -- --apk         # phone-targeted APK build instead of the AVD emulator
+//   npm run dev:local -- --app admin --phone-apk mechanic
+//                                      # admin app in the AVD emulator AND a mechanic phone APK,
+//                                      # both talking to the same local emulator suite
+//   npm run dev:local -- --app admin --phone-apk mechanic --prod
+//                                      # same, but both builds talk to PRODUCTION Firebase
+//                                      # (the project in .env) — no emulators, no LAN IP;
+//                                      # the script exits once the AVD app is running
 //
 // What it does, in order:
 //   1. Detects this laptop's LAN IPv4 address, and checks whether adb already
@@ -40,12 +49,38 @@ import { fileURLToPath } from 'node:url';
 
 const isWindows = process.platform === 'win32';
 const repoRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const androidDir = path.join(repoRoot, 'android');
-const appId = 'com.agrisahaya.mechanic';
 const avdName = process.env.AVD_NAME || 'Pixel_6';
 // Which Firebase project to run the emulators against comes from .firebaserc
 // (the Firebase CLI's own config), not a literal here — one source of truth,
 // shared with every other `firebase` command in this repo.
+
+// Which app this run targets — `--app admin` runs the admin app instead of
+// the default mechanic app. Each has its own native Android project, appId,
+// and Capacitor config (see capacitor.config.ts / capacitor.admin.config.ts;
+// android/ and android-admin/ are both gitignored, regenerated via
+// `[CAP_APP=admin] npx cap add android`).
+const APPS = {
+  mechanic: {
+    label: 'Mechanic',
+    androidDir: path.join(repoRoot, 'android'),
+    appId: 'com.agrisahaya.mechanic',
+    capEnv: {},
+    apkPrefix: 'agrisahaya-local',
+    prodApkPrefix: 'agrisahaya-prod',
+  },
+  admin: {
+    label: 'Admin',
+    androidDir: path.join(repoRoot, 'android-admin'),
+    appId: 'com.agrisahaya.admin',
+    capEnv: { CAP_APP: 'admin' },
+    apkPrefix: 'agrisahaya-admin-local',
+    prodApkPrefix: 'agrisahaya-admin-prod',
+  },
+};
+const appArgIndex = process.argv.indexOf('--app');
+const appKey = appArgIndex !== -1 ? process.argv[appArgIndex + 1] : 'mechanic';
+const app = APPS[appKey];
+if (!app) fail(`Unknown --app "${appKey}". Expected "mechanic" or "admin".`);
 
 function log(message) {
   console.log(`\n\x1b[36m[dev:local]\x1b[0m ${message}`);
@@ -171,6 +206,23 @@ function waitForBootOrRecover(adb, emulatorBin, avdName) {
   fail(`Emulator failed to boot after ${BOOT_RETRIES} attempts.`);
 }
 
+// `adb shell am start` returns success even if the app crashes immediately
+// on launch — poll for the process actually staying alive for a few seconds
+// instead of trusting the start command's exit code alone.
+function verifyAppLaunched(adb, appId, { timeoutMs = 12_000, settleMs = 2000 } = {}) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const pid = capture(adb, ['shell', 'pidof', appId]).stdout?.trim();
+    if (pid) {
+      sleepSyncMs(settleMs);
+      const stillAlive = capture(adb, ['shell', 'pidof', appId]).stdout?.trim();
+      return Boolean(stillAlive);
+    }
+    sleepSyncMs(500);
+  }
+  return false;
+}
+
 // The Firebase emulators fail with a confusing, easy-to-miss "port not open,
 // could not start" per-service warning (rather than a clear error) when a
 // previous run's process got orphaned — e.g. this script's terminal was
@@ -188,6 +240,22 @@ function isPortFree(port) {
 // `--apk`: build a debug APK for a physical phone (laptop LAN IP baked in), skip the AVD, then run the
 // emulators here. Install dist/agrisahaya-local-*.apk on the phone; its traffic and logs show up in this terminal.
 const PHONE_APK = process.argv.includes('--apk');
+
+// `--phone-apk <app>`: on top of the normal AVD run, also build a phone APK for <app> (LAN IP baked
+// in) — e.g. `--app admin --phone-apk mechanic` runs the admin app in the AVD and gives you a
+// mechanic APK for your phone. The two need separate web builds (10.0.2.2 vs the LAN IP), so the
+// phone APK is built, synced, and assembled first, before dist/ is rebuilt for the AVD.
+const phoneApkArgIndex = process.argv.indexOf('--phone-apk');
+const phoneApkApp = phoneApkArgIndex !== -1 ? APPS[process.argv[phoneApkArgIndex + 1]] : null;
+if (phoneApkArgIndex !== -1 && !phoneApkApp) {
+  fail(`Unknown --phone-apk "${process.argv[phoneApkArgIndex + 1]}". Expected "mechanic" or "admin".`);
+}
+if (phoneApkApp && PHONE_APK) fail('--phone-apk is for AVD runs; drop --apk (or drop --phone-apk).');
+
+// `--prod`: every build talks to production Firebase (whatever project .env points at) instead of
+// the local emulator suite — no emulator host baked in, no cleartext/http scheme, no emulators
+// started. Same device/APK handling otherwise, so you can smoke-test a real deploy end to end.
+const PROD = process.argv.includes('--prod');
 
 const WEB_DEV_PORT = 5173;
 const WEB_DEV_LOG = path.join(os.tmpdir(), 'agrisahaya-vite-dev.log');
@@ -264,7 +332,7 @@ function resolveJavaHome() {
 // surviving in git. Debug-only (src/debug/), so it never reaches a release
 // build: Android blocks cleartext (plain HTTP) traffic by default on API
 // 28+, and the emulator suite has no TLS cert to serve over HTTPS.
-function ensureDebugCleartextConfig() {
+function ensureDebugCleartextConfig(androidDir) {
   const debugDir = path.join(androidDir, 'app', 'src', 'debug');
   mkdirSync(path.join(debugDir, 'res', 'xml'), { recursive: true });
 
@@ -284,16 +352,111 @@ function ensureDebugCleartextConfig() {
   );
 }
 
+// Builds both apps into dist/ with `firebaseHost` baked in, then syncs the build into
+// `targetApp`'s Android project. Anything synced earlier keeps its own copy of the assets,
+// so rebuilding dist/ afterwards for a different host doesn't touch it. A null
+// `firebaseHost` (--prod) builds against production Firebase instead.
+function buildAndSync(targetApp, firebaseHost) {
+  log(
+    firebaseHost
+      ? `Building the web app (both apps) with Firebase emulator host ${firebaseHost} baked in...`
+      : 'Building the web app (both apps) against PRODUCTION Firebase (no emulator host)...',
+  );
+  // Set explicitly (even to '') so a VITE_FIREBASE_EMULATOR_HOST exported in the shell can't
+  // leak into a --prod build — process env takes priority over .env in Vite.
+  const buildEnv = { VITE_FIREBASE_EMULATOR_HOST: firebaseHost ?? '' };
+  // Two builds: mechanic → dist/, admin → dist/admin/ (self-contained; see vite.admin.config.ts).
+  // Note the mechanic build empties dist/, including any APK copied there earlier.
+  run('npx', ['vite', 'build'], buildEnv);
+  run('npx', ['vite', 'build', '--config', 'vite.admin.config.ts'], buildEnv);
+
+  if (!firebaseHost) {
+    log(`Syncing the build into the ${targetApp.label} Android project...`);
+    run('npx', ['cap', 'sync', 'android'], targetApp.capEnv);
+    return;
+  }
+  log(`Syncing the build into the ${targetApp.label} Android project (cleartext HTTP enabled for this build only)...`);
+  run('npx', ['cap', 'sync', 'android'], { ...targetApp.capEnv, CAP_LOCAL_DEV: '1' });
+  ensureDebugCleartextConfig(targetApp.androidDir);
+}
+
+function apkPaths(targetApp, stamp) {
+  return {
+    apkSource: path.join(targetApp.androidDir, 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk'),
+    apkOut: path.join(repoRoot, 'dist', `${PROD ? targetApp.prodApkPrefix : targetApp.apkPrefix}-${stamp}.apk`),
+  };
+}
+
+function assemblePhoneApk(targetApp, gradleEnv) {
+  const gradlew = path.join(targetApp.androidDir, isWindows ? 'gradlew.bat' : 'gradlew');
+  log(`Building the ${targetApp.label} phone APK (debug-signed)...`);
+  const buildResult = runBin(gradlew, ['assembleDebug'], { cwd: targetApp.androidDir, env: gradleEnv });
+  if (buildResult.status !== 0) fail('Gradle build failed. See output above.');
+}
+
+// Copies an assembled APK into dist/. Call it only after the last web build of the
+// run — the mechanic vite build empties dist/.
+function savePhoneApk(targetApp, lanIp, stamp) {
+  const { apkSource, apkOut } = apkPaths(targetApp, stamp);
+  copyFileSync(apkSource, apkOut);
+  log(`Phone APK ready: ${apkOut}`);
+  log(
+    lanIp
+      ? `It talks to ${lanIp} — the phone must be on the same network as this laptop. Rebuild if the IP changes.`
+      : 'It talks to production Firebase — works on any network.',
+  );
+  return apkOut;
+}
+
+// src/firebase.ts only console.errors on a missing config, so a build without it still installs and
+// "launches" fine — verifyAppLaunched can't tell. Refuse to build instead of shipping a dead APK.
+const REQUIRED_FIREBASE_KEYS = [
+  'VITE_FIREBASE_API_KEY',
+  'VITE_FIREBASE_AUTH_DOMAIN',
+  'VITE_FIREBASE_PROJECT_ID',
+  'VITE_FIREBASE_STORAGE_BUCKET',
+  'VITE_FIREBASE_MESSAGING_SENDER_ID',
+  'VITE_FIREBASE_APP_ID',
+];
+
+function requireFirebaseConfig() {
+  const envPath = path.join(repoRoot, '.env');
+  const fileVars = existsSync(envPath)
+    ? Object.fromEntries(
+        readFileSync(envPath, 'utf8')
+          .split(/\r?\n/)
+          .map((line) => line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/))
+          .filter(Boolean)
+          .map((m) => [m[1], m[2]]),
+      )
+    : {};
+  const missing = REQUIRED_FIREBASE_KEYS.filter((key) => !process.env[key] && !fileVars[key]);
+  if (missing.length > 0) {
+    fail(`.env is missing Firebase config: ${missing.join(', ')}. Copy .env.example to .env and fill it in.`);
+  }
+}
+
+function requireAndroidProject(targetApp) {
+  if (!existsSync(targetApp.androidDir)) {
+    fail(`No ${path.basename(targetApp.androidDir)}/ project found. Run "${targetApp.capEnv.CAP_APP ? 'CAP_APP=admin ' : ''}npx cap add android" first.`);
+  }
+}
+
 async function main() {
-  const lanIp = detectLanIp();
+  // --prod never talks to this laptop, so it doesn't need (or require) a LAN IP.
+  const lanIp = PROD ? null : detectLanIp();
+
+  log(`Targeting the ${app.label} app (${app.appId})${PROD ? ' against PRODUCTION Firebase' : ''}.`);
 
   const androidHome = resolveAndroidHome();
   const javaHome = resolveJavaHome();
   const adb = path.join(androidHome, 'platform-tools', isWindows ? 'adb.exe' : 'adb');
   const emulatorBin = path.join(androidHome, 'emulator', isWindows ? 'emulator.exe' : 'emulator');
-  const gradlew = path.join(androidDir, isWindows ? 'gradlew.bat' : 'gradlew');
+  const gradlew = path.join(app.androidDir, isWindows ? 'gradlew.bat' : 'gradlew');
   if (!existsSync(adb)) fail(`adb not found at ${adb}. Check your Android SDK install.`);
-  if (!existsSync(androidDir)) fail(`No android/ project found. Run "npx cap add android" first.`);
+  requireFirebaseConfig();
+  requireAndroidProject(app);
+  if (phoneApkApp) requireAndroidProject(phoneApkApp);
 
   // The AVD emulator this script boots can only reach the host machine via
   // the special 10.0.2.2 loopback alias — its slirp/NAT network cannot
@@ -313,11 +476,13 @@ async function main() {
     .map((line) => line.trim().split(/\s+/)[0])
     .filter(Boolean);
   const hasPhysicalDevice = connectedSerials.some((serial) => !serial.startsWith('emulator-'));
-  const androidFirebaseHost = PHONE_APK || hasPhysicalDevice ? lanIp : '10.0.2.2';
+  const androidFirebaseHost = PROD ? null : PHONE_APK || hasPhysicalDevice ? lanIp : '10.0.2.2';
 
-  log(`This laptop's LAN IP: ${lanIp} (used for the browser dev server and any physical device on Wi-Fi).`);
+  if (!PROD) log(`This laptop's LAN IP: ${lanIp} (used for the browser dev server and any physical device on Wi-Fi).`);
   log(
-    PHONE_APK
+    PROD
+      ? 'Production mode — every build talks to the Firebase project in .env; no emulators are started.'
+      : PHONE_APK
       ? 'Building a phone APK — using the LAN IP so the phone can reach this laptop over the shared network.'
       : hasPhysicalDevice
       ? 'A physical device is connected — building for it with the LAN IP so it can reach this laptop over Wi-Fi.'
@@ -326,24 +491,28 @@ async function main() {
 
   mkdirSync(path.join(repoRoot, 'dist'), { recursive: true });
 
-  log('Building the web app with the local Firebase emulator host baked in...');
   run('npx', ['tsc', '--noEmit']);
-  run('npx', ['vite', 'build'], { VITE_FIREBASE_EMULATOR_HOST: androidFirebaseHost });
 
-  log('Syncing the build into the Android project (cleartext HTTP enabled for this build only)...');
-  run('npx', ['cap', 'sync', 'android'], { CAP_LOCAL_DEV: '1' });
-  ensureDebugCleartextConfig();
+  const gradleEnv = javaHome ? { JAVA_HOME: javaHome } : {};
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..*/, '').replace('T', '-');
+  const { apkSource, apkOut } = apkPaths(app, stamp);
+
+  // Phone APK first: its LAN-IP build must be synced + assembled before dist/ is
+  // rebuilt below with the AVD's 10.0.2.2 host.
+  let extraPhoneApk = null;
+  if (phoneApkApp) {
+    log(`Also building a ${phoneApkApp.label} phone APK (--phone-apk)${PROD ? '' : `, using the LAN IP ${lanIp}`}...`);
+    buildAndSync(phoneApkApp, lanIp);
+    assemblePhoneApk(phoneApkApp, gradleEnv);
+  }
+
+  buildAndSync(app, androidFirebaseHost);
+  // Now that dist/ won't be rebuilt again, the phone APK can be copied into it.
+  if (phoneApkApp) extraPhoneApk = savePhoneApk(phoneApkApp, lanIp, stamp);
 
   if (PHONE_APK) {
-    log('Building the phone APK (debug-signed)...');
-    const gradleEnv = javaHome ? { JAVA_HOME: javaHome } : {};
-    const buildResult = runBin(gradlew, ['assembleDebug'], { cwd: androidDir, env: gradleEnv });
-    if (buildResult.status !== 0) fail('Gradle build failed. See output above.');
-    const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..*/, '').replace('T', '-');
-    const apkOut = path.join(repoRoot, 'dist', `agrisahaya-local-${stamp}.apk`);
-    copyFileSync(path.join(androidDir, 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk'), apkOut);
-    log(`Phone APK ready: ${apkOut}`);
-    log(`It talks to ${lanIp} — the phone must be on the same network as this laptop. Rebuild if the IP changes.`);
+    assemblePhoneApk(app, gradleEnv);
+    savePhoneApk(app, lanIp, stamp);
   } else {
     log('Checking for a connected Android device/emulator...');
     const hasDevice = connectedSerials.length > 0;
@@ -357,14 +526,33 @@ async function main() {
     waitForBootOrRecover(adb, emulatorBin, avdName);
     log('Device ready.');
 
-    log('Building and installing the debug APK...');
-    const gradleEnv = javaHome ? { JAVA_HOME: javaHome } : {};
-    const installResult = runBin(gradlew, ['installDebug'], { cwd: androidDir, env: gradleEnv });
+    log(`Building and installing the ${app.label} debug APK...`);
+    const installResult = runBin(gradlew, ['installDebug'], { cwd: app.androidDir, env: gradleEnv });
     if (installResult.status !== 0) fail('Gradle build/install failed. See output above.');
 
-    log('Launching the app...');
-    runBin(adb, ['shell', 'am', 'start', '-n', `${appId}/.MainActivity`]);
+    // installDebug assembles app-debug.apk as a dependency, so it's already there to copy —
+    // this way every run (not just --apk) leaves a testable artifact behind in dist/.
+    copyFileSync(apkSource, apkOut);
+    log(`APK also saved to ${apkOut} (installs on any device with "install unknown apps" enabled).`);
 
+    log(`Launching the ${app.label} app...`);
+    runBin(adb, ['shell', 'am', 'start', '-n', `${app.appId}/.MainActivity`]);
+
+    log('Verifying the app actually launched (not just that the install succeeded)...');
+    if (verifyAppLaunched(adb, app.appId)) {
+      log(`${app.label} app is running and did not crash on startup.`);
+    } else {
+      fail(
+        `${app.label} app did not stay running after launch — check "adb logcat" for a crash, ` +
+          `or run \`make logs${app === APPS.admin ? '-admin' : ''}\` once the emulators below are up.`,
+      );
+    }
+  }
+
+  if (PROD) {
+    if (extraPhoneApk) log(`Phone APK (${phoneApkApp.label}): ${extraPhoneApk} — install it on your phone.`);
+    log('Done. Everything above talks to production Firebase — check `npx firebase functions:log` for backend errors.');
+    process.exit(0);
   }
 
   if (existsSync(path.join(repoRoot, 'functions', 'package.json'))) {
@@ -385,6 +573,7 @@ async function main() {
   log(`Starting the Firebase Emulator Suite on 0.0.0.0 (reachable at ${lanIp})...`);
   log(`Browser:    http://localhost:${WEB_DEV_PORT}   (talks to this same local emulator)`);
   log('Emulator UI: http://localhost:4000   Ctrl+C to stop everything.');
+  if (extraPhoneApk) log(`Phone APK (${phoneApkApp.label}): ${extraPhoneApk} — install it on your phone (same network as ${lanIp}).`);
   // The Firebase CLI shells out to `java` on PATH (not JAVA_HOME) for the Firestore/Auth
   // emulators, so make sure the resolved JDK's bin/ is actually on PATH for this step.
   const pathWithJava = javaHome

@@ -1,12 +1,12 @@
 import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-import { Input, Textarea, type Toast } from '../components/ui';
-import { useI18n } from '../i18n/I18nContext';
-import { listOwnProfileUpdateRequests, submitProfileUpdate } from '../services/profileUpdates';
-import type { Mechanic, MechanicForm } from '../types';
-import { PROFILE_UPDATE_LIFETIME_CAP_DISPLAY } from '../types';
-import { hasErrors, validateProfileForm, type ValidationErrors } from '../utils/validation';
+import { Input, Textarea, type Toast } from '../../components/ui';
+import { useI18n } from '../../i18n/I18nContext';
+import { listOwnProfileUpdateRequests, submitProfileUpdate } from '../../services/profileUpdates';
+import type { Mechanic, MechanicForm } from '../../types';
+import { PROFILE_UPDATE_LIFETIME_CAP_DISPLAY } from '../../types';
+import { hasErrors, validateProfileForm, type ValidationErrors } from '../../utils/validation';
 
 type EditableKey = Exclude<keyof MechanicForm, 'phoneNumber'>;
 type EditableForm = Omit<MechanicForm, 'phoneNumber'>;

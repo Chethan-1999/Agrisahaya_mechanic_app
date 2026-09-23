@@ -1,0 +1,1 @@
+export const SUPPORT_NUMBER = '9646424964';

@@ -54,7 +54,7 @@ export const postAnnouncement = onCall(async (request) => {
     .filter((token): token is string => Boolean(token));
 
   await pushBroadcastBestEffort(tokens, {
-    title: trimmedTitle,
+    title: `📢 ${trimmedTitle}`,
     body: trimmedBody.slice(0, 120),
     data: { type: 'announcement', announcementId: ref.id },
   });

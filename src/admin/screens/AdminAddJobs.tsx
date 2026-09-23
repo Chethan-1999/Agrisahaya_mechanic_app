@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
-import { PullToRefresh } from '../components/PullToRefresh';
-import { formatDate, jobStatusMeta, type ConfirmDialog, type Toast } from '../components/ui';
-import { createJob, deleteJob, sortForAdmin, updateJob, visibleJobs } from '../services/jobs';
-import { emptyJobFields, type Job, type JobFields } from '../types';
+import { PullToRefresh } from '../../components/PullToRefresh';
+import { formatDate, jobStatusMeta, type ConfirmDialog, type Toast } from '../../components/ui';
+import { createJob, deleteJob, sortForAdmin, updateJob, visibleJobs } from '../../services/jobs';
+import { emptyJobFields, type Job, type JobFields } from '../../types';
 
 const toDigits = (value: string) => value.replace(/\D/g, '').slice(0, 10);
 

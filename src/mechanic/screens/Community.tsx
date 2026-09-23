@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 
-import { PullToRefresh } from '../components/PullToRefresh';
-import { formatDate } from '../components/ui';
-import { useI18n } from '../i18n/I18nContext';
-import { listAnnouncements } from '../services/announcements';
-import type { Announcement } from '../types';
+import { PullToRefresh } from '../../components/PullToRefresh';
+import { formatDate } from '../../components/ui';
+import { useI18n } from '../../i18n/I18nContext';
+import { listAnnouncements } from '../../services/announcements';
+import type { Announcement } from '../../types';
 
 export function Community({ withLoading }: {
   withLoading: (action: () => Promise<void>) => Promise<void>;

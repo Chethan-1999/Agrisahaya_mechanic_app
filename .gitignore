@@ -41,8 +41,11 @@ CLAUDE.md
 
 # local env files (see .env.example / functions/.env.example for the template)
 .env
-.env*.local
+.env.*
+!.env.example
 functions/.env
+functions/.env.*
+!functions/.env.example
 push-github-api.ps1
 
 # typescript
@@ -51,12 +54,15 @@ push-github-api.ps1
 # Cloud Functions build output
 functions/lib/
 
-# generated native folders
+# generated native folders — mechanic app lives in /android (npx cap add android,
+# default capacitor.config.ts), admin app in /android-admin (capacitor.admin.config.ts)
 /ios
 /android
+/android-admin
 
 /package-lock.json
 /package.json
 # Persisted Firebase emulator data (Auth users incl. password hashes, Firestore)
 emulator-data/
 emulator-data.bak/
+keys/

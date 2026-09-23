@@ -1,3 +1,4 @@
+export { registerAdminDevice, unregisterAdminDevice } from './adminFunctions';
 export { postAnnouncement } from './announcementFunctions';
 export { devSignIn } from './devFunctions';
 export {
