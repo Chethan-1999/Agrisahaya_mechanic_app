@@ -223,11 +223,12 @@ Every target above targets the mechanic app; `make sync-admin`,
 (`android-admin/`, `capacitor.admin.config.ts`). The exception is
 `make local-phone-admin`: it runs the admin app in the AVD emulator *and*
 builds a mechanic phone APK (`dist/agrisahaya-local-*.apk`) in one run.
-`make prod-phone-admin` is the same pair against **production** Firebase
-(the project in `.env`): the admin app in the AVD plus a mechanic phone APK
-(`dist/agrisahaya-prod-*.apk`), no emulators started — use it to smoke-test a
-real deploy. The phone APK uses real SMS OTP, so the debug keystore's SHA
-fingerprints must be registered on the Firebase Android app.
+`make prod-apks` builds two phone APKs against **production** Firebase (the
+project in `.env`) — mechanic (`dist/agrisahaya-prod-*.apk`) and admin
+(`dist/agrisahaya-admin-prod-*.apk`) — with nothing run in the AVD and no
+emulators started. It doesn't deploy; `make deploy-prod` deploys Cloud
+Functions + Firestore rules/indexes. The mechanic APK uses real SMS OTP, so the
+debug keystore's SHA fingerprints must be registered on the Firebase Android app.
 
 The emulator always boots with `-no-snapshot`: the AVD's own snapshot cache has
 been the single biggest source of a "boots fine once, then silently dies on the

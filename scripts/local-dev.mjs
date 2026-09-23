@@ -7,10 +7,10 @@
 //   npm run dev:local -- --app admin --phone-apk mechanic
 //                                      # admin app in the AVD emulator AND a mechanic phone APK,
 //                                      # both talking to the same local emulator suite
-//   npm run dev:local -- --app admin --phone-apk mechanic --prod
-//                                      # same, but both builds talk to PRODUCTION Firebase
-//                                      # (the project in .env) — no emulators, no LAN IP;
-//                                      # the script exits once the AVD app is running
+//   npm run dev:local -- --apk --phone-apk admin --prod
+//                                      # two phone APKs (mechanic + admin) against PRODUCTION
+//                                      # Firebase (the project in .env) — no AVD, no emulators;
+//                                      # the script exits once both APKs are in dist/
 //
 // What it does, in order:
 //   1. Detects this laptop's LAN IPv4 address, and checks whether adb already
@@ -241,16 +241,17 @@ function isPortFree(port) {
 // emulators here. Install dist/agrisahaya-local-*.apk on the phone; its traffic and logs show up in this terminal.
 const PHONE_APK = process.argv.includes('--apk');
 
-// `--phone-apk <app>`: on top of the normal AVD run, also build a phone APK for <app> (LAN IP baked
-// in) — e.g. `--app admin --phone-apk mechanic` runs the admin app in the AVD and gives you a
-// mechanic APK for your phone. The two need separate web builds (10.0.2.2 vs the LAN IP), so the
-// phone APK is built, synced, and assembled first, before dist/ is rebuilt for the AVD.
+// `--phone-apk <app>`: also build a phone APK for <app> (LAN IP baked in) — e.g. `--app admin
+// --phone-apk mechanic` runs the admin app in the AVD and gives you a mechanic APK for your phone.
+// With `--apk` there's no AVD run at all: you just get phone APKs for both apps. The builds may need
+// different hosts (10.0.2.2 vs the LAN IP), so the extra APK is built, synced, and assembled first,
+// before dist/ is rebuilt for the main app.
 const phoneApkArgIndex = process.argv.indexOf('--phone-apk');
 const phoneApkApp = phoneApkArgIndex !== -1 ? APPS[process.argv[phoneApkArgIndex + 1]] : null;
 if (phoneApkArgIndex !== -1 && !phoneApkApp) {
   fail(`Unknown --phone-apk "${process.argv[phoneApkArgIndex + 1]}". Expected "mechanic" or "admin".`);
 }
-if (phoneApkApp && PHONE_APK) fail('--phone-apk is for AVD runs; drop --apk (or drop --phone-apk).');
+if (phoneApkApp === app) fail(`--phone-apk ${appKey} is the same app as --app; pick the other one.`);
 
 // `--prod`: every build talks to production Firebase (whatever project .env points at) instead of
 // the local emulator suite — no emulator host baked in, no cleartext/http scheme, no emulators
@@ -550,7 +551,7 @@ async function main() {
   }
 
   if (PROD) {
-    if (extraPhoneApk) log(`Phone APK (${phoneApkApp.label}): ${extraPhoneApk} — install it on your phone.`);
+    if (extraPhoneApk) log(`Phone APK (${phoneApkApp.label}): ${extraPhoneApk} — install it on a phone.`);
     log('Done. Everything above talks to production Firebase — check `npx firebase functions:log` for backend errors.');
     process.exit(0);
   }

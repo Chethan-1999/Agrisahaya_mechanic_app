@@ -1,5 +1,5 @@
-.PHONY: web sync apk local-phone prod-phone admin admin-prod emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean \
-	sync-admin apk-admin install-admin launch-admin run-admin logs-admin clean-admin local-phone-admin local-admin prod-phone-admin
+.PHONY: web sync apk local-phone prod-apks deploy-prod admin admin-prod emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean \
+	sync-admin apk-admin install-admin launch-admin run-admin logs-admin clean-admin local-phone-admin local-admin
 
 # Override any of these on the command line, e.g. `make run AVD_NAME=Pixel_7`
 AVD_NAME     ?= Pixel_6
@@ -135,31 +135,21 @@ local-phone:
 local-phone-admin:
 	npm run dev:local -- --app admin --phone-apk mechanic
 
-## Same as `local-phone-admin`, but both builds talk to PRODUCTION Firebase (the project in .env):
-## admin app in the AVD + a mechanic phone APK (dist/agrisahaya-prod-*.apk). No emulators, no LAN IP;
-## the phone works on any network. Exits once the admin app is running.
-prod-phone-admin:
-	npm run dev:local -- --app admin --phone-apk mechanic --prod
+## PRODUCTION: build two phone APKs — mechanic (dist/agrisahaya-prod-*.apk) and admin
+## (dist/agrisahaya-admin-prod-*.apk) — against the Firebase project in .env. Nothing runs in the
+## AVD and no emulators start; the APKs work on any network. Does NOT deploy — see deploy-prod.
+## Requires google-services.json in both android/app/ and android-admin/app/.
+prod-apks:
+	npm run dev:local -- --apk --phone-apk admin --prod
 
-## PRODUCTION: deploy the backend to the Firebase project named in .env, then build a
-## phone APK against that same project. Nothing here touches the local emulators.
-##   1. deploys Cloud Functions + Firestore rules/indexes to VITE_FIREBASE_PROJECT_ID
-##   2. builds the web assets with .env (emulator host forced empty, push enabled unless
-##      .env says otherwise), syncs to Android, assembles the APK
-## Output: dist/agrisahaya-prod-<label>.apk. Requires `firebase login` and android/app/google-services.json.
+## PRODUCTION: deploy Cloud Functions + Firestore rules/indexes to the project in .env
+## (VITE_FIREBASE_PROJECT_ID). Requires `firebase login`.
 PROD_PROJECT = $(shell sed -n 's/^VITE_FIREBASE_PROJECT_ID=\(.*\)/\1/p' .env | tr -d '"\r ')
-prod-phone:
+deploy-prod:
 	@test -n "$(PROD_PROJECT)" || { echo "VITE_FIREBASE_PROJECT_ID missing in .env"; exit 1; }
 	@echo "==> Deploying backend to Firebase project '$(PROD_PROJECT)' (from .env)"
 	cd functions && npm install && npm run build
 	npx firebase-tools deploy --only functions,firestore --project $(PROD_PROJECT)
-	@echo "==> Building production APK against '$(PROD_PROJECT)'"
-	VITE_FIREBASE_EMULATOR_HOST= npm run build
-	npx cap sync android
-	cd android && ./gradlew assembleDebug
-	@mkdir -p dist
-	cp android/app/build/outputs/apk/debug/app-debug.apk dist/agrisahaya-prod-$(APK_LABEL).apk
-	@echo "Production APK ready: dist/agrisahaya-prod-$(APK_LABEL).apk"
 
 ## Create the admin in the RUNNING local emulators (one time; it's then saved in emulator-data/).
 ## Usage: make admin ADMIN_EMAIL=agrisahay@gmail.com ADMIN_PASSWORD='...' [ADMIN_NAME=Admin]
