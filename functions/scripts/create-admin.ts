@@ -7,12 +7,18 @@
  * service account key, not deployed as a Cloud Function.
  *
  * Usage (from the functions/ directory):
- *   1. cp .env.example .env, fill in GOOGLE_APPLICATION_CREDENTIALS, OR pass
- *      it inline for a one-off run:
+ *   1. cp .env.scripts.example .env.scripts, fill in GOOGLE_APPLICATION_CREDENTIALS,
+ *      OR pass it inline for a one-off run:
  *        GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json \
  *          npm run create-admin -- "admin@example.com" "a-strong-password" "Admin Name"
  */
-import 'dotenv/config';
+import path from 'node:path';
+
+import { config } from 'dotenv';
+
+// NOT functions/.env: `firebase deploy` uploads that file as the deployed functions' environment, and a
+// GOOGLE_APPLICATION_CREDENTIALS pointing at a laptop path makes every function crash on startup.
+config({ path: path.resolve(__dirname, '../.env.scripts') });
 
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';

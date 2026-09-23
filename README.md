@@ -87,10 +87,15 @@ cp functions/.env.example functions/.env # backend: only needed for create-admin
   Firebase project the app talks to; they are not secrets, but are still
   env-driven so switching projects (e.g. a personal test project) never needs a
   code change. The app refuses to boot with a clear error if any are missing.
-- **`functions/.env`** — only `GOOGLE_APPLICATION_CREDENTIALS`, used by the local
-  `create-admin` script (see below). Deployed Cloud Functions get their
-  credentials from the Cloud Functions runtime automatically and never read this
-  file.
+- **`functions/.env.scripts`** (from `functions/.env.scripts.example`) — only
+  `GOOGLE_APPLICATION_CREDENTIALS`, used by the local `create-admin` script (see
+  below). Deployed Cloud Functions get their credentials from the runtime
+  automatically.
+- **`functions/.env`** / **`functions/.env.<project-id>`** — optional overrides
+  for the deployed functions (`PROFILE_UPDATE_LIFETIME_CAP`). `firebase deploy`
+  uploads these as the functions' environment, so **never put
+  `GOOGLE_APPLICATION_CREDENTIALS` in them** — a laptop path makes every deployed
+  function crash on startup.
 - **`.firebaserc`** — which Firebase project the `firebase` CLI targets
   (emulators, deploy). Already checked in; change it if you're pointing this repo
   at a different Firebase project.
@@ -277,8 +282,9 @@ GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json \
   npm run create-admin -- "admin@example.com" "a-strong-password" "Admin Name"
 ```
 
-(Or put `GOOGLE_APPLICATION_CREDENTIALS` in `functions/.env` once instead of
-prefixing every command — see `functions/.env.example`.) Get a service account
+(Or put `GOOGLE_APPLICATION_CREDENTIALS` in `functions/.env.scripts` once instead of
+prefixing every command — see `functions/.env.scripts.example`. Not `functions/.env`:
+deploys upload that file, and the laptop path breaks every deployed function.) Get a service account
 key from Firebase console → Project settings → Service accounts → Generate new
 private key.
 

@@ -46,6 +46,7 @@ CLAUDE.md
 functions/.env
 functions/.env.*
 !functions/.env.example
+!functions/.env.scripts.example
 push-github-api.ps1
 
 # typescript

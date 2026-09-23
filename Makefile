@@ -160,7 +160,7 @@ admin:
 	cd functions && FIRESTORE_EMULATOR_HOST=localhost:8080 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 GCLOUD_PROJECT=$(FIREBASE_PROJECT) npm run create-admin -- "$(ADMIN_EMAIL)" "$(ADMIN_PASSWORD)" "$(ADMIN_NAME)"
 
 ## Create the admin in the PRODUCTION Firebase project from .env (project id = VITE_FIREBASE_PROJECT_ID).
-## Needs GOOGLE_APPLICATION_CREDENTIALS (service account key) in functions/.env.
+## Needs GOOGLE_APPLICATION_CREDENTIALS (service account key) in functions/.env.scripts.
 ## Usage: make admin-prod ADMIN_EMAIL=... ADMIN_PASSWORD='...' [ADMIN_NAME=Admin]
 admin-prod:
 	@test -n "$(ADMIN_EMAIL)" -a -n "$(ADMIN_PASSWORD)" || { echo "Usage: make admin-prod ADMIN_EMAIL=... ADMIN_PASSWORD=... [ADMIN_NAME=...]"; exit 1; }
