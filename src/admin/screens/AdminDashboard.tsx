@@ -1,3 +1,5 @@
+import { BriefcaseBusiness, CircleCheck, CircleDot, Clock3, Users, UserX } from 'lucide-react';
+
 import { Metric, jobStatusMeta } from '../../components/ui';
 import { getInitials } from '../../shared/formatting';
 import type { Job, Mechanic } from '../../types';
@@ -33,12 +35,12 @@ export function AdminDashboard({ active, inactive, jobs, mechanics, pending, tot
       </div>
 
       <section className="dashboard-metrics-grid">
-        <Metric label="Total Mechanics" value={total} />
-        <Metric label="Pending Approval" value={pending} />
-        <Metric label="Active" value={active} />
-        <Metric label="Inactive / Rejected" value={inactive} />
-        <Metric label="Total jobs" value={jobs.length} />
-        <Metric label="Open jobs" value={openJobs} />
+        <Metric icon={<Users size={20} strokeWidth={2.5} />} label="Total Mechanics" value={total} />
+        <Metric icon={<Clock3 size={20} strokeWidth={2.5} />} label="Pending Approval" value={pending} />
+        <Metric icon={<CircleCheck size={20} strokeWidth={2.5} />} label="Active" value={active} />
+        <Metric icon={<UserX size={20} strokeWidth={2.5} />} label="Inactive / Rejected" value={inactive} />
+        <Metric icon={<BriefcaseBusiness size={20} strokeWidth={2.5} />} label="Total jobs" value={jobs.length} />
+        <Metric icon={<CircleDot size={20} strokeWidth={2.5} />} label="Open jobs" value={openJobs} />
       </section>
 
       <section className="dashboard-panels">

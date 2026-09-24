@@ -1,4 +1,4 @@
-import { Menu, X } from 'lucide-react';
+import { LogOut, Menu, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
 import { useI18n } from '../../i18n/I18nContext';
@@ -39,7 +39,7 @@ export function AdminShell({ activePage, children, onLogout, onNavigate }: { act
         <h2>{t('mechanicDirectory')}</h2>
         <div className="sidebar-menu">
           {navItems.map((item) => <button className={activeNavPage === item.page ? 'active' : ''} key={item.page} onClick={() => navigate(item.page)}>{item.label}</button>)}
-          <button className="logout" onClick={onLogout}>Logout</button>
+          <button className="logout" onClick={onLogout}><LogOut size={18} strokeWidth={2.5} aria-hidden="true" />Logout</button>
         </div>
       </aside>
       <main className="admin-content">{children}</main>

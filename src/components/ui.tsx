@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { LANGUAGES, type LanguageCode, type StringKey } from '../i18n/strings';
 import type { JobStatus } from '../types';
@@ -66,8 +66,8 @@ export function Select({ label, onChange, options, value }: { label: string; onC
   return <label className="field"><span>{label}</span><select onChange={(event) => onChange(event.target.value)} value={value}>{options.map(([optionValue, text]) => <option key={optionValue} value={optionValue}>{text}</option>)}</select></label>;
 }
 
-export function Metric({ label, value }: { label: string; value: number }) {
-  return <article className="metric-card"><span>{label}</span><strong>{value}</strong></article>;
+export function Metric({ icon, label, value }: { icon?: ReactNode; label: string; value: number }) {
+  return <article className="metric-card"><span className="metric-card-label">{icon && <span className="metric-card-icon">{icon}</span>}{label}</span><strong>{value}</strong></article>;
 }
 
 export function formatDate(value: string) {

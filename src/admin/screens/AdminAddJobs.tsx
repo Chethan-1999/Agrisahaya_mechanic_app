@@ -1,3 +1,4 @@
+import { ChevronDown, Search } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import { PullToRefresh } from '../../components/PullToRefresh';
@@ -25,15 +26,45 @@ export function AdminAddJobs({ askConfirm, jobs, onRefresh, setToast, withLoadin
 }) {
   const [showForm, setShowForm] = useState(false);
   const [editingJobId, setEditingJobId] = useState<string | null>(null);
+  const [expandedJobIds, setExpandedJobIds] = useState<string[]>([]);
+  const [search, setSearch] = useState('');
   const [form, setForm] = useState<JobFields>(emptyJobFields);
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     void onRefresh();
   }, []);
 
-  const board = useMemo(() => sortForAdmin(visibleJobs(jobs)), [jobs]);
+  const board = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    const visible = sortForAdmin(visibleJobs(jobs));
+    if (!needle) return visible;
+
+    return visible.filter((job) => {
+      const meta = jobStatusMeta(job.status);
+      return [
+        job.jobCode,
+        job.farmerName,
+        job.farmerPhone,
+        job.equipment,
+        job.issue,
+        job.district,
+        job.additionalNotes,
+        job.description,
+        meta.label,
+        job.status,
+        formatDate(job.createdAt),
+      ].some((value) => String(value ?? '').toLowerCase().includes(needle));
+    });
+  }, [jobs, search]);
   const deletedCount = jobs.filter((job) => job.deleted).length;
+  const editingJob = editingJobId ? jobs.find((job) => job.id === editingJobId) : null;
+  const canShowPhone = Boolean(form.farmerName.trim());
+  const canShowEquipment = /^\d{10}$/.test(form.farmerPhone);
+  const canShowIssue = Boolean(form.equipment.trim());
+  const canShowDistrict = Boolean(form.issue.trim());
+  const canShowNotes = Boolean(form.district.trim());
 
   function updateField(key: keyof JobFields, value: string) {
     setForm((current) => ({ ...current, [key]: key === 'farmerPhone' ? toDigits(value) : value }));
@@ -44,6 +75,7 @@ export function AdminAddJobs({ askConfirm, jobs, onRefresh, setToast, withLoadin
     setForm(emptyJobFields);
     setEditingJobId(null);
     setError('');
+    setSaving(false);
     setShowForm(false);
   }
 
@@ -61,8 +93,14 @@ export function AdminAddJobs({ askConfirm, jobs, onRefresh, setToast, withLoadin
     setShowForm(true);
   }
 
+  function toggleJob(jobId: string) {
+    setExpandedJobIds((current) => (current.includes(jobId) ? current.filter((id) => id !== jobId) : [...current, jobId]));
+  }
+
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (saving) return;
+
     const fields = Object.fromEntries(Object.entries(form).map(([key, value]) => [key, value.trim()])) as JobFields;
 
     if (!fields.farmerName || !fields.farmerPhone || !fields.equipment || !fields.issue || !fields.district) {
@@ -74,17 +112,22 @@ export function AdminAddJobs({ askConfirm, jobs, onRefresh, setToast, withLoadin
       return;
     }
 
-    await withLoading(async () => {
-      if (editingJobId) {
-        await updateJob(editingJobId, fields);
-        setToast({ kind: 'success', text: 'Job updated.' });
-      } else {
-        const jobCode = await createJob(fields);
-        setToast({ kind: 'success', text: `Job ${jobCode} added.` });
-      }
-      closeForm();
-      await onRefresh();
-    });
+    setSaving(true);
+    try {
+      await withLoading(async () => {
+        if (editingJobId) {
+          await updateJob(editingJobId, fields);
+          setToast({ kind: 'success', text: 'Job updated.' });
+        } else {
+          const jobCode = await createJob(fields);
+          setToast({ kind: 'success', text: `Job ${jobCode} added.` });
+        }
+        closeForm();
+        await onRefresh();
+      });
+    } finally {
+      setSaving(false);
+    }
   }
 
   function confirmDelete(job: Job) {
@@ -107,59 +150,83 @@ export function AdminAddJobs({ askConfirm, jobs, onRefresh, setToast, withLoadin
     <PullToRefresh onRefresh={onRefresh}>
     <section>
       <div className="section-heading jobs-heading">
-        <h1>Add new jobs</h1>
+        <label className="admin-job-search" aria-label="Search added jobs">
+          <Search size={18} strokeWidth={2.5} aria-hidden="true" />
+          <input onChange={(event) => setSearch(event.target.value)} placeholder="Search jobs" type="search" value={search} />
+        </label>
         <button className="add-job-button" onClick={startNewJob} type="button" aria-label="Add job">
           <span aria-hidden="true">+</span>
           Add job
         </button>
       </div>
-      <form onSubmit={(event) => void submit(event)}>
-        <div className="table-wrap jobs-table-wrap">
-          <table className="jobs-table">
-            <thead><tr><th>Job ID</th><th>Customer name</th><th>Phone number</th><th>Equipment</th><th>Issue</th><th>District</th><th>Additional notes</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
-            <tbody>
-              {showForm && (
-                <tr className="job-entry-row">
-                  <td>{editingJobId ? jobs.find((job) => job.id === editingJobId)?.jobCode || '-' : 'New'}</td>
-                  <td><input aria-label="Customer name" onChange={(event) => updateField('farmerName', event.target.value)} placeholder="Customer name" value={form.farmerName} /></td>
-                  <td><input aria-label="Phone number" inputMode="numeric" maxLength={10} onChange={(event) => updateField('farmerPhone', event.target.value)} pattern="[0-9]*" placeholder="Phone number" value={form.farmerPhone} /></td>
-                  <td><input aria-label="Equipment" onChange={(event) => updateField('equipment', event.target.value)} placeholder="Equipment" value={form.equipment} /></td>
-                  <td><input aria-label="Issue" onChange={(event) => updateField('issue', event.target.value)} placeholder="Issue" value={form.issue} /></td>
-                  <td><input aria-label="District" onChange={(event) => updateField('district', event.target.value)} placeholder="District" value={form.district} /></td>
-                  <td><input aria-label="Additional notes" onChange={(event) => updateField('additionalNotes', event.target.value)} placeholder="Additional notes" value={form.additionalNotes} /></td>
-                  <td>{editingJobId ? 'Editing' : 'New'}</td>
-                  <td>-</td>
-                  <td className="actions"><button className="icon-save" title="Save job" type="submit" aria-label="Save job">Save</button><button className="danger-text" onClick={closeForm} type="button">Cancel</button></td>
-                </tr>
-              )}
-              {board.map((job) => {
-                const meta = jobStatusMeta(job.status);
-                const finished = job.status === 'completed' || job.status === 'cancelled';
-                return (
-                  <tr className={job.needsReassignment && job.status === 'open' ? 'needs-reassign' : undefined} key={job.id}>
-                    <td>{job.jobCode || '-'}</td>
-                    <td>{job.farmerName || '-'}</td>
-                    <td>{job.farmerPhone || '-'}</td>
-                    <td>{job.equipment || job.description}</td>
-                    <td>{job.issue || '-'}</td>
-                    <td>{job.district || '-'}</td>
-                    <td>{job.additionalNotes || '-'}</td>
-                    <td><span className={`pill ${meta.pillClass}`}>{meta.label}</span>{job.needsReassignment && job.status === 'open' && <small className="needs-reassign-note">Needs reassignment</small>}</td>
-                    <td>{formatDate(job.createdAt)}</td>
-                    <td className="actions">
-                      {!finished && <button onClick={() => startEdit(job)} type="button">Edit</button>}
-                      {(job.status === 'declined' || job.status === 'cancelled' || job.status === 'completed') && <button className="danger-text" onClick={() => confirmDelete(job)} type="button">Delete</button>}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {board.length === 0 && <p className="empty">No jobs saved yet.</p>}
-          {deletedCount > 0 && <p className="muted">{deletedCount} deleted {deletedCount === 1 ? 'job' : 'jobs'} on record.</p>}
+      {showForm && (
+        <div className="job-form-backdrop" role="presentation">
+          <form aria-label={editingJobId ? 'Edit job' : 'Add job'} className="job-form-modal" onSubmit={(event) => void submit(event)}>
+            <div className="job-form-heading">
+              <div>
+                <p className="eyebrow">{editingJobId ? 'Edit job' : 'New job'}</p>
+                <h2>{editingJobId ? 'Update job details' : 'Add job details'}</h2>
+              </div>
+              <button className="text-button" disabled={saving} onClick={closeForm} type="button">Close</button>
+            </div>
+            <label className="field"><span>Job ID</span><input disabled value={editingJob?.jobCode || 'Auto generated'} /></label>
+            <label className="field"><span>Customer name</span><input autoFocus onChange={(event) => updateField('farmerName', event.target.value)} placeholder="Customer name" value={form.farmerName} /></label>
+            {canShowPhone && <label className="field"><span>Phone number</span><input inputMode="numeric" maxLength={10} onChange={(event) => updateField('farmerPhone', event.target.value)} pattern="[0-9]*" placeholder="10 digit phone number" value={form.farmerPhone} /></label>}
+            {canShowEquipment && <label className="field"><span>Equipment</span><input onChange={(event) => updateField('equipment', event.target.value)} placeholder="Tractor, pump, harvester..." value={form.equipment} /></label>}
+            {canShowIssue && <label className="field"><span>Issue</span><input onChange={(event) => updateField('issue', event.target.value)} placeholder="What problem should the mechanic fix?" value={form.issue} /></label>}
+            {canShowDistrict && <label className="field"><span>District</span><input onChange={(event) => updateField('district', event.target.value)} placeholder="District" value={form.district} /></label>}
+            {canShowNotes && <label className="field"><span>Additional notes</span><textarea onChange={(event) => updateField('additionalNotes', event.target.value)} placeholder="Optional notes" rows={3} value={form.additionalNotes} /></label>}
+            {error && <p className="error-text">{error}</p>}
+            <div className="job-form-actions">
+              <button className="secondary" disabled={saving} onClick={closeForm} type="button">Cancel</button>
+              <button className="primary" disabled={!canShowNotes || saving} type="submit">{saving ? 'Saving...' : editingJobId ? 'Update job' : 'Save job'}</button>
+            </div>
+          </form>
         </div>
-        {error && <p className="error-text">{error}</p>}
-      </form>
+      )}
+      <div className="admin-job-card-list">
+        {board.map((job) => {
+          const meta = jobStatusMeta(job.status);
+          const finished = job.status === 'completed' || job.status === 'cancelled';
+          const isExpanded = expandedJobIds.includes(job.id);
+
+          return (
+            <article className={job.needsReassignment && job.status === 'open' ? 'admin-job-card needs-reassign-card' : 'admin-job-card'} key={job.id}>
+              <div className="job-card-topline"><span>{job.jobCode || 'No job ID'}</span><time>{formatDate(job.createdAt)}</time></div>
+              <div className="job-card-summary">
+                <div>
+                  <h2><span>Customer</span>{job.farmerName || '-'}</h2>
+                  <p><span>Issue</span>{job.issue || '-'}</p>
+                </div>
+                <div className="admin-job-card-buttons">
+                  {!finished && <button className="secondary admin-card-edit-button" onClick={() => startEdit(job)} type="button">Edit</button>}
+                  <button aria-expanded={isExpanded} aria-label={isExpanded ? 'Hide job details' : 'Show job details'} className="job-show-more" onClick={() => toggleJob(job.id)} type="button">
+                    <span>{isExpanded ? 'Less' : 'More'}</span>
+                    <ChevronDown className={isExpanded ? 'open' : ''} size={20} strokeWidth={2.6} />
+                  </button>
+                </div>
+              </div>
+              {isExpanded && (
+                <div className="job-card-details">
+                  <dl>
+                    <div><dt>Phone number</dt><dd>{job.farmerPhone || '-'}</dd></div>
+                    <div><dt>Equipment</dt><dd>{job.equipment || job.description || '-'}</dd></div>
+                    <div><dt>District</dt><dd>{job.district || '-'}</dd></div>
+                    <div><dt>Additional notes</dt><dd>{job.additionalNotes || '-'}</dd></div>
+                    <div><dt>Status</dt><dd><span className={`pill ${meta.pillClass}`}>{meta.label}</span>{job.needsReassignment && job.status === 'open' && <small className="needs-reassign-note">Needs reassignment</small>}</dd></div>
+                    <div><dt>Created</dt><dd>{formatDate(job.createdAt)}</dd></div>
+                  </dl>
+                </div>
+              )}
+              <div className="admin-job-card-actions">
+                {(job.status === 'declined' || job.status === 'cancelled' || job.status === 'completed') && <button className="danger-text" onClick={() => confirmDelete(job)} type="button">Delete</button>}
+              </div>
+            </article>
+          );
+        })}
+        {board.length === 0 && <p className="empty">{search.trim() ? 'No jobs match your search.' : 'No jobs saved yet.'}</p>}
+        {deletedCount > 0 && <p className="muted">{deletedCount} deleted {deletedCount === 1 ? 'job' : 'jobs'} on record.</p>}
+      </div>
     </section>
     </PullToRefresh>
   );
