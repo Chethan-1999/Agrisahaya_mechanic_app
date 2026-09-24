@@ -1,7 +1,8 @@
 import { FieldValue } from 'firebase-admin/firestore';
-import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { HttpsError } from 'firebase-functions/v2/https';
 
 import { db } from './lib/firebaseAdmin';
+import { onCall } from './lib/onCall';
 import { pushToAdmins } from './lib/push';
 import { assertValidProfile, type ProfileInput } from './lib/validation';
 

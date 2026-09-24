@@ -1,6 +1,7 @@
-import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { HttpsError } from 'firebase-functions/v2/https';
 
 import { auth, db } from './lib/firebaseAdmin';
+import { onCall } from './lib/onCall';
 import { normalizePhone } from './lib/phone';
 
 /**

@@ -1,7 +1,8 @@
-import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { HttpsError } from 'firebase-functions/v2/https';
 
 import { requireAdmin } from './lib/authz';
 import { db } from './lib/firebaseAdmin';
+import { onCall } from './lib/onCall';
 import { pushBroadcast } from './lib/push';
 
 const PUSH_BROADCAST_TIMEOUT_MS = 5000;

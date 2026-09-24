@@ -1,11 +1,12 @@
 import { FieldValue } from 'firebase-admin/firestore';
-import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { HttpsError } from 'firebase-functions/v2/https';
 
 import { requireAdmin } from './lib/authz';
 import { requireDoc } from './lib/docHelpers';
 import { auth, db } from './lib/firebaseAdmin';
 import { historyEntry } from './lib/jobHistory';
 import { isHeld, statusStamp } from './lib/jobStatus';
+import { onCall } from './lib/onCall';
 import { pushToTechnician } from './lib/push';
 import { assertValidProfile, type ProfileInput } from './lib/validation';
 

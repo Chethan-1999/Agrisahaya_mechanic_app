@@ -37,7 +37,8 @@ const firebaseConfig = {
 export const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(firebaseApp);
 export const db = getFirestore(firebaseApp);
-export const functions = getFunctions(firebaseApp);
+// Must match the region in functions/src/lib/firebaseAdmin.ts (next to Firestore, asia-south1).
+export const functions = getFunctions(firebaseApp, 'asia-south1');
 
 // Baked in at build time by `npm run dev:local` (see scripts/local-dev.mjs) so a
 // device on the same network hits this laptop's Firebase Emulator Suite instead

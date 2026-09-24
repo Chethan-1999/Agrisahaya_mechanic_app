@@ -1,10 +1,11 @@
 import { FieldValue } from 'firebase-admin/firestore';
-import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { HttpsError } from 'firebase-functions/v2/https';
 
 import { requireAdmin } from './lib/authz';
 import { requireDoc } from './lib/docHelpers';
 import { db } from './lib/firebaseAdmin';
 import { isIndianState } from './lib/indianStates';
+import { onCall } from './lib/onCall';
 import { PROFILE_UPDATE_LIFETIME_CAP } from './lib/params';
 import { profileHistoryEntry } from './lib/profileHistory';
 import { pushToAdmins, pushToTechnician } from './lib/push';

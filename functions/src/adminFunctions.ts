@@ -1,8 +1,9 @@
 import { FieldValue } from 'firebase-admin/firestore';
-import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { HttpsError } from 'firebase-functions/v2/https';
 
 import { requireAdmin } from './lib/authz';
 import { db } from './lib/firebaseAdmin';
+import { onCall } from './lib/onCall';
 
 function requireFcmToken(data: unknown): string {
   const fcmToken = (data as { fcmToken?: unknown } | undefined)?.fcmToken;
