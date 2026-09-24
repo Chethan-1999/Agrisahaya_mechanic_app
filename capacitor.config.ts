@@ -14,6 +14,11 @@ const config: CapacitorConfig = {
   appId: 'com.agrisahaya.mechanic',
   appName: 'MechanicApp',
   webDir: 'dist',
+  plugins: {
+    // Native phone OTP (src/services/otp/nativeOtpProvider.ts). skipNativeAuth: the native SDK only sends the
+    // SMS and returns a verificationId; the JS SDK signs in, so the app keeps a single (JS) auth session.
+    FirebaseAuthentication: { skipNativeAuth: true, providers: ['phone'] },
+  },
   ...(process.env.CAP_LOCAL_DEV === '1' ? { server: { cleartext: true, androidScheme: 'http' } } : {}),
 };
 
