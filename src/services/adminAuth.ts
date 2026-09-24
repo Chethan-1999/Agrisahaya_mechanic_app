@@ -58,8 +58,36 @@ function getAdminLoginErrorMessage(error: unknown) {
     return 'Firebase Authentication is not enabled. Enable Authentication and Email/Password sign-in in Firebase Console.';
   }
 
+  // Firebase deliberately returns the same code for "no such user" and "wrong password", so we can't
+  // tell them apart — and a wrong password is by far the likelier cause for an existing admin.
   if (code === 'auth/invalid-credential' || code === 'auth/user-not-found' || code === 'auth/wrong-password') {
-    return 'Admin email or password is incorrect, or this admin user has not been created in Firebase Authentication.';
+    return 'Incorrect email or password. If you forgot the password, ask the project owner to reset it.';
+  }
+
+  if (code === 'auth/invalid-email') {
+    return 'Enter a valid email address.';
+  }
+
+  if (code === 'auth/missing-password') {
+    return 'Enter your password.';
+  }
+
+  if (code === 'auth/too-many-requests') {
+    return 'Too many failed attempts. Wait a few minutes before trying again, or reset the password.';
+  }
+
+  if (code === 'auth/network-request-failed') {
+    return 'No internet connection. Check your network and try again.';
+  }
+
+  if (code === 'auth/user-disabled') {
+    return 'This admin account has been disabled.';
+  }
+
+  // Any other Firebase code: don't show the raw "Firebase: Error (auth/...)" text.
+  if (code.startsWith('auth/')) {
+    console.warn('Admin login error:', error);
+    return 'Admin login failed. Please try again.';
   }
 
   if (error instanceof Error) {
