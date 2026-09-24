@@ -7,6 +7,7 @@ import { usePhoneOtp } from '../../hooks/usePhoneOtp';
 import { useI18n } from '../../i18n/I18nContext';
 import { completeSignup } from '../../services/auth';
 import { getMechanic, revokeOtherSessions } from '../../services/mechanics';
+import { otpErrorKey } from '../../services/otp/otpErrors';
 import { MechanicFields } from '../../shared/MechanicFields';
 import type { Mechanic, MechanicForm } from '../../types';
 import { emptyMechanicForm } from '../../types';
@@ -15,6 +16,10 @@ import { hasErrors, validateProfileForm, type ValidationErrors } from '../../uti
 import { withTimeout } from '../../utils/withTimeout';
 
 const toPhoneDigits = (value: string) => value.replace(/\D/g, '').slice(0, 10);
+
+// Sending an OTP can put a reCAPTCHA image puzzle in front of the technician, so the
+// normal network timeout would fire while they're still solving it.
+const OTP_SEND_TIMEOUT_MS = 3 * 60 * 1000;
 
 /**
  * Merged login/signup: phone-OTP verification only, no PIN. After OTP
@@ -79,13 +84,33 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
     setErrors({});
   }
 
+  // Turns a raw OTP failure ("Firebase: ... (auth/operation-not-allowed).") into a translated message.
+  // The original stays in the console for debugging.
+  function toOtpError(err: unknown): unknown {
+    if (err instanceof Error && err.message === 'INVALID_PHONE') return new Error(t('enterValidPhone'));
+
+    const key = otpErrorKey(err);
+    if (!key) return err;
+
+    console.warn('OTP error:', err);
+    return new Error(t(key));
+  }
+
+  async function confirmOtpOrThrow() {
+    try {
+      await withTimeout(confirmOtp(), t('networkError'));
+    } catch (err) {
+      throw toOtpError(err);
+    }
+  }
+
   async function send() {
     await withLoading(async () => {
       let hint: string | null;
       try {
-        hint = await withTimeout(sendOtp(), 'OTP request timed out. Check that Firebase or the local emulators are running, then try again.');
+        hint = await withTimeout(sendOtp(), t('networkError'), OTP_SEND_TIMEOUT_MS);
       } catch (err) {
-        throw err instanceof Error && err.message === 'INVALID_PHONE' ? new Error(t('enterValidPhone')) : err;
+        throw toOtpError(err);
       }
       setSentOtp(hint ?? 'sent');
       setOtpVerified(false);
@@ -100,7 +125,7 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
     }
 
     await withLoading(async () => {
-      await withTimeout(confirmOtp(), 'OTP verification timed out. Check that Firebase or the local emulators are running, then try again.');
+      await confirmOtpOrThrow();
       const uid = auth.currentUser?.uid;
       if (!uid) throw new Error('Sign-in failed. Try again.');
 
@@ -124,7 +149,7 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
       return;
     }
     await withLoading(async () => {
-      await withTimeout(confirmOtp(), 'OTP verification timed out. Check that Firebase or the local emulators are running, then try again.');
+      await confirmOtpOrThrow();
       const uid = auth.currentUser?.uid;
       if (!uid) throw new Error('Sign-in failed. Try again.');
 

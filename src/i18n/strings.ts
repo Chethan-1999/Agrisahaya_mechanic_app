@@ -45,6 +45,12 @@ export type StringKey =
   | 'codeSentBySms'
   | 'enterValidPhone'
   | 'sendCodeFirst'
+  | 'otpSmsUnavailable'
+  | 'otpTooManyAttempts'
+  | 'otpWrongCode'
+  | 'otpCodeExpired'
+  | 'networkError'
+  | 'otpGenericError'
   | 'phoneVerifiedCompleteProfile'
   | 'registeredMessage'
   | 'pendingHeading'
@@ -136,6 +142,12 @@ const en: Record<StringKey, string> = {
   codeSentBySms: 'Code sent by SMS.',
   enterValidPhone: 'Enter a valid 10 digit phone number.',
   sendCodeFirst: 'Send yourself a code first.',
+  otpSmsUnavailable: "SMS login isn't available right now. Please contact support.",
+  otpTooManyAttempts: 'Too many attempts. Please wait a few minutes and try again.',
+  otpWrongCode: 'Wrong code. Check the SMS and try again.',
+  otpCodeExpired: 'This code has expired. Please get a new code.',
+  networkError: 'No internet connection. Check your network and try again.',
+  otpGenericError: 'Something went wrong with the OTP. Please try again.',
   phoneVerifiedCompleteProfile: 'Phone verified. Complete your profile to finish registering.',
   registeredMessage: 'Registered — you will be notified once an admin verifies your account.',
   pendingHeading: 'Account pending approval',
@@ -228,6 +240,12 @@ const hi: Record<StringKey, string> = {
   codeSentBySms: 'कोड एसएमएस से भेज दिया गया है।',
   enterValidPhone: 'सही 10 अंकों का मोबाइल नंबर डालें।',
   sendCodeFirst: 'पहले खुद को कोड भेजें।',
+  otpSmsUnavailable: 'अभी SMS से लॉगिन उपलब्ध नहीं है। कृपया सहायता टीम से संपर्क करें।',
+  otpTooManyAttempts: 'बहुत ज़्यादा प्रयास हो गए। कुछ मिनट रुककर फिर से कोशिश करें।',
+  otpWrongCode: 'कोड गलत है। SMS देखकर फिर से डालें।',
+  otpCodeExpired: 'यह कोड अब मान्य नहीं है। कृपया नया कोड मँगवाएँ।',
+  networkError: 'इंटरनेट कनेक्शन नहीं है। नेटवर्क जाँचकर फिर से कोशिश करें।',
+  otpGenericError: 'OTP में कुछ गड़बड़ हुई। कृपया फिर से कोशिश करें।',
   phoneVerifiedCompleteProfile: 'मोबाइल नंबर सत्यापित हो गया। रजिस्ट्रेशन पूरा करने के लिए प्रोफाइल भरें।',
   registeredMessage: 'रजिस्ट्रेशन हो गया — एडमिन के खाता सत्यापित करने पर आपको सूचना मिलेगी।',
   pendingHeading: 'खाता स्वीकृति के इंतज़ार में',
@@ -320,6 +338,12 @@ const kn: Record<StringKey, string> = {
   codeSentBySms: 'ಕೋಡ್ ಅನ್ನು ಎಸ್‌ಎಂಎಸ್ ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ.',
   enterValidPhone: 'ಸರಿಯಾದ 10 ಅಂಕಿಗಳ ಫೋನ್ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ.',
   sendCodeFirst: 'ಮೊದಲು ನಿಮಗೆ ಕೋಡ್ ಕಳುಹಿಸಿ.',
+  otpSmsUnavailable: 'ಈಗ SMS ಮೂಲಕ ಲಾಗಿನ್ ಲಭ್ಯವಿಲ್ಲ. ದಯವಿಟ್ಟು ಸಹಾಯ ತಂಡವನ್ನು ಸಂಪರ್ಕಿಸಿ.',
+  otpTooManyAttempts: 'ತುಂಬಾ ಪ್ರಯತ್ನಗಳಾಗಿವೆ. ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
+  otpWrongCode: 'ಕೋಡ್ ತಪ್ಪಾಗಿದೆ. SMS ನೋಡಿ ಮತ್ತೆ ನಮೂದಿಸಿ.',
+  otpCodeExpired: 'ಈ ಕೋಡ್‌ನ ಅವಧಿ ಮುಗಿದಿದೆ. ದಯವಿಟ್ಟು ಹೊಸ ಕೋಡ್ ಪಡೆಯಿರಿ.',
+  networkError: 'ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕವಿಲ್ಲ. ನೆಟ್‌ವರ್ಕ್ ಪರಿಶೀಲಿಸಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
+  otpGenericError: 'OTP ಯಲ್ಲಿ ಏನೋ ತೊಂದರೆಯಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
   phoneVerifiedCompleteProfile: 'ಫೋನ್ ಪರಿಶೀಲಿಸಲಾಗಿದೆ. ನೋಂದಣಿ ಪೂರ್ಣಗೊಳಿಸಲು ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ಭರ್ತಿ ಮಾಡಿ.',
   registeredMessage: 'ನೋಂದಣಿ ಆಗಿದೆ — ಅಡ್ಮಿನ್ ನಿಮ್ಮ ಖಾತೆಯನ್ನು ಪರಿಶೀಲಿಸಿದ ನಂತರ ನಿಮಗೆ ತಿಳಿಸಲಾಗುವುದು.',
   pendingHeading: 'ಖಾತೆ ಅನುಮೋದನೆಗೆ ಬಾಕಿ ಇದೆ',
@@ -412,6 +436,12 @@ const ta: Record<StringKey, string> = {
   codeSentBySms: 'குறியீடு எஸ்எம்எஸ் மூலம் அனுப்பப்பட்டது.',
   enterValidPhone: 'சரியான 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்.',
   sendCodeFirst: 'முதலில் உங்களுக்கு குறியீடு அனுப்புங்கள்.',
+  otpSmsUnavailable: 'இப்போது SMS மூலம் உள்நுழைவு கிடைக்கவில்லை. உதவிக் குழுவைத் தொடர்பு கொள்ளுங்கள்.',
+  otpTooManyAttempts: 'அதிக முயற்சிகள். சில நிமிடங்கள் கழித்து மீண்டும் முயற்சிக்கவும்.',
+  otpWrongCode: 'குறியீடு தவறு. SMS-ஐப் பார்த்து மீண்டும் உள்ளிடவும்.',
+  otpCodeExpired: 'இந்தக் குறியீடு காலாவதியாகிவிட்டது. புதிய குறியீட்டைப் பெறுங்கள்.',
+  networkError: 'இணைய இணைப்பு இல்லை. நெட்வொர்க்கைச் சரிபார்த்து மீண்டும் முயற்சிக்கவும்.',
+  otpGenericError: 'OTP-இல் ஏதோ சிக்கல். மீண்டும் முயற்சிக்கவும்.',
   phoneVerifiedCompleteProfile: 'மொபைல் எண் சரிபார்க்கப்பட்டது. பதிவை முடிக்க உங்கள் விவரங்களை நிரப்பவும்.',
   registeredMessage: 'பதிவு முடிந்தது — நிர்வாகி உங்கள் கணக்கை சரிபார்த்தவுடன் உங்களுக்கு தெரிவிக்கப்படும்.',
   pendingHeading: 'கணக்கு ஒப்புதலுக்காக காத்திருக்கிறது',
@@ -504,6 +534,12 @@ const te: Record<StringKey, string> = {
   codeSentBySms: 'కోడ్ ఎస్ఎంఎస్ ద్వారా పంపబడింది.',
   enterValidPhone: 'సరైన 10 అంకెల ఫోన్ నంబర్ నమోదు చేయండి.',
   sendCodeFirst: 'ముందుగా మీకు కోడ్ పంపండి.',
+  otpSmsUnavailable: 'ప్రస్తుతం SMS ద్వారా లాగిన్ అందుబాటులో లేదు. దయచేసి సహాయ బృందాన్ని సంప్రదించండి.',
+  otpTooManyAttempts: 'చాలా ప్రయత్నాలు జరిగాయి. కొన్ని నిమిషాల తర్వాత మళ్లీ ప్రయత్నించండి.',
+  otpWrongCode: 'కోడ్ తప్పు. SMS చూసి మళ్లీ నమోదు చేయండి.',
+  otpCodeExpired: 'ఈ కోడ్ గడువు ముగిసింది. దయచేసి కొత్త కోడ్ పొందండి.',
+  networkError: 'ఇంటర్నెట్ కనెక్షన్ లేదు. నెట్‌వర్క్ చూసి మళ్లీ ప్రయత్నించండి.',
+  otpGenericError: 'OTPలో ఏదో సమస్య వచ్చింది. దయచేసి మళ్లీ ప్రయత్నించండి.',
   phoneVerifiedCompleteProfile: 'ఫోన్ నంబర్ ధృవీకరించబడింది. నమోదును పూర్తి చేయడానికి మీ ప్రొఫైల్ నింపండి.',
   registeredMessage: 'నమోదు పూర్తయింది — అడ్మిన్ మీ ఖాతాను ధృవీకరించిన తర్వాత మీకు తెలియజేయబడుతుంది.',
   pendingHeading: 'ఖాతా ఆమోదం కోసం వేచి ఉంది',
@@ -596,6 +632,12 @@ const ml: Record<StringKey, string> = {
   codeSentBySms: 'കോഡ് എസ്എംഎസ് വഴി അയച്ചു.',
   enterValidPhone: 'ശരിയായ 10 അക്ക ഫോൺ നമ്പർ നൽകുക.',
   sendCodeFirst: 'ആദ്യം നിങ്ങൾക്ക് ഒരു കോഡ് അയയ്ക്കുക.',
+  otpSmsUnavailable: 'ഇപ്പോൾ SMS വഴി ലോഗിൻ ലഭ്യമല്ല. ദയവായി സഹായ ടീമുമായി ബന്ധപ്പെടുക.',
+  otpTooManyAttempts: 'വളരെയധികം ശ്രമങ്ങൾ. കുറച്ച് മിനിറ്റിനു ശേഷം വീണ്ടും ശ്രമിക്കുക.',
+  otpWrongCode: 'കോഡ് തെറ്റാണ്. SMS നോക്കി വീണ്ടും നൽകുക.',
+  otpCodeExpired: 'ഈ കോഡിന്റെ കാലാവധി കഴിഞ്ഞു. ദയവായി പുതിയ കോഡ് നേടുക.',
+  networkError: 'ഇന്റർനെറ്റ് കണക്ഷൻ ഇല്ല. നെറ്റ്‌വർക്ക് പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.',
+  otpGenericError: 'OTP-യിൽ എന്തോ പ്രശ്നം. ദയവായി വീണ്ടും ശ്രമിക്കുക.',
   phoneVerifiedCompleteProfile: 'ഫോൺ നമ്പർ പരിശോധിച്ചു. രജിസ്ട്രേഷൻ പൂർത്തിയാക്കാൻ നിങ്ങളുടെ പ്രൊഫൈൽ പൂരിപ്പിക്കുക.',
   registeredMessage: 'രജിസ്ട്രേഷൻ പൂർത്തിയായി — അഡ്മിൻ നിങ്ങളുടെ അക്കൗണ്ട് പരിശോധിച്ച ശേഷം അറിയിക്കും.',
   pendingHeading: 'അക്കൗണ്ട് അംഗീകാരത്തിനായി കാത്തിരിക്കുന്നു',
