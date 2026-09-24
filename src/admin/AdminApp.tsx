@@ -186,10 +186,13 @@ export default function AdminApp() {
       confirmLabel: 'Logout',
       kind: 'danger',
       onConfirm: () => {
-        void logoutAdmin();
-        setSession(null);
-        setSelectedMechanic(null);
-        setPage('adminLogin');
+        // Wait for signOut before leaving the dashboard, so closing the app right after can't keep the session.
+        void withLoading(async () => {
+          await logoutAdmin();
+          setSession(null);
+          setSelectedMechanic(null);
+          setPage('adminLogin');
+        });
       },
     });
   }

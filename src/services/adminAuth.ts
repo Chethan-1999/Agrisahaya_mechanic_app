@@ -4,6 +4,7 @@ import { httpsCallable } from 'firebase/functions';
 
 import { auth, db, functions } from '../firebase';
 import type { AdminProfile } from '../types';
+import { withTimeout } from '../utils/withTimeout';
 import { currentPushToken } from './notifications';
 
 const registerAdminDeviceFn = httpsCallable<{ fcmToken: string }, { status: 'ok' }>(functions, 'registerAdminDevice');
@@ -40,15 +41,22 @@ export async function loginAdmin(email: string, password: string): Promise<Admin
   };
 }
 
-/** Stops this device's admin pushes (best-effort — a failure must never block logging out), then signs out. */
+/**
+ * Stops this device's admin pushes, then signs out. Unregistering is best-effort and capped at a few seconds: it needs
+ * the still-signed-in user, but a slow call must never delay `signOut` — if the app is closed before `signOut` runs, the
+ * persisted session survives and the app reopens logged in. A token left behind is pruned on the next failed push.
+ */
 export async function logoutAdmin() {
   const fcmToken = currentPushToken();
 
-  if (fcmToken) {
-    await unregisterAdminDeviceFn({ fcmToken }).catch((err: unknown) => console.warn('failed to unregister push token:', err));
+  try {
+    if (fcmToken) {
+      await withTimeout(unregisterAdminDeviceFn({ fcmToken }), 'Unregistering push token timed out.', 3000)
+        .catch((err: unknown) => console.warn('failed to unregister push token:', err));
+    }
+  } finally {
+    await signOut(auth);
   }
-
-  await signOut(auth);
 }
 
 function getAdminLoginErrorMessage(error: unknown) {
