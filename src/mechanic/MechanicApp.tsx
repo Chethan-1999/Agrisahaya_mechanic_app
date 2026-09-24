@@ -4,11 +4,12 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 
 import { PullToRefresh } from '../components/PullToRefresh';
-import { ConfirmModal, type ConfirmDialog } from '../components/ui';
+import { ConfirmModal, getErrorMessage, type ConfirmDialog } from '../components/ui';
 import { auth } from '../firebase';
 import { useLoadingState } from '../hooks/useLoadingState';
 import { useI18n } from '../i18n/I18nContext';
 import { listAnnouncements } from '../services/announcements';
+import { dataErrorKey } from '../services/dataErrors';
 import { getMechanic, updateDeviceInfo } from '../services/mechanics';
 import { initNotifications } from '../services/notifications';
 import type { Mechanic } from '../types';
@@ -74,8 +75,11 @@ export default function MechanicApp() {
   const [bootstrapping, setBootstrapping] = useState(true);
   const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog>(null);
-  const { loading, toast, setToast, withLoading } = useLoadingState();
   const { t } = useI18n();
+  const { loading, toast, setToast, withLoading } = useLoadingState((error) => {
+    const key = dataErrorKey(error);
+    return key ? t(key) : getErrorMessage(error);
+  });
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;

@@ -33,7 +33,7 @@ export function AdminCommunity({ setToast, withLoading }: {
 
   async function refresh() {
     await withLoading(async () => {
-      const announcements = await withCommunityTimeout(listAnnouncements(), 'Loading community posts timed out. Check Firestore or the local emulators, then try again.');
+      const announcements = await withCommunityTimeout(listAnnouncements(), "Couldn't load community posts — the connection is slow. Pull down to try again.");
       setPosts(announcements);
     });
   }
@@ -42,11 +42,11 @@ export function AdminCommunity({ setToast, withLoading }: {
     event.preventDefault();
     if (!canPost) return;
     await withLoading(async () => {
-      await withCommunityTimeout(postAnnouncement(title, message), 'Posting to community timed out. Check Firebase Functions or the local emulators, then try again.');
+      await withCommunityTimeout(postAnnouncement(title, message), 'Posting timed out — the connection is slow. Check the community list before posting again, so it isn\'t sent twice.');
       setTitle('');
       setMessage('');
       setToast({ kind: 'success', text: 'Posted to the community.' });
-      const announcements = await withCommunityTimeout(listAnnouncements(), 'Post was sent, but refreshing community posts timed out. Pull to refresh after checking Firestore.');
+      const announcements = await withCommunityTimeout(listAnnouncements(), "Posted, but the list couldn't refresh — the connection is slow. Pull down to refresh.");
       setPosts(announcements);
     });
   }

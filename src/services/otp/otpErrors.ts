@@ -8,6 +8,9 @@ const OTP_ERROR_KEYS: Record<string, StringKey> = {
   // Authentication → Settings → SMS region policy). Only the project owner can fix this.
   'auth/operation-not-allowed': 'otpSmsUnavailable',
   'auth/too-many-requests': 'otpTooManyAttempts',
+  'auth/too-many-requests (device blocked)': 'otpTooManyAttempts',
+  // Firebase's "unusual activity" block on a number/device after many requests — same advice: wait.
+  'auth/error-code:-39': 'otpTooManyAttempts',
   'auth/quota-exceeded': 'otpTooManyAttempts',
   'auth/invalid-phone-number': 'enterValidPhone',
   'auth/missing-phone-number': 'enterValidPhone',
@@ -15,12 +18,22 @@ const OTP_ERROR_KEYS: Record<string, StringKey> = {
   'auth/missing-verification-code': 'otpWrongCode',
   'auth/code-expired': 'otpCodeExpired',
   'auth/session-expired': 'otpCodeExpired',
+  'auth/invalid-verification-id': 'otpCodeExpired',
+  'auth/missing-verification-id': 'otpCodeExpired',
+  // The reCAPTCHA answer was rejected (e.g. an image puzzle left open until it expired).
+  'auth/captcha-check-failed': 'otpCheckFailed',
+  'auth/invalid-app-credential': 'otpCheckFailed',
+  'auth/missing-app-credential': 'otpCheckFailed',
   'auth/network-request-failed': 'networkError',
 };
 
+export function authErrorCode(err: unknown): string {
+  return typeof err === 'object' && err && 'code' in err ? String(err.code) : '';
+}
+
 /** The translated message for an OTP failure, or null when `err` isn't a Firebase Auth error (e.g. our own timeouts). */
 export function otpErrorKey(err: unknown): StringKey | null {
-  const code = typeof err === 'object' && err && 'code' in err ? String(err.code) : '';
+  const code = authErrorCode(err);
 
   if (!code.startsWith('auth/')) return null;
 

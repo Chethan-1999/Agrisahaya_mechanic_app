@@ -7,7 +7,7 @@ import { usePhoneOtp } from '../../hooks/usePhoneOtp';
 import { useI18n } from '../../i18n/I18nContext';
 import { completeSignup } from '../../services/auth';
 import { getMechanic, revokeOtherSessions } from '../../services/mechanics';
-import { otpErrorKey } from '../../services/otp/otpErrors';
+import { authErrorCode, otpErrorKey } from '../../services/otp/otpErrors';
 import { MechanicFields } from '../../shared/MechanicFields';
 import type { Mechanic, MechanicForm } from '../../types';
 import { emptyMechanicForm } from '../../types';
@@ -93,7 +93,10 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
     if (!key) return err;
 
     console.warn('OTP error:', err);
-    return new Error(t(key));
+    // For unrecognised codes, failed phone checks and rate limits (several different causes), the code is shown too,
+    // so a technician can read it out to support.
+    const showCode = key === 'otpGenericError' || key === 'otpCheckFailed' || key === 'otpTooManyAttempts';
+    return new Error(showCode ? `${t(key)} (${authErrorCode(err)})` : t(key));
   }
 
   async function confirmOtpOrThrow() {
@@ -129,7 +132,7 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
       const uid = auth.currentUser?.uid;
       if (!uid) throw new Error('Sign-in failed. Try again.');
 
-      const technician = await withTimeout(getMechanic(uid), 'Checking mechanic profile timed out. Check Firestore or the local emulators, then try again.');
+      const technician = await withTimeout(getMechanic(uid), t('slowConnectionError'));
       if (technician) {
         await signOut(auth);
         throw new Error(t('phoneAlreadyExists'));
@@ -153,7 +156,7 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
       const uid = auth.currentUser?.uid;
       if (!uid) throw new Error('Sign-in failed. Try again.');
 
-      const technician = await withTimeout(getMechanic(uid), 'Checking mechanic profile timed out. Check Firestore or the local emulators, then try again.');
+      const technician = await withTimeout(getMechanic(uid), t('slowConnectionError'));
       if (technician) {
         await withTimeout(revokeOtherSessions(), 'Session cleanup timed out. Try again.');
         await withTimeout(auth.currentUser?.getIdToken(true) ?? Promise.resolve(''), 'Refreshing your session timed out. Try again.');

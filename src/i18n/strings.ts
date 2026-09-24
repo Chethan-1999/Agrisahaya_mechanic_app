@@ -50,7 +50,10 @@ export type StringKey =
   | 'otpWrongCode'
   | 'otpCodeExpired'
   | 'networkError'
+  | 'slowConnectionError'
+  | 'loadFailedError'
   | 'otpGenericError'
+  | 'otpCheckFailed'
   | 'phoneVerifiedCompleteProfile'
   | 'registeredMessage'
   | 'pendingHeading'
@@ -147,7 +150,10 @@ const en: Record<StringKey, string> = {
   otpWrongCode: 'Wrong code. Check the SMS and try again.',
   otpCodeExpired: 'This code has expired. Please get a new code.',
   networkError: 'No internet connection. Check your network and try again.',
+  slowConnectionError: 'The connection is slow. Check your internet and try again.',
+  loadFailedError: "Couldn't load this right now. Please try again in a few minutes.",
   otpGenericError: 'Something went wrong with the OTP. Please try again.',
+  otpCheckFailed: 'Phone verification failed. Please try again in a few minutes.',
   phoneVerifiedCompleteProfile: 'Phone verified. Complete your profile to finish registering.',
   registeredMessage: 'Registered — you will be notified once an admin verifies your account.',
   pendingHeading: 'Account pending approval',
@@ -245,7 +251,10 @@ const hi: Record<StringKey, string> = {
   otpWrongCode: 'कोड गलत है। SMS देखकर फिर से डालें।',
   otpCodeExpired: 'यह कोड अब मान्य नहीं है। कृपया नया कोड मँगवाएँ।',
   networkError: 'इंटरनेट कनेक्शन नहीं है। नेटवर्क जाँचकर फिर से कोशिश करें।',
+  slowConnectionError: 'कनेक्शन धीमा है। इंटरनेट जाँचकर फिर से कोशिश करें।',
+  loadFailedError: 'अभी यह लोड नहीं हो सका। कुछ मिनट बाद फिर से कोशिश करें।',
   otpGenericError: 'OTP में कुछ गड़बड़ हुई। कृपया फिर से कोशिश करें।',
+  otpCheckFailed: 'फ़ोन की जाँच नहीं हो पाई। कुछ मिनट बाद फिर से कोशिश करें।',
   phoneVerifiedCompleteProfile: 'मोबाइल नंबर सत्यापित हो गया। रजिस्ट्रेशन पूरा करने के लिए प्रोफाइल भरें।',
   registeredMessage: 'रजिस्ट्रेशन हो गया — एडमिन के खाता सत्यापित करने पर आपको सूचना मिलेगी।',
   pendingHeading: 'खाता स्वीकृति के इंतज़ार में',
@@ -343,7 +352,10 @@ const kn: Record<StringKey, string> = {
   otpWrongCode: 'ಕೋಡ್ ತಪ್ಪಾಗಿದೆ. SMS ನೋಡಿ ಮತ್ತೆ ನಮೂದಿಸಿ.',
   otpCodeExpired: 'ಈ ಕೋಡ್‌ನ ಅವಧಿ ಮುಗಿದಿದೆ. ದಯವಿಟ್ಟು ಹೊಸ ಕೋಡ್ ಪಡೆಯಿರಿ.',
   networkError: 'ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕವಿಲ್ಲ. ನೆಟ್‌ವರ್ಕ್ ಪರಿಶೀಲಿಸಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
+  slowConnectionError: 'ಸಂಪರ್ಕ ನಿಧಾನವಾಗಿದೆ. ಇಂಟರ್ನೆಟ್ ಪರಿಶೀಲಿಸಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
+  loadFailedError: 'ಈಗ ಇದನ್ನು ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
   otpGenericError: 'OTP ಯಲ್ಲಿ ಏನೋ ತೊಂದರೆಯಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
+  otpCheckFailed: 'ಫೋನ್ ಪರಿಶೀಲನೆ ವಿಫಲವಾಯಿತು. ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
   phoneVerifiedCompleteProfile: 'ಫೋನ್ ಪರಿಶೀಲಿಸಲಾಗಿದೆ. ನೋಂದಣಿ ಪೂರ್ಣಗೊಳಿಸಲು ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ಭರ್ತಿ ಮಾಡಿ.',
   registeredMessage: 'ನೋಂದಣಿ ಆಗಿದೆ — ಅಡ್ಮಿನ್ ನಿಮ್ಮ ಖಾತೆಯನ್ನು ಪರಿಶೀಲಿಸಿದ ನಂತರ ನಿಮಗೆ ತಿಳಿಸಲಾಗುವುದು.',
   pendingHeading: 'ಖಾತೆ ಅನುಮೋದನೆಗೆ ಬಾಕಿ ಇದೆ',
@@ -441,7 +453,10 @@ const ta: Record<StringKey, string> = {
   otpWrongCode: 'குறியீடு தவறு. SMS-ஐப் பார்த்து மீண்டும் உள்ளிடவும்.',
   otpCodeExpired: 'இந்தக் குறியீடு காலாவதியாகிவிட்டது. புதிய குறியீட்டைப் பெறுங்கள்.',
   networkError: 'இணைய இணைப்பு இல்லை. நெட்வொர்க்கைச் சரிபார்த்து மீண்டும் முயற்சிக்கவும்.',
+  slowConnectionError: 'இணைப்பு மெதுவாக உள்ளது. இணையத்தைச் சரிபார்த்து மீண்டும் முயற்சிக்கவும்.',
+  loadFailedError: 'இப்போது இதை ஏற்ற முடியவில்லை. சில நிமிடங்களில் மீண்டும் முயற்சிக்கவும்.',
   otpGenericError: 'OTP-இல் ஏதோ சிக்கல். மீண்டும் முயற்சிக்கவும்.',
+  otpCheckFailed: 'ஃபோன் சரிபார்ப்பு தோல்வியடைந்தது. சில நிமிடங்கள் கழித்து மீண்டும் முயற்சிக்கவும்.',
   phoneVerifiedCompleteProfile: 'மொபைல் எண் சரிபார்க்கப்பட்டது. பதிவை முடிக்க உங்கள் விவரங்களை நிரப்பவும்.',
   registeredMessage: 'பதிவு முடிந்தது — நிர்வாகி உங்கள் கணக்கை சரிபார்த்தவுடன் உங்களுக்கு தெரிவிக்கப்படும்.',
   pendingHeading: 'கணக்கு ஒப்புதலுக்காக காத்திருக்கிறது',
@@ -539,7 +554,10 @@ const te: Record<StringKey, string> = {
   otpWrongCode: 'కోడ్ తప్పు. SMS చూసి మళ్లీ నమోదు చేయండి.',
   otpCodeExpired: 'ఈ కోడ్ గడువు ముగిసింది. దయచేసి కొత్త కోడ్ పొందండి.',
   networkError: 'ఇంటర్నెట్ కనెక్షన్ లేదు. నెట్‌వర్క్ చూసి మళ్లీ ప్రయత్నించండి.',
+  slowConnectionError: 'కనెక్షన్ నెమ్మదిగా ఉంది. ఇంటర్నెట్ చూసి మళ్లీ ప్రయత్నించండి.',
+  loadFailedError: 'ఇప్పుడు దీన్ని లోడ్ చేయలేకపోయాం. కొన్ని నిమిషాల తర్వాత మళ్లీ ప్రయత్నించండి.',
   otpGenericError: 'OTPలో ఏదో సమస్య వచ్చింది. దయచేసి మళ్లీ ప్రయత్నించండి.',
+  otpCheckFailed: 'ఫోన్ ధృవీకరణ విఫలమైంది. కొన్ని నిమిషాల తర్వాత మళ్లీ ప్రయత్నించండి.',
   phoneVerifiedCompleteProfile: 'ఫోన్ నంబర్ ధృవీకరించబడింది. నమోదును పూర్తి చేయడానికి మీ ప్రొఫైల్ నింపండి.',
   registeredMessage: 'నమోదు పూర్తయింది — అడ్మిన్ మీ ఖాతాను ధృవీకరించిన తర్వాత మీకు తెలియజేయబడుతుంది.',
   pendingHeading: 'ఖాతా ఆమోదం కోసం వేచి ఉంది',
@@ -637,7 +655,10 @@ const ml: Record<StringKey, string> = {
   otpWrongCode: 'കോഡ് തെറ്റാണ്. SMS നോക്കി വീണ്ടും നൽകുക.',
   otpCodeExpired: 'ഈ കോഡിന്റെ കാലാവധി കഴിഞ്ഞു. ദയവായി പുതിയ കോഡ് നേടുക.',
   networkError: 'ഇന്റർനെറ്റ് കണക്ഷൻ ഇല്ല. നെറ്റ്‌വർക്ക് പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.',
+  slowConnectionError: 'കണക്ഷൻ മന്ദഗതിയിലാണ്. ഇന്റർനെറ്റ് പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.',
+  loadFailedError: 'ഇപ്പോൾ ഇത് ലോഡ് ചെയ്യാനായില്ല. കുറച്ച് മിനിറ്റിനുശേഷം വീണ്ടും ശ്രമിക്കുക.',
   otpGenericError: 'OTP-യിൽ എന്തോ പ്രശ്നം. ദയവായി വീണ്ടും ശ്രമിക്കുക.',
+  otpCheckFailed: 'ഫോൺ പരിശോധന പരാജയപ്പെട്ടു. കുറച്ച് മിനിറ്റിനു ശേഷം വീണ്ടും ശ്രമിക്കുക.',
   phoneVerifiedCompleteProfile: 'ഫോൺ നമ്പർ പരിശോധിച്ചു. രജിസ്ട്രേഷൻ പൂർത്തിയാക്കാൻ നിങ്ങളുടെ പ്രൊഫൈൽ പൂരിപ്പിക്കുക.',
   registeredMessage: 'രജിസ്ട്രേഷൻ പൂർത്തിയായി — അഡ്മിൻ നിങ്ങളുടെ അക്കൗണ്ട് പരിശോധിച്ച ശേഷം അറിയിക്കും.',
   pendingHeading: 'അക്കൗണ്ട് അംഗീകാരത്തിനായി കാത്തിരിക്കുന്നു',

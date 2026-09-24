@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 
-import { LANGUAGES, type LanguageCode, type StringKey } from '../i18n/strings';
+import { LANGUAGES, strings, type LanguageCode, type StringKey } from '../i18n/strings';
+import { dataErrorKey } from '../services/dataErrors';
 import type { JobStatus } from '../types';
 
 export type Toast = { kind: 'success' | 'error'; text: string } | null;
@@ -74,7 +75,11 @@ export function formatDate(value: string) {
   return value ? new Date(value).toLocaleDateString() : '-';
 }
 
+/** English message for a failed action — the admin app's, and the fallback for anything untranslated. */
 export function getErrorMessage(error: unknown) {
+  const key = dataErrorKey(error);
+  if (key) return strings.en[key];
+
   return error instanceof Error ? error.message : 'Something went wrong.';
 }
 
