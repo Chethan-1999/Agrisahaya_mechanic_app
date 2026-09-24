@@ -156,6 +156,16 @@ export default function AdminApp() {
     await withLoading(async () => setJobs(await listAllJobs()));
   }
 
+  // Assign jobs needs both: a mechanic approved since this session loaded (e.g. on another device) must show up
+  // in the "Assign mechanic" dropdown, not as "Unknown", without restarting the app.
+  async function loadJobsAndMechanics() {
+    await withLoading(async () => {
+      const [nextJobs, nextMechanics] = await Promise.all([listAllJobs(), listMechanics()]);
+      setJobs(nextJobs);
+      setMechanics(nextMechanics);
+    });
+  }
+
   function logout() {
     setConfirmDialog({
       title: 'Logout?',
@@ -278,7 +288,7 @@ export default function AdminApp() {
             />
           )}
           {page === 'adminAddJobs' && <AdminAddJobs askConfirm={setConfirmDialog} jobs={jobs} onRefresh={loadJobs} setToast={setToast} withLoading={withLoading} />}
-          {page === 'adminAssignJobs' && <AdminAssignJobs askConfirm={setConfirmDialog} jobs={jobs} mechanics={mechanics} onRefresh={loadJobs} setToast={setToast} withLoading={withLoading} />}
+          {page === 'adminAssignJobs' && <AdminAssignJobs askConfirm={setConfirmDialog} jobs={jobs} mechanics={mechanics} onRefresh={loadJobsAndMechanics} setToast={setToast} withLoading={withLoading} />}
           {page === 'adminProfileRequests' && <AdminProfileRequests mechanics={mechanics} setToast={setToast} withLoading={withLoading} />}
           {page === 'adminCommunity' && <AdminCommunity setToast={setToast} withLoading={withLoading} />}
           {page === 'adminDetails' && selectedMechanic && (
