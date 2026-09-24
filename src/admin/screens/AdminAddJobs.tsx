@@ -2,8 +2,8 @@ import { ChevronDown, Search } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import { PullToRefresh } from '../../components/PullToRefresh';
-import { formatDate, jobStatusMeta, type ConfirmDialog, type Toast } from '../../components/ui';
-import { createJob, deleteJob, sortForAdmin, updateJob, visibleJobs } from '../../services/jobs';
+import { formatDate, jobStatusMeta, type Toast } from '../../components/ui';
+import { createJob, sortForAdmin, updateJob, visibleJobs } from '../../services/jobs';
 import { emptyJobFields, type Job, type JobFields } from '../../types';
 
 const toDigits = (value: string) => value.replace(/\D/g, '').slice(0, 10);
@@ -17,9 +17,9 @@ const toJobFields = (job: Job): JobFields => ({
   additionalNotes: job.additionalNotes,
 });
 
-export function AdminAddJobs({ askConfirm, jobs, onRefresh, setToast, withLoading }: {
-  askConfirm: (dialog: NonNullable<ConfirmDialog>) => void;
+export function AdminAddJobs({ jobs, onJobSaved, onRefresh, setToast, withLoading }: {
   jobs: Job[];
+  onJobSaved: (job: Job) => void;
   onRefresh: () => Promise<void>;
   setToast: (toast: Toast) => void;
   withLoading: (action: () => Promise<void>) => Promise<void>;
@@ -116,34 +116,18 @@ export function AdminAddJobs({ askConfirm, jobs, onRefresh, setToast, withLoadin
     try {
       await withLoading(async () => {
         if (editingJobId) {
-          await updateJob(editingJobId, fields);
+          onJobSaved(await updateJob(editingJobId, fields));
           setToast({ kind: 'success', text: 'Job updated.' });
         } else {
-          const jobCode = await createJob(fields);
-          setToast({ kind: 'success', text: `Job ${jobCode} added.` });
+          const job = await createJob(fields);
+          onJobSaved(job);
+          setToast({ kind: 'success', text: `Job ${job.jobCode} added.` });
         }
         closeForm();
-        await onRefresh();
       });
     } finally {
       setSaving(false);
     }
-  }
-
-  function confirmDelete(job: Job) {
-    askConfirm({
-      title: 'Delete job?',
-      message: `${job.jobCode || 'This job'} will be removed from the boards. The record is kept and counted as deleted${job.technicianId ? ' for the mechanic too' : ''}.`,
-      confirmLabel: 'Delete',
-      kind: 'danger',
-      onConfirm: () => {
-        void withLoading(async () => {
-          await deleteJob(job.id);
-          setToast({ kind: 'success', text: 'Job deleted.' });
-          await onRefresh();
-        });
-      },
-    });
   }
 
   return (
@@ -218,9 +202,6 @@ export function AdminAddJobs({ askConfirm, jobs, onRefresh, setToast, withLoadin
                   </dl>
                 </div>
               )}
-              <div className="admin-job-card-actions">
-                {(job.status === 'declined' || job.status === 'cancelled' || job.status === 'completed') && <button className="danger-text" onClick={() => confirmDelete(job)} type="button">Delete</button>}
-              </div>
             </article>
           );
         })}

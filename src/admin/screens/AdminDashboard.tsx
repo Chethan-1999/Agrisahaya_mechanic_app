@@ -1,6 +1,7 @@
 import { BriefcaseBusiness, CircleCheck, CircleDot, Clock3, Users, UserX } from 'lucide-react';
 
 import { Metric, jobStatusMeta } from '../../components/ui';
+import { lastChangedAt } from '../../services/jobs';
 import { getInitials } from '../../shared/formatting';
 import type { Job, Mechanic } from '../../types';
 
@@ -13,7 +14,7 @@ export function AdminDashboard({ active, inactive, jobs, mechanics, pending, tot
   const assignedJobs = jobs.filter(isAssignedJob).length;
   const openJobs = jobs.filter((job) => job.status === 'open').length;
   const assignmentRate = jobs.length ? Math.round((assignedJobs / jobs.length) * 100) : 0;
-  const recentJobs = jobs.slice(0, 5);
+  const recentJobs = [...jobs].sort((a, b) => lastChangedAt(b).localeCompare(lastChangedAt(a))).slice(0, 5);
   const topMechanics = mechanics
     .map((mechanic) => ({ mechanic, count: jobs.filter((job) => job.technicianId === mechanic.id && isAssignedJob(job)).length }))
     .filter((item) => item.count > 0)

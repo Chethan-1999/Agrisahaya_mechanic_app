@@ -290,7 +290,6 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; }
 .admin-job-card-buttons { flex: 0 0 auto; display: grid; justify-items: end; gap: 7px; padding-top: 1px; }
 .admin-job-card .job-show-more, .admin-card-edit-button { min-height: 30px; padding: 0 9px; border-radius: 10px; font-size: 11px; }
 .admin-job-card .job-show-more svg { width: 17px; height: 17px; }
-.admin-job-card-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 0; }
 .admin-card-edit-button { flex: 0 0 auto; align-self: flex-start; margin-top: 0; border-color: rgba(22, 128, 71, 0.34); background: var(--primary); color: #ffffff; box-shadow: 0 8px 16px rgba(22, 128, 71, 0.16); }
 .admin-card-edit-button:hover { background: var(--primary-dark); }
 .needs-reassign-card { border-color: #f3b7b7; background: linear-gradient(145deg, #fffafa 0%, #fff5f5 100%); }

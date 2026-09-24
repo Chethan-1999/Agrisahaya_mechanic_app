@@ -1,10 +1,11 @@
 import { FieldValue, type DocumentReference, type DocumentSnapshot, type Transaction } from 'firebase-admin/firestore';
-import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { HttpsError } from 'firebase-functions/v2/https';
 
 import { requireAdmin } from './lib/authz';
 import { db } from './lib/firebaseAdmin';
 import { historyEntry } from './lib/jobHistory';
-import { isAwaitingResponse, isDeletable, isFinished, isHeld, statusStamp, type JobStatus } from './lib/jobStatus';
+import { isAwaitingResponse, isFinished, isHeld, statusStamp, type JobStatus } from './lib/jobStatus';
+import { onCall } from './lib/onCall';
 import { pushToAdmins, pushToTechnician } from './lib/push';
 
 type JobStatsDelta = Partial<Record<'pending' | 'completed' | 'cancelled' | 'deleted', number>>;
@@ -42,6 +43,15 @@ async function readJob(tx: Transaction, ref: DocumentReference): Promise<JobDoc>
   }
 
   return data;
+}
+
+/**
+ * A job mutation's response: the job as it now stands, so the client can show the change straight away instead of
+ * waiting to reload every job (it still refreshes the full list in the background).
+ */
+async function jobResult(ref: DocumentReference) {
+  const snap = await ref.get();
+  return { status: 'ok' as const, job: { id: ref.id, ...snap.data() } };
 }
 
 /** Reads a technician inside a transaction; every read in a transaction has to happen before its first write. */
@@ -175,7 +185,7 @@ export const createJob = onCall(async (request) => {
     });
   }
 
-  return { status: 'ok', jobId: ref.id, jobCode };
+  return { ...(await jobResult(ref)), jobId: ref.id, jobCode };
 });
 
 /** Admin edits the six entered fields. Finished jobs (completed/cancelled) are frozen; a technician holding the job is told. */
@@ -214,44 +224,7 @@ export const updateJob = onCall(async (request) => {
     });
   }
 
-  return { status: 'ok' };
-});
-
-/**
- * Admin removes a finished-with job from the boards. Only declined, cancelled or completed jobs can be deleted, and the
- * document is kept (flagged `deleted`) so both sides keep an accurate record: the job's own history stays intact and
- * the technician's `jobStats.deleted` goes up. Hidden from every list by the clients.
- */
-export const deleteJob = onCall(async (request) => {
-  const adminUid = await requireAdmin(request);
-  const { jobId } = request.data ?? {};
-
-  if (typeof jobId !== 'string') throw new HttpsError('invalid-argument', 'jobId is required.');
-
-  const ref = db.collection('jobs').doc(jobId);
-
-  await db.runTransaction(async (tx) => {
-    const job = await readJob(tx, ref);
-
-    if (!isDeletable(job.status)) {
-      throw new HttpsError('failed-precondition', 'Only a declined, cancelled or completed job can be deleted. Cancel it first.');
-    }
-
-    const technician = job.technicianId ? await readTechnician(tx, job.technicianId) : null;
-    const at = new Date().toISOString();
-
-    tx.update(ref, {
-      deleted: true,
-      deletedAt: at,
-      deletedBy: adminUid,
-      ...statusStamp(adminUid, 'admin'),
-      history: FieldValue.arrayUnion(historyEntry('delete', adminUid, { fromStatus: job.status })),
-    });
-
-    if (technician) writeStats(tx, technician, { deleted: 1 });
-  });
-
-  return { status: 'ok' };
+  return jobResult(ref);
 });
 
 /**
@@ -315,28 +288,30 @@ export const assignJob = onCall(async (request) => {
     return { job: current, previousTechnicianId: previousId, previouslyHeld: held, nextStatus: status };
   });
 
-  // Tell the technician who just lost the job (a declined one already gave it up), then the one who received it.
-  if (previousTechnicianId && previouslyHeld) {
-    await pushToTechnician(previousTechnicianId, {
-      title: '🔄 Job update',
-      body: `${jobLabel(job)} has moved to another mechanic. More jobs are on the way!`,
-      data: { type: 'job-reassigned', jobId },
-    });
-  }
+  // Tell the technician who just lost the job (a declined one already gave it up) and the one who received it — sent
+  // together, so the admin isn't kept waiting on two push sends back to back.
+  await Promise.all([
+    previousTechnicianId && previouslyHeld
+      ? pushToTechnician(previousTechnicianId, {
+          title: '🔄 Job update',
+          body: `${jobLabel(job)} has moved to another mechanic. More jobs are on the way!`,
+          data: { type: 'job-reassigned', jobId },
+        })
+      : undefined,
+    pushToTechnician(technicianId, completeNow
+      ? {
+          title: '✅ Job marked complete',
+          body: `Great work! ${jobLabel(job)} is now marked completed.`,
+          data: { type: 'job-completed', jobId },
+        }
+      : {
+          title: nextStatus === 'reassigned' ? '🔁 A job just came your way!' : '🔧 New job for you!',
+          body: `${job.description.slice(0, 100)} · Tap to view & accept`,
+          data: { type: 'job-assigned', jobId },
+        }),
+  ]);
 
-  await pushToTechnician(technicianId, completeNow
-    ? {
-        title: '✅ Job marked complete',
-        body: `Great work! ${jobLabel(job)} is now marked completed.`,
-        data: { type: 'job-completed', jobId },
-      }
-    : {
-        title: nextStatus === 'reassigned' ? '🔁 A job just came your way!' : '🔧 New job for you!',
-        body: `${job.description.slice(0, 100)} · Tap to view & accept`,
-        data: { type: 'job-assigned', jobId },
-      });
-
-  return { status: 'ok' };
+  return jobResult(ref);
 });
 
 /** Admin closes a job on the technician's behalf (e.g. done by phone). Same end state and stats as completeJob, flagged in history. */
@@ -375,7 +350,7 @@ export const completeJobAsAdmin = onCall(async (request) => {
     data: { type: 'job-completed', jobId },
   });
 
-  return { status: 'ok' };
+  return jobResult(ref);
 });
 
 /** Loads the caller's own job inside a transaction, or throws if it isn't theirs. */
@@ -425,7 +400,7 @@ export const acceptJob = onCall(async (request) => {
 
   await pushJobUpdateToAdmins('✅ Job accepted', 'accepted', technician, jobId, job);
 
-  return { status: 'ok' };
+  return jobResult(ref);
 });
 
 /** Technician declines — hands the job back to the admin to reassign. Not the same as a cancellation. */
@@ -454,7 +429,7 @@ export const declineJob = onCall(async (request) => {
 
   await pushJobUpdateToAdmins('↩️ Job declined — needs reassigning', 'declined', technician, jobId, job);
 
-  return { status: 'ok' };
+  return jobResult(ref);
 });
 
 /** Technician marks an accepted job done. */
@@ -484,7 +459,7 @@ export const completeJob = onCall(async (request) => {
 
   await pushJobUpdateToAdmins('🏁 Job completed', 'completed', technician, jobId, job);
 
-  return { status: 'ok' };
+  return jobResult(ref);
 });
 
 /** Admin-only. Reason is optional — cancelling doesn't require an explanation. Any job that isn't already finished can be cancelled. */
@@ -529,5 +504,5 @@ export const cancelJob = onCall(async (request) => {
     });
   }
 
-  return { status: 'ok' };
+  return jobResult(ref);
 });

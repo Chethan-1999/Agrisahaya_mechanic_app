@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { PullToRefresh } from '../../components/PullToRefresh';
 import { formatDate, jobStatusMeta, type Toast } from '../../components/ui';
 import { useI18n } from '../../i18n/I18nContext';
-import { acceptJob, completeJob, declineJob, listOwnJobs } from '../../services/jobs';
+import { acceptJob, completeJob, declineJob, listOwnJobs, withJob } from '../../services/jobs';
 import type { Job } from '../../types';
 
 export function TechnicianJobs({ setToast, technicianId, withLoading }: {
@@ -31,11 +31,14 @@ export function TechnicianJobs({ setToast, technicianId, withLoading }: {
     setExpandedJobIds((current) => (current.includes(jobId) ? current.filter((id) => id !== jobId) : [...current, jobId]));
   }
 
-  async function run(action: () => Promise<void>, toast: string) {
+  // The spinner closes as soon as the action succeeds: the returned job replaces its old copy on screen, and the full
+  // list is re-read in the background.
+  async function run(action: () => Promise<Job>, toast: string) {
     await withLoading(async () => {
-      await action();
+      const job = await action();
+      setJobs((current) => withJob(current, job));
       setToast({ kind: 'success', text: toast });
-      setJobs(await listOwnJobs(technicianId));
+      void listOwnJobs(technicianId).then(setJobs, (error: unknown) => console.warn('Background job refresh failed:', error));
     });
   }
 

@@ -21,9 +21,6 @@ export const isHeld = (status: string) => isAwaitingResponse(status) || status =
 
 export const isFinished = (status: string) => status === 'completed' || status === 'cancelled';
 
-/** Deleting is only for jobs that are done with one way or another. */
-export const isDeletable = (status: string) => status === 'declined' || status === 'cancelled' || status === 'completed';
-
 /** Who moved the job into its current state — written on every transition next to `history`. */
 export function statusStamp(by: string, role: 'admin' | 'technician') {
   return { statusUpdatedBy: by, statusUpdatedByRole: role, statusUpdatedAt: new Date().toISOString() };

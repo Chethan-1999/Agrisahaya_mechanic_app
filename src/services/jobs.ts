@@ -50,69 +50,82 @@ export async function listAllJobs() {
   return snapshot.docs.map((d) => toJob(d.id, d.data()));
 }
 
-const createJobFn = httpsCallable<JobFields & { technicianId?: string }, { status: string; jobId: string; jobCode: string }>(functions, 'createJob');
-const updateJobFn = httpsCallable<JobFields & { jobId: string }, { status: string }>(functions, 'updateJob');
-const deleteJobFn = httpsCallable<{ jobId: string }, { status: string }>(functions, 'deleteJob');
-const assignJobFn = httpsCallable<{ jobId: string; technicianId: string; markCompleted?: boolean }, { status: string }>(functions, 'assignJob');
-const acceptJobFn = httpsCallable<{ jobId: string }, { status: string }>(functions, 'acceptJob');
-const declineJobFn = httpsCallable<{ jobId: string }, { status: string }>(functions, 'declineJob');
-const completeJobFn = httpsCallable<{ jobId: string }, { status: string }>(functions, 'completeJob');
-const completeJobAsAdminFn = httpsCallable<{ jobId: string }, { status: string }>(functions, 'completeJobAsAdmin');
-const cancelJobFn = httpsCallable<{ jobId: string; reason?: string }, { status: string }>(functions, 'cancelJob');
+/** Every job mutation answers with the job as it now stands (see `jobResult` in functions/src/jobFunctions.ts). */
+type JobResult = { status: string; job: { id: string } & Record<string, unknown> };
+const resultJob = ({ data }: { data: JobResult }) => toJob(data.job.id, data.job);
+
+const createJobFn = httpsCallable<JobFields & { technicianId?: string }, JobResult & { jobId: string; jobCode: string }>(functions, 'createJob');
+const updateJobFn = httpsCallable<JobFields & { jobId: string }, JobResult>(functions, 'updateJob');
+const assignJobFn = httpsCallable<{ jobId: string; technicianId: string; markCompleted?: boolean }, JobResult>(functions, 'assignJob');
+const acceptJobFn = httpsCallable<{ jobId: string }, JobResult>(functions, 'acceptJob');
+const declineJobFn = httpsCallable<{ jobId: string }, JobResult>(functions, 'declineJob');
+const completeJobFn = httpsCallable<{ jobId: string }, JobResult>(functions, 'completeJob');
+const completeJobAsAdminFn = httpsCallable<{ jobId: string }, JobResult>(functions, 'completeJobAsAdmin');
+const cancelJobFn = httpsCallable<{ jobId: string; reason?: string }, JobResult>(functions, 'cancelJob');
 
 export async function createJob(input: JobFields & { technicianId?: string }) {
-  const result = await createJobFn(input);
-  return result.data.jobCode;
+  return resultJob(await createJobFn(input));
 }
 
 export async function updateJob(jobId: string, fields: JobFields) {
-  await updateJobFn({ jobId, ...fields });
-}
-
-export async function deleteJob(jobId: string) {
-  await deleteJobFn({ jobId });
+  return resultJob(await updateJobFn({ jobId, ...fields }));
 }
 
 export async function completeJobAsAdmin(jobId: string) {
-  await completeJobAsAdminFn({ jobId });
+  return resultJob(await completeJobAsAdminFn({ jobId }));
 }
 
 /** `markCompleted` assigns and closes the job in one step (work already done by phone), so it can't be left half-applied. */
 export async function assignJob(jobId: string, technicianId: string, markCompleted = false) {
-  await assignJobFn({ jobId, technicianId, markCompleted });
+  return resultJob(await assignJobFn({ jobId, technicianId, markCompleted }));
 }
 
 export async function acceptJob(jobId: string) {
-  await acceptJobFn({ jobId });
+  return resultJob(await acceptJobFn({ jobId }));
 }
 
 export async function declineJob(jobId: string) {
-  await declineJobFn({ jobId });
+  return resultJob(await declineJobFn({ jobId }));
 }
 
 export async function completeJob(jobId: string) {
-  await completeJobFn({ jobId });
+  return resultJob(await completeJobFn({ jobId }));
 }
 
 export async function cancelJob(jobId: string, reason?: string) {
-  await cancelJobFn({ jobId, reason });
+  return resultJob(await cancelJobFn({ jobId, reason }));
+}
+
+/** `jobs` with `job` swapped in for its old copy (or added on top if it's new) — shows a saved change right away. */
+export function withJob(jobs: Job[], job: Job): Job[] {
+  return jobs.some((current) => current.id === job.id) ? jobs.map((current) => (current.id === job.id ? job : current)) : [job, ...jobs];
 }
 
 /** Jobs the admin should still see on the boards (soft-deleted ones are hidden). */
 export const visibleJobs = (jobs: Job[]) => jobs.filter((job) => !job.deleted);
 
-/** Awaiting the admin's attention first (unassigned or declined), then jobs out with a technician, then completed, then cancelled. */
+/** Awaiting the admin's attention first (unassigned or declined), then everything else, cancelled last. */
 const statusRank: Record<JobStatus, number> = {
   open: 0,
   declined: 0,
   assigned: 1,
   reassigned: 1,
   accepted: 1,
-  completed: 2,
-  cancelled: 3,
+  completed: 1,
+  cancelled: 2,
 };
 
-/** Admin board order: pending work floats to the top as a standing reminder, completed jobs follow, newest first within each group. */
+/** When the job last moved status (older jobs without the stamp fall back to when they were created). */
+export const lastChangedAt = (job: Job) => job.statusUpdatedAt || job.createdAt;
+
+/**
+ * Admin board order: jobs waiting for a mechanic come first, oldest first so nobody is left waiting longest; below
+ * them, the most recently changed job is on top, so a job that was just assigned, accepted or completed doesn't sink.
+ */
 export function sortForAdmin(jobs: Job[]): Job[] {
-  return [...jobs].sort((a, b) => statusRank[a.status] - statusRank[b.status] || b.createdAt.localeCompare(a.createdAt));
+  return [...jobs].sort((a, b) => {
+    const byRank = statusRank[a.status] - statusRank[b.status];
+    if (byRank) return byRank;
+    return statusRank[a.status] === 0 ? a.createdAt.localeCompare(b.createdAt) : lastChangedAt(b).localeCompare(lastChangedAt(a));
+  });
 }

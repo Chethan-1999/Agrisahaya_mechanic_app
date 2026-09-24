@@ -8,7 +8,7 @@ import { ConfirmModal, type ConfirmDialog } from '../components/ui';
 import { auth, db } from '../firebase';
 import { useLoadingState } from '../hooks/useLoadingState';
 import { logoutAdmin, registerAdminDevice } from '../services/adminAuth';
-import { listAllJobs, visibleJobs } from '../services/jobs';
+import { listAllJobs, visibleJobs, withJob } from '../services/jobs';
 import { listMechanics, reviewSignup, setTechnicianStatus } from '../services/mechanics';
 import { initNotifications } from '../services/notifications';
 import type { AdminProfile, Job, Mechanic } from '../types';
@@ -166,6 +166,19 @@ export default function AdminApp() {
     });
   }
 
+  // After a job save: the spinner is already closed, the returned job goes on screen right away, and jobs + mechanics
+  // (whose jobStats just moved) are re-read in the background with no spinner.
+  function showSavedJob(job: Job) {
+    setJobs((current) => withJob(current, job));
+    void Promise.all([listAllJobs(), listMechanics()]).then(
+      ([nextJobs, nextMechanics]) => {
+        setJobs(nextJobs);
+        setMechanics(nextMechanics);
+      },
+      (error: unknown) => console.warn('Background refresh failed:', error),
+    );
+  }
+
   function logout() {
     setConfirmDialog({
       title: 'Logout?',
@@ -287,8 +300,8 @@ export default function AdminApp() {
               }}
             />
           )}
-          {page === 'adminAddJobs' && <AdminAddJobs askConfirm={setConfirmDialog} jobs={jobs} onRefresh={loadJobs} setToast={setToast} withLoading={withLoading} />}
-          {page === 'adminAssignJobs' && <AdminAssignJobs askConfirm={setConfirmDialog} jobs={jobs} mechanics={mechanics} onRefresh={loadJobsAndMechanics} setToast={setToast} withLoading={withLoading} />}
+          {page === 'adminAddJobs' && <AdminAddJobs jobs={jobs} onJobSaved={showSavedJob} onRefresh={loadJobs} setToast={setToast} withLoading={withLoading} />}
+          {page === 'adminAssignJobs' && <AdminAssignJobs askConfirm={setConfirmDialog} jobs={jobs} mechanics={mechanics} onJobSaved={showSavedJob} onRefresh={loadJobsAndMechanics} setToast={setToast} withLoading={withLoading} />}
           {page === 'adminProfileRequests' && <AdminProfileRequests mechanics={mechanics} setToast={setToast} withLoading={withLoading} />}
           {page === 'adminCommunity' && <AdminCommunity setToast={setToast} withLoading={withLoading} />}
           {page === 'adminDetails' && selectedMechanic && (

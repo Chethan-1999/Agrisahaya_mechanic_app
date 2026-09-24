@@ -5,10 +5,11 @@ import { jobStatusMeta, type ConfirmDialog, type Toast } from '../../components/
 import { assignJob, cancelJob, completeJobAsAdmin, sortForAdmin, visibleJobs } from '../../services/jobs';
 import type { Job, Mechanic } from '../../types';
 
-export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToast, withLoading }: {
+export function AdminAssignJobs({ askConfirm, jobs, mechanics, onJobSaved, onRefresh, setToast, withLoading }: {
   askConfirm: (dialog: NonNullable<ConfirmDialog>) => void;
   jobs: Job[];
   mechanics: Mechanic[];
+  onJobSaved: (job: Job) => void;
   onRefresh: () => Promise<void>;
   setToast: (toast: Toast) => void;
   withLoading: (action: () => Promise<void>) => Promise<void>;
@@ -21,7 +22,7 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
     void onRefresh();
   }, []);
 
-  // Pending work stays at the top as a standing reminder; completed jobs follow, cancelled ones last.
+  // Unassigned jobs on top (oldest first), then the most recently changed job first, cancelled ones last.
   const board = useMemo(() => sortForAdmin(visibleJobs(jobs)), [jobs]);
   const activeTechnicians = useMemo(() => mechanics.filter((mechanic) => mechanic.status === 'active'), [mechanics]);
   const technicianName = (id: string | null) => (id ? (mechanics.find((mechanic) => mechanic.id === id)?.fullName ?? 'Unknown') : '');
@@ -36,13 +37,12 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
     void withLoading(async () => {
       if (technicianId !== (job.technicianId ?? '') || job.status === 'open' || job.status === 'declined') {
         // Assign and (optionally) close in one call, so a failure can't leave the job assigned but not completed.
-        await assignJob(job.id, technicianId, markCompleted);
+        onJobSaved(await assignJob(job.id, technicianId, markCompleted));
       } else if (markCompleted) {
-        await completeJobAsAdmin(job.id);
+        onJobSaved(await completeJobAsAdmin(job.id));
       }
       setToast({ kind: 'success', text: markCompleted ? 'Job assigned and completed.' : 'Job assigned.' });
       stopEditing(job);
-      await onRefresh();
     });
   }
 
@@ -54,9 +54,8 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onRefresh, setToa
       kind: 'danger',
       onConfirm: () => {
         void withLoading(async () => {
-          await cancelJob(job.id);
+          onJobSaved(await cancelJob(job.id));
           setToast({ kind: 'success', text: 'Job cancelled.' });
-          await onRefresh();
         });
       },
     });

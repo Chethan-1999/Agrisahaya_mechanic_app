@@ -9,7 +9,6 @@ export {
   completeJobAsAdmin,
   createJob,
   declineJob,
-  deleteJob,
   updateJob,
 } from './jobFunctions';
 export { reviewProfileUpdate, submitProfileUpdate } from './profileUpdateFunctions';
