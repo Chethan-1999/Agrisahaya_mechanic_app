@@ -43,6 +43,7 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
   const [form, setForm] = useState<MechanicForm>(emptyMechanicForm);
   const [sentOtp, setSentOtp] = useState<string | null>(null);
   const [otpVerified, setOtpVerified] = useState(false);
+  const [loggingIn, setLoggingIn] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
     setForm(mode === 'signup' ? { ...emptyMechanicForm, ...loadSignupDraft() } : emptyMechanicForm);
     setSentOtp(null);
     setOtpVerified(false);
+    setLoggingIn(false);
     setErrors({});
   }, [mode]);
 
@@ -147,35 +149,43 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
 
   async function verify(event: FormEvent) {
     event.preventDefault();
+    if (loggingIn) return;
+
     if (!session) {
       setToast({ kind: 'error', text: t('sendCodeFirst') });
       return;
     }
-    await withLoading(async () => {
-      await confirmOtpOrThrow();
-      const uid = auth.currentUser?.uid;
-      if (!uid) throw new Error('Sign-in failed. Try again.');
 
-      const technician = await withTimeout(getMechanic(uid), t('slowConnectionError'));
-      if (technician) {
-        await withTimeout(revokeOtherSessions(), 'Session cleanup timed out. Try again.');
-        await withTimeout(auth.currentUser?.getIdToken(true) ?? Promise.resolve(''), 'Refreshing your session timed out. Try again.');
-        if (mode === 'signup') {
-          setToast({ kind: 'success', text: 'This number is already registered. Opening your account.' });
+    setLoggingIn(true);
+    try {
+      await withLoading(async () => {
+        await confirmOtpOrThrow();
+        const uid = auth.currentUser?.uid;
+        if (!uid) throw new Error('Sign-in failed. Try again.');
+
+        const technician = await withTimeout(getMechanic(uid), t('slowConnectionError'));
+        if (technician) {
+          await withTimeout(revokeOtherSessions(), 'Session cleanup timed out. Try again.');
+          await withTimeout(auth.currentUser?.getIdToken(true) ?? Promise.resolve(''), 'Refreshing your session timed out. Try again.');
+          if (mode === 'signup') {
+            setToast({ kind: 'success', text: 'This number is already registered. Opening your account.' });
+          }
+          onExisting(uid, technician);
+          return;
         }
-        onExisting(uid, technician);
-        return;
-      }
 
-      if (mode === 'login') {
-        await signOut(auth);
-        setToast({ kind: 'error', text: 'No mechanic account found. Please use Sign Up to register.' });
-        return;
-      }
+        if (mode === 'login') {
+          await signOut(auth);
+          setToast({ kind: 'error', text: 'No mechanic account found. Please use Sign Up to register.' });
+          return;
+        }
 
-      setForm((current) => ({ ...current, phoneNumber: phoneNumber.trim() }));
-      setStep('profile');
-    });
+        setForm((current) => ({ ...current, phoneNumber: phoneNumber.trim() }));
+        setStep('profile');
+      });
+    } finally {
+      setLoggingIn(false);
+    }
   }
 
   async function submitProfile(event: FormEvent) {
@@ -232,9 +242,12 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
 
   return (
     <form className="form-grid" onSubmit={(event) => void verify(event)}>
-      <Input label={t('mobileNumber')} onChange={setPhoneNumber} value={phoneNumber} />
-      <div className="otp-row"><Input label={t('otp')} onChange={setOtp} value={otp} /><button className="secondary" onClick={() => void send()} type="button">{t('sendOtp')}</button></div>
-      <button className="primary" type="submit">{t('verifyButton')}</button>
+      <div className="login-phone-row">
+        <Input inputMode="numeric" label={t('mobileNumber')} maxLength={10} onChange={updatePhoneNumber} pattern="[0-9]*" value={phoneNumber} />
+        <button className="secondary send-otp-button" onClick={() => void send()} type="button">{t('sendOtp')}</button>
+      </div>
+      <Input label={t('otp')} onChange={setOtp} value={otp} />
+      <button className="primary" disabled={loggingIn} type="submit">{loggingIn ? 'Logging in...' : 'Login'}</button>
     </form>
   );
 }
