@@ -26,7 +26,7 @@ export const localOtpProvider: OtpProvider = {
       session: {
         async confirm(enteredCode) {
           if (enteredCode.trim() !== code) {
-            throw new Error('Incorrect code.');
+            throw Object.assign(new Error('Incorrect code.'), { code: 'auth/invalid-verification-code' });
           }
 
           const result = await devSignInFn({ phone: phoneE164 });

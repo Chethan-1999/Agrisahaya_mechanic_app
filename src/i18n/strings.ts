@@ -54,6 +54,13 @@ export type StringKey =
   | 'loadFailedError'
   | 'otpGenericError'
   | 'otpCheckFailed'
+  | 'otpAlreadySent'
+  | 'otpReuseTimer'
+  | 'otpTimerExpired'
+  | 'noAccountSignUpNow'
+  | 'alreadyRegisteredOpening'
+  | 'signInFailed'
+  | 'loggingIn'
   | 'sessionExpiredError'
   | 'somethingWentWrong'
   | 'phoneVerifiedCompleteProfile'
@@ -156,6 +163,13 @@ const en: Record<StringKey, string> = {
   loadFailedError: "Couldn't load this right now. Please try again in a few minutes.",
   otpGenericError: 'Something went wrong with the OTP. Please try again.',
   otpCheckFailed: 'Phone verification failed. Please try again in a few minutes.',
+  otpAlreadySent: "We already sent a code to this number. Please use the same code.",
+  otpReuseTimer: "Use the code sent to your phone. You can use the same code for {time} more, for both login and sign up.",
+  otpTimerExpired: "The code time is over. Tap Send OTP to get a new code.",
+  noAccountSignUpNow: "No account found for this number. Fill in your details below to sign up.",
+  alreadyRegisteredOpening: "This number is already registered. Opening your account.",
+  signInFailed: "Could not log you in. Please try again.",
+  loggingIn: "Logging in...",
   sessionExpiredError: "You have been logged out. Please log in again.",
   somethingWentWrong: "Something went wrong. Please try again.",
   phoneVerifiedCompleteProfile: 'Phone verified. Complete your profile to finish registering.',
@@ -259,6 +273,13 @@ const hi: Record<StringKey, string> = {
   loadFailedError: 'अभी यह लोड नहीं हो सका। कुछ मिनट बाद फिर से कोशिश करें।',
   otpGenericError: 'OTP में कुछ गड़बड़ हुई। कृपया फिर से कोशिश करें।',
   otpCheckFailed: 'फ़ोन की जाँच नहीं हो पाई। कुछ मिनट बाद फिर से कोशिश करें।',
+  otpAlreadySent: "इस नंबर पर कोड पहले ही भेजा जा चुका है। कृपया वही कोड डालें।",
+  otpReuseTimer: "आपके फ़ोन पर भेजा गया कोड डालें। यही कोड अगले {time} तक लॉगिन और साइन अप दोनों के लिए चलेगा।",
+  otpTimerExpired: "कोड का समय खत्म हो गया। नया कोड पाने के लिए Send OTP दबाएँ।",
+  noAccountSignUpNow: "इस नंबर का कोई खाता नहीं मिला। साइन अप के लिए नीचे अपनी जानकारी भरें।",
+  alreadyRegisteredOpening: "यह नंबर पहले से रजिस्टर है। आपका खाता खोला जा रहा है।",
+  signInFailed: "लॉगिन नहीं हो पाया। कृपया फिर से कोशिश करें।",
+  loggingIn: "लॉगिन हो रहा है...",
   sessionExpiredError: "आप लॉग आउट हो गए हैं। कृपया फिर से लॉगिन करें।",
   somethingWentWrong: "कुछ गड़बड़ हो गई। कृपया फिर से कोशिश करें।",
   phoneVerifiedCompleteProfile: 'मोबाइल नंबर सत्यापित हो गया। रजिस्ट्रेशन पूरा करने के लिए प्रोफाइल भरें।',
@@ -362,6 +383,13 @@ const kn: Record<StringKey, string> = {
   loadFailedError: 'ಈಗ ಇದನ್ನು ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
   otpGenericError: 'OTP ಯಲ್ಲಿ ಏನೋ ತೊಂದರೆಯಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
   otpCheckFailed: 'ಫೋನ್ ಪರಿಶೀಲನೆ ವಿಫಲವಾಯಿತು. ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
+  otpAlreadySent: "ಈ ಸಂಖ್ಯೆಗೆ ಈಗಾಗಲೇ ಕೋಡ್ ಕಳುಹಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ಅದೇ ಕೋಡ್ ಬಳಸಿ.",
+  otpReuseTimer: "ನಿಮ್ಮ ಫೋನ್‌ಗೆ ಬಂದ ಕೋಡ್ ನಮೂದಿಸಿ. ಇದೇ ಕೋಡ್ ಇನ್ನೂ {time} ವರೆಗೆ ಲಾಗಿನ್ ಮತ್ತು ಸೈನ್ ಅಪ್ ಎರಡಕ್ಕೂ ಬಳಸಬಹುದು.",
+  otpTimerExpired: "ಕೋಡ್ ಸಮಯ ಮುಗಿದಿದೆ. ಹೊಸ ಕೋಡ್‌ಗಾಗಿ Send OTP ಒತ್ತಿ.",
+  noAccountSignUpNow: "ಈ ಸಂಖ್ಯೆಗೆ ಯಾವುದೇ ಖಾತೆ ಇಲ್ಲ. ಸೈನ್ ಅಪ್ ಮಾಡಲು ಕೆಳಗೆ ನಿಮ್ಮ ವಿವರಗಳನ್ನು ತುಂಬಿ.",
+  alreadyRegisteredOpening: "ಈ ಸಂಖ್ಯೆ ಈಗಾಗಲೇ ನೋಂದಾಯಿಸಲಾಗಿದೆ. ನಿಮ್ಮ ಖಾತೆ ತೆರೆಯಲಾಗುತ್ತಿದೆ.",
+  signInFailed: "ಲಾಗಿನ್ ಆಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+  loggingIn: "ಲಾಗಿನ್ ಆಗುತ್ತಿದೆ...",
   sessionExpiredError: "ನೀವು ಲಾಗ್ ಔಟ್ ಆಗಿದ್ದೀರಿ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಲಾಗಿನ್ ಮಾಡಿ.",
   somethingWentWrong: "ಏನೋ ತೊಂದರೆಯಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
   phoneVerifiedCompleteProfile: 'ಫೋನ್ ಪರಿಶೀಲಿಸಲಾಗಿದೆ. ನೋಂದಣಿ ಪೂರ್ಣಗೊಳಿಸಲು ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ಭರ್ತಿ ಮಾಡಿ.',
@@ -465,6 +493,13 @@ const ta: Record<StringKey, string> = {
   loadFailedError: 'இப்போது இதை ஏற்ற முடியவில்லை. சில நிமிடங்களில் மீண்டும் முயற்சிக்கவும்.',
   otpGenericError: 'OTP-இல் ஏதோ சிக்கல். மீண்டும் முயற்சிக்கவும்.',
   otpCheckFailed: 'ஃபோன் சரிபார்ப்பு தோல்வியடைந்தது. சில நிமிடங்கள் கழித்து மீண்டும் முயற்சிக்கவும்.',
+  otpAlreadySent: "இந்த எண்ணிற்கு ஏற்கனவே குறியீடு அனுப்பப்பட்டது. அதே குறியீட்டைப் பயன்படுத்தவும்.",
+  otpReuseTimer: "உங்கள் ஃபோனுக்கு வந்த குறியீட்டை உள்ளிடவும். இதே குறியீட்டை இன்னும் {time} வரை உள்நுழைவு, பதிவு இரண்டிற்கும் பயன்படுத்தலாம்.",
+  otpTimerExpired: "குறியீட்டின் நேரம் முடிந்தது. புதிய குறியீட்டிற்கு Send OTP அழுத்தவும்.",
+  noAccountSignUpNow: "இந்த எண்ணிற்கு கணக்கு இல்லை. பதிவு செய்ய கீழே உங்கள் விவரங்களை நிரப்பவும்.",
+  alreadyRegisteredOpening: "இந்த எண் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது. உங்கள் கணக்கு திறக்கப்படுகிறது.",
+  signInFailed: "உள்நுழைய முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
+  loggingIn: "உள்நுழைகிறது...",
   sessionExpiredError: "நீங்கள் வெளியேற்றப்பட்டீர்கள். மீண்டும் உள்நுழையவும்.",
   somethingWentWrong: "ஏதோ சிக்கல் ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.",
   phoneVerifiedCompleteProfile: 'மொபைல் எண் சரிபார்க்கப்பட்டது. பதிவை முடிக்க உங்கள் விவரங்களை நிரப்பவும்.',
@@ -568,6 +603,13 @@ const te: Record<StringKey, string> = {
   loadFailedError: 'ఇప్పుడు దీన్ని లోడ్ చేయలేకపోయాం. కొన్ని నిమిషాల తర్వాత మళ్లీ ప్రయత్నించండి.',
   otpGenericError: 'OTPలో ఏదో సమస్య వచ్చింది. దయచేసి మళ్లీ ప్రయత్నించండి.',
   otpCheckFailed: 'ఫోన్ ధృవీకరణ విఫలమైంది. కొన్ని నిమిషాల తర్వాత మళ్లీ ప్రయత్నించండి.',
+  otpAlreadySent: "ఈ నంబర్‌కు ఇప్పటికే కోడ్ పంపబడింది. దయచేసి అదే కోడ్ వాడండి.",
+  otpReuseTimer: "మీ ఫోన్‌కు వచ్చిన కోడ్ నమోదు చేయండి. ఇదే కోడ్‌ను ఇంకా {time} వరకు లాగిన్, సైన్ అప్ రెండింటికీ వాడవచ్చు.",
+  otpTimerExpired: "కోడ్ సమయం ముగిసింది. కొత్త కోడ్ కోసం Send OTP నొక్కండి.",
+  noAccountSignUpNow: "ఈ నంబర్‌కు ఖాతా లేదు. సైన్ అప్ కోసం కింద మీ వివరాలు నింపండి.",
+  alreadyRegisteredOpening: "ఈ నంబర్ ఇప్పటికే నమోదై ఉంది. మీ ఖాతా తెరుస్తున్నాం.",
+  signInFailed: "లాగిన్ కాలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.",
+  loggingIn: "లాగిన్ అవుతోంది...",
   sessionExpiredError: "మీరు లాగ్ అవుట్ అయ్యారు. దయచేసి మళ్లీ లాగిన్ అవ్వండి.",
   somethingWentWrong: "ఏదో సమస్య వచ్చింది. దయచేసి మళ్లీ ప్రయత్నించండి.",
   phoneVerifiedCompleteProfile: 'ఫోన్ నంబర్ ధృవీకరించబడింది. నమోదును పూర్తి చేయడానికి మీ ప్రొఫైల్ నింపండి.',
@@ -671,6 +713,13 @@ const ml: Record<StringKey, string> = {
   loadFailedError: 'ഇപ്പോൾ ഇത് ലോഡ് ചെയ്യാനായില്ല. കുറച്ച് മിനിറ്റിനുശേഷം വീണ്ടും ശ്രമിക്കുക.',
   otpGenericError: 'OTP-യിൽ എന്തോ പ്രശ്നം. ദയവായി വീണ്ടും ശ്രമിക്കുക.',
   otpCheckFailed: 'ഫോൺ പരിശോധന പരാജയപ്പെട്ടു. കുറച്ച് മിനിറ്റിനു ശേഷം വീണ്ടും ശ്രമിക്കുക.',
+  otpAlreadySent: "ഈ നമ്പറിലേക്ക് ഇതിനകം കോഡ് അയച്ചിട്ടുണ്ട്. ദയവായി അതേ കോഡ് ഉപയോഗിക്കുക.",
+  otpReuseTimer: "നിങ്ങളുടെ ഫോണിൽ വന്ന കോഡ് നൽകുക. ഇതേ കോഡ് ഇനി {time} വരെ ലോഗിനും സൈൻ അപ്പിനും ഉപയോഗിക്കാം.",
+  otpTimerExpired: "കോഡിന്റെ സമയം കഴിഞ്ഞു. പുതിയ കോഡിനായി Send OTP അമർത്തുക.",
+  noAccountSignUpNow: "ഈ നമ്പറിന് അക്കൗണ്ട് ഇല്ല. സൈൻ അപ്പ് ചെയ്യാൻ താഴെ നിങ്ങളുടെ വിവരങ്ങൾ നൽകുക.",
+  alreadyRegisteredOpening: "ഈ നമ്പർ ഇതിനകം രജിസ്റ്റർ ചെയ്തിട്ടുണ്ട്. നിങ്ങളുടെ അക്കൗണ്ട് തുറക്കുന്നു.",
+  signInFailed: "ലോഗിൻ ചെയ്യാനായില്ല. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  loggingIn: "ലോഗിൻ ചെയ്യുന്നു...",
   sessionExpiredError: "നിങ്ങൾ ലോഗ് ഔട്ട് ആയി. ദയവായി വീണ്ടും ലോഗിൻ ചെയ്യുക.",
   somethingWentWrong: "എന്തോ പ്രശ്നം സംഭവിച്ചു. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
   phoneVerifiedCompleteProfile: 'ഫോൺ നമ്പർ പരിശോധിച്ചു. രജിസ്ട്രേഷൻ പൂർത്തിയാക്കാൻ നിങ്ങളുടെ പ്രൊഫൈൽ പൂരിപ്പിക്കുക.',

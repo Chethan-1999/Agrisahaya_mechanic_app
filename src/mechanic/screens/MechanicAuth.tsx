@@ -1,13 +1,12 @@
-import { signOut } from 'firebase/auth';
 import { useEffect, useState, type FormEvent } from 'react';
 
 import { Input, type Toast } from '../../components/ui';
 import { auth } from '../../firebase';
-import { usePhoneOtp } from '../../hooks/usePhoneOtp';
+import { OTP_REUSE_MS, usePhoneOtp } from '../../hooks/usePhoneOtp';
 import { useI18n } from '../../i18n/I18nContext';
 import { completeSignup } from '../../services/auth';
 import { getMechanic, revokeOtherSessions } from '../../services/mechanics';
-import { authErrorCode, otpErrorKey } from '../../services/otp/otpErrors';
+import { otpErrorKey } from '../../services/otp/otpErrors';
 import { MechanicFields } from '../../shared/MechanicFields';
 import type { Mechanic, MechanicForm } from '../../types';
 import { emptyMechanicForm } from '../../types';
@@ -16,6 +15,25 @@ import { hasErrors, validateProfileForm, type ValidationErrors } from '../../uti
 import { withTimeout } from '../../utils/withTimeout';
 
 const toPhoneDigits = (value: string) => value.replace(/\D/g, '').slice(0, 10);
+
+const formatCountdown = (ms: number) => {
+  const seconds = Math.ceil(ms / 1000);
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+};
+
+/** Seconds left to reuse the code sent at `sentAt`, ticking every second; null when no code was sent. */
+function useOtpTimeLeft(sentAt: number | null): number | null {
+  const [now, setNow] = useState(Date.now);
+
+  useEffect(() => {
+    if (sentAt === null) return;
+    setNow(Date.now());
+    const intervalId = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(intervalId);
+  }, [sentAt]);
+
+  return sentAt === null ? null : Math.max(0, sentAt + OTP_REUSE_MS - now);
+}
 
 // Sending an OTP can put a reCAPTCHA image puzzle in front of the technician, so the
 // normal network timeout would fire while they're still solving it.
@@ -27,8 +45,8 @@ const OTP_SEND_TIMEOUT_MS = 3 * 60 * 1000;
  * revealed directly; a brand-new phone number is walked through the profile
  * form and completeSignup. Both paths call revokeOtherSessions right after
  * sign-in to enforce "only one phone at a time" (see technicianFunctions.ts)
- * — the getIdToken(true) refresh after it keeps THIS device's own session
- * from being caught by the same revocation.
+ * — it only revokes sessions from before this sign-in, and the
+ * getIdToken(true) refresh after it confirms THIS device's session survived.
  */
 export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }: {
   mode: 'login' | 'signup';
@@ -38,7 +56,8 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
   withLoading: (action: () => Promise<void>) => Promise<void>;
 }) {
   const { t } = useI18n();
-  const { clearOtpSession, confirmOtp, otp, phoneNumber, sendOtp, session, setOtp, setPhoneNumber } = usePhoneOtp();
+  const { clearOtpSession, confirmOtp, otp, phoneNumber, sendOtp, sentAt, session, setOtp, setPhoneNumber } = usePhoneOtp();
+  const otpTimeLeft = useOtpTimeLeft(sentAt);
   const [step, setStep] = useState<'verify' | 'profile'>('verify');
   const [form, setForm] = useState<MechanicForm>(emptyMechanicForm);
   const [sentOtp, setSentOtp] = useState<string | null>(null);
@@ -86,8 +105,8 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
     setErrors({});
   }
 
-  // Turns a raw OTP failure ("Firebase: ... (auth/operation-not-allowed).") into a translated message.
-  // The original stays in the console for debugging.
+  // Turns a raw OTP failure ("Firebase: ... (auth/operation-not-allowed).") into a plain translated message —
+  // no error codes on screen. The original stays in the console for debugging.
   function toOtpError(err: unknown): unknown {
     if (err instanceof Error && err.message === 'INVALID_PHONE') return new Error(t('enterValidPhone'));
 
@@ -95,10 +114,7 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
     if (!key) return err;
 
     console.warn('OTP error:', err);
-    // For unrecognised codes, failed phone checks and rate limits (several different causes), the code is shown too,
-    // so a technician can read it out to support.
-    const showCode = key === 'otpGenericError' || key === 'otpCheckFailed' || key === 'otpTooManyAttempts';
-    return new Error(showCode ? `${t(key)} (${authErrorCode(err)})` : t(key));
+    return new Error(t(key));
   }
 
   async function confirmOtpOrThrow() {
@@ -111,16 +127,26 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
 
   async function send() {
     await withLoading(async () => {
-      let hint: string | null;
+      let result: Awaited<ReturnType<typeof sendOtp>>;
       try {
-        hint = await withTimeout(sendOtp(), t('networkError'), OTP_SEND_TIMEOUT_MS);
+        result = await withTimeout(sendOtp(), t('networkError'), OTP_SEND_TIMEOUT_MS);
       } catch (err) {
         throw toOtpError(err);
       }
-      setSentOtp(hint ?? 'sent');
-      setOtpVerified(false);
-      setToast({ kind: 'success', text: hint ? `Dev code: ${hint}` : t('codeSentBySms') });
+      setSentOtp(result.devHint ?? 'sent');
+      setToast({
+        kind: 'success',
+        text: result.reused ? t('otpAlreadySent') : result.devHint ? `Dev code: ${result.devHint}` : t('codeSentBySms'),
+      });
     });
+  }
+
+  // Signing in from either tab with a number that already has an account just opens that account.
+  async function openExistingAccount(uid: string, technician: Mechanic) {
+    await withTimeout(revokeOtherSessions(), t('slowConnectionError'));
+    await withTimeout(auth.currentUser?.getIdToken(true) ?? Promise.resolve(''), t('slowConnectionError'));
+    if (mode === 'signup') setToast({ kind: 'success', text: t('alreadyRegisteredOpening') });
+    onExisting(uid, technician);
   }
 
   async function verifySignupOtp() {
@@ -132,12 +158,12 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
     await withLoading(async () => {
       await confirmOtpOrThrow();
       const uid = auth.currentUser?.uid;
-      if (!uid) throw new Error('Sign-in failed. Try again.');
+      if (!uid) throw new Error(t('signInFailed'));
 
       const technician = await withTimeout(getMechanic(uid), t('slowConnectionError'));
       if (technician) {
-        await signOut(auth);
-        throw new Error(t('phoneAlreadyExists'));
+        await openExistingAccount(uid, technician);
+        return;
       }
 
       setForm((current) => ({ ...current, phoneNumber: phoneNumber.trim() }));
@@ -161,26 +187,17 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
       await withLoading(async () => {
         await confirmOtpOrThrow();
         const uid = auth.currentUser?.uid;
-        if (!uid) throw new Error('Sign-in failed. Try again.');
+        if (!uid) throw new Error(t('signInFailed'));
 
         const technician = await withTimeout(getMechanic(uid), t('slowConnectionError'));
         if (technician) {
-          await withTimeout(revokeOtherSessions(), 'Session cleanup timed out. Try again.');
-          await withTimeout(auth.currentUser?.getIdToken(true) ?? Promise.resolve(''), 'Refreshing your session timed out. Try again.');
-          if (mode === 'signup') {
-            setToast({ kind: 'success', text: 'This number is already registered. Opening your account.' });
-          }
-          onExisting(uid, technician);
+          await openExistingAccount(uid, technician);
           return;
         }
 
-        if (mode === 'login') {
-          await signOut(auth);
-          setToast({ kind: 'error', text: 'No mechanic account found. Please use Sign Up to register.' });
-          return;
-        }
-
-        setForm((current) => ({ ...current, phoneNumber: phoneNumber.trim() }));
+        // No account yet: the phone is already verified, so go straight to the sign-up details — no second code.
+        setForm((current) => ({ ...current, ...loadSignupDraft(), phoneNumber: phoneNumber.trim() }));
+        setToast({ kind: 'success', text: t('noAccountSignUpNow') });
         setStep('profile');
       });
     } finally {
@@ -201,14 +218,20 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
     if (hasErrors(nextErrors)) return;
 
     await withLoading(async () => {
-      await withTimeout(completeSignup(profile), 'Signup timed out. Check that Firebase Functions are running, then try again.');
+      await withTimeout(completeSignup(profile), t('slowConnectionError'));
       const uid = auth.currentUser?.uid;
-      if (!uid) throw new Error('Registration failed. Try again.');
+      if (!uid) throw new Error(t('signInFailed'));
       clearSignupDraft();
       void revokeOtherSessions();
       onNew(uid);
     });
   }
+
+  const otpTimer = otpTimeLeft === null ? null : (
+    <p className={otpTimeLeft > 0 ? 'muted otp-timer' : 'error-text otp-timer'}>
+      {otpTimeLeft > 0 ? t('otpReuseTimer').replace('{time}', formatCountdown(otpTimeLeft)) : t('otpTimerExpired')}
+    </p>
+  );
 
   if (mode === 'signup') {
     return (
@@ -217,6 +240,7 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
           <Input disabled={otpVerified} error={errors.phoneNumber} inputMode="numeric" label={t('mobileNumber')} maxLength={10} onChange={updatePhoneNumber} pattern="[0-9]*" value={phoneNumber} />
           <button className="secondary" disabled={otpVerified} onClick={() => void send()} type="button">{t('sendOtp')}</button>
         </div>
+        {!otpVerified && otpTimer}
         <div className="otp-row">
           <Input disabled={otpVerified} label={t('otpVerification')} onChange={setOtp} value={otp} />
           <button className="secondary" disabled={otpVerified} onClick={() => void verifySignupOtp()} type="button">{t('verifyButton')}</button>
@@ -245,9 +269,10 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
       <div className="login-phone-row">
         <Input inputMode="numeric" label={t('mobileNumber')} maxLength={10} onChange={updatePhoneNumber} pattern="[0-9]*" value={phoneNumber} />
         <button className="secondary send-otp-button" onClick={() => void send()} type="button">{t('sendOtp')}</button>
+        {otpTimer}
       </div>
       <Input label={t('otp')} onChange={setOtp} value={otp} />
-      <button className="primary" disabled={loggingIn} type="submit">{loggingIn ? 'Logging in...' : 'Login'}</button>
+      <button className="primary" disabled={loggingIn} type="submit">{loggingIn ? t('loggingIn') : t('login')}</button>
     </form>
   );
 }
