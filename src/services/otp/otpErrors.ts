@@ -25,6 +25,11 @@ const OTP_ERROR_KEYS: Record<string, StringKey> = {
   'auth/invalid-app-credential': 'otpCheckFailed',
   'auth/missing-app-credential': 'otpCheckFailed',
   'auth/network-request-failed': 'networkError',
+  // The sign-in itself has ended (e.g. signed in on another phone) — outside the OTP screen too.
+  'auth/user-token-expired': 'sessionExpiredError',
+  'auth/invalid-user-token': 'sessionExpiredError',
+  'auth/id-token-expired': 'sessionExpiredError',
+  'auth/requires-recent-login': 'sessionExpiredError',
 };
 
 export function authErrorCode(err: unknown): string {

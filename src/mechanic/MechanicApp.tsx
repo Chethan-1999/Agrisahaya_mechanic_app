@@ -9,9 +9,10 @@ import { auth } from '../firebase';
 import { useLoadingState } from '../hooks/useLoadingState';
 import { useI18n } from '../i18n/I18nContext';
 import { listAnnouncements } from '../services/announcements';
-import { dataErrorKey } from '../services/dataErrors';
+import { dataErrorKey, isDeveloperMessage } from '../services/dataErrors';
 import { getMechanic, updateDeviceInfo } from '../services/mechanics';
 import { initNotifications } from '../services/notifications';
+import { otpErrorKey } from '../services/otp/otpErrors';
 import type { Mechanic } from '../types';
 import { withTimeout } from '../utils/withTimeout';
 import { AuthLayout } from './screens/AuthLayout';
@@ -76,9 +77,18 @@ export default function MechanicApp() {
   const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog>(null);
   const { t } = useI18n();
+  // Technicians only ever see plain, translated text: known failures get their own message, and anything that still
+  // reads like a developer message (raw Firebase text, error codes) becomes a generic "try again".
   const { loading, toast, setToast, withLoading } = useLoadingState((error) => {
-    const key = dataErrorKey(error);
-    return key ? t(key) : getErrorMessage(error);
+    const key = dataErrorKey(error) ?? otpErrorKey(error);
+    if (key) return t(key);
+
+    const message = getErrorMessage(error);
+    if (isDeveloperMessage(message)) {
+      console.warn('Unexpected error:', error);
+      return t('somethingWentWrong');
+    }
+    return message;
   });
 
   useEffect(() => {
@@ -277,10 +287,7 @@ export default function MechanicApp() {
               setPage(technician.status === 'active' ? 'mechanicJobs' : 'mechanicPending');
             }}
             onNew={(mechanicId) => {
-              setToast({
-                kind: 'success',
-                text: 'Registered — you will be notified once an admin verifies your account.',
-              });
+              setToast({ kind: 'success', text: t('registeredMessage') });
               setSession({ mechanicId });
               setPage('mechanicPending');
             }}

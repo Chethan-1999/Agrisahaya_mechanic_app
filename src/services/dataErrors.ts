@@ -19,6 +19,10 @@ const FIRESTORE_ERROR_KEYS: Record<string, StringKey> = {
 const FUNCTION_ERROR_KEYS: Record<string, StringKey> = {
   'functions/unavailable': 'slowConnectionError',
   'functions/deadline-exceeded': 'slowConnectionError',
+  // Neither carries a message written for people: 'internal' is an unexpected server failure (its message is just
+  // "internal"), 'unauthenticated' means the sign-in ended.
+  'functions/internal': 'somethingWentWrong',
+  'functions/unauthenticated': 'sessionExpiredError',
 };
 
 /** The plain-language message for a Firestore/connection failure, or null when `err`'s own message is fine to show. */
@@ -29,4 +33,13 @@ export function dataErrorKey(err: unknown): StringKey | null {
   if (key) console.warn(`Data error (${code}):`, err);
 
   return key;
+}
+
+/**
+ * True for text written for developers, not technicians: raw Firebase messages ("Firebase: Error (auth/...)"),
+ * anything carrying an error code ("auth/...", "functions/..."), and bare codes like "internal" or "NO_SESSION".
+ */
+export function isDeveloperMessage(message: string): boolean {
+  const text = message.trim();
+  return /firebase|firestore|\b[a-z]+\/[a-z-]+\b/i.test(text) || /^[A-Za-z_-]+$/.test(text);
 }
