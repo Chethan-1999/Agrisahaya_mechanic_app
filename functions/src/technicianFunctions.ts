@@ -1,3 +1,4 @@
+import { applicationDefault } from 'firebase-admin/app';
 import { FieldValue } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 
@@ -151,22 +152,37 @@ export const updateDeviceInfo = onCall(async (request) => {
 });
 
 /**
+ * Revokes every refresh token issued before `validSince` (Unix seconds). The Admin SDK's
+ * `revokeRefreshTokens` only ever uses "now", so this sets the same account field through the
+ * Identity Toolkit API directly.
+ */
+async function revokeRefreshTokensBefore(uid: string, validSince: number): Promise<void> {
+  const { access_token } = await applicationDefault().getAccessToken();
+  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/projects/${process.env.GCLOUD_PROJECT}/accounts:update`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${access_token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ localId: uid, validSince: String(validSince) }),
+  });
+  if (!response.ok) throw new Error(`accounts:update failed (${response.status}): ${await response.text()}`);
+}
+
+/**
  * Best-effort single-device enforcement: called once right after any
  * successful phone-OTP sign-in (fresh signup or returning login alike).
- * Revokes every refresh token issued before now for this uid, forcing any
- * other device's session to re-authenticate on its next token refresh.
+ * Revokes every refresh token issued before this sign-in (the caller's
+ * `auth_time`), forcing any other device's session to re-authenticate on its
+ * next token refresh.
  *
- * Two accepted tradeoffs, not closed here:
- * - `revokeRefreshTokens` doesn't invalidate an already-issued ID token — an
- *   old device's session can keep calling functions for up to its ~1hr
- *   natural expiry. Checking `checkRevoked` on every call would close this
- *   gap but adds an Auth/Firestore lookup to every request in the app — not
- *   worth it at this app's scale/threat model.
- * - This also revokes the tokens the just-signed-in device itself was
- *   issued a moment earlier (second-granularity `iat` can tie with the
- *   revocation cutoff). Callers must force a fresh ID token right after this
- *   resolves (`auth.currentUser?.getIdToken(true)`) so this device's own
- *   session survives.
+ * The cutoff is the caller's sign-in time, not "now": revoking at "now"
+ * (`revokeRefreshTokens`) also revokes the refresh token this device was
+ * issued a second or more earlier, and its next refresh then fails with
+ * auth/user-token-expired — every login over a real network hit that.
+ *
+ * Accepted tradeoff, not closed here: revoking doesn't invalidate an
+ * already-issued ID token — an old device's session can keep calling
+ * functions for up to its ~1hr natural expiry. Checking `checkRevoked` on
+ * every call would close this gap but adds an Auth/Firestore lookup to every
+ * request in the app — not worth it at this app's scale/threat model.
  *
  * Best-effort like the push helpers in lib/push.ts: this single-device
  * enforcement is a nice-to-have, not the thing that authenticates the
@@ -179,7 +195,9 @@ export const revokeOtherSessions = onCall(async (request) => {
   if (!uid) throw new HttpsError('unauthenticated', 'Sign in required.');
 
   try {
-    await auth.revokeRefreshTokens(uid);
+    // The emulator has no real Identity Toolkit endpoint to call; local sign-ins are one device anyway.
+    if (process.env.FUNCTIONS_EMULATOR === 'true') await auth.revokeRefreshTokens(uid);
+    else await revokeRefreshTokensBefore(uid, request.auth!.token.auth_time);
   } catch (err) {
     console.warn(`revokeOtherSessions failed for ${uid}:`, err);
   }
