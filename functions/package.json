@@ -11,7 +11,8 @@
     "serve": "npm run build && firebase emulators:start --only functions,firestore,auth",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
-    "create-admin": "tsx scripts/create-admin.ts"
+    "create-admin": "tsx scripts/create-admin.ts",
+    "otp-bypass": "tsx scripts/otp-bypass.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
