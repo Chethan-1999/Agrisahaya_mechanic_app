@@ -16,7 +16,7 @@ export function isMechanicTabPage(page: MechanicPage) {
   return mechanicTabs.some((tab) => tab.page === page);
 }
 
-export function MechanicShell({ activePage, children, onNavigate, unreadAnnouncements }: { activePage: MechanicPage; children: ReactNode; onNavigate: (page: MechanicPage) => void; unreadAnnouncements: number }) {
+export function MechanicShell({ activePage, children, mechanicName, onNavigate, unreadAnnouncements }: { activePage: MechanicPage; children: ReactNode; mechanicName: string; onNavigate: (page: MechanicPage) => void; unreadAnnouncements: number }) {
   const { t } = useI18n();
   const [showSupport, setShowSupport] = useState(false);
   const canShowSupport = activePage === 'mechanicJobs';
@@ -34,16 +34,22 @@ export function MechanicShell({ activePage, children, onNavigate, unreadAnnounce
     <main className="mechanic-app-page">
       <div className="mechanic-app-content">
         {canShowSupport && <div className="mechanic-help-area">
-          <button aria-expanded={showSupport} aria-label={t('supportLabel')} className="mechanic-help-button" onClick={() => setShowSupport((isVisible) => !isVisible)} type="button">
-            <Headphones size={20} strokeWidth={2.5} />
-            <span>{t('supportLabel')}</span>
-          </button>
-          {showSupport && (
-            <div className="mechanic-support-popover">
-              <span>For Support</span>
-              <a href={`tel:${SUPPORT_NUMBER}`}><PhoneCall size={18} strokeWidth={2.6} />{SUPPORT_NUMBER}</a>
-            </div>
-          )}
+          <div className="mechanic-welcome">
+            <span>Welcome</span>
+            <strong>{mechanicName}</strong>
+          </div>
+          <div className="mechanic-support-area">
+            <button aria-expanded={showSupport} aria-label={t('supportLabel')} className="mechanic-help-button" onClick={() => setShowSupport((isVisible) => !isVisible)} type="button">
+              <Headphones size={20} strokeWidth={2.5} />
+              <span>{t('supportLabel')}</span>
+            </button>
+            {showSupport && (
+              <div className="mechanic-support-popover">
+                <span>For Support</span>
+                <a href={`tel:${SUPPORT_NUMBER}`}><PhoneCall size={18} strokeWidth={2.6} />{SUPPORT_NUMBER}</a>
+              </div>
+            )}
+          </div>
         </div>}
         {children}
       </div>

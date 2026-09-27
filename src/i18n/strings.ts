@@ -171,7 +171,7 @@ const en: Record<StringKey, string> = {
   welcome: 'Welcome',
   jobsNav: 'Jobs',
   profileNav: 'Profile',
-  requestChangeNav: 'Request Change',
+  requestChangeNav: 'Request profile change',
   announcementsNav: 'Announcements',
   communityNav: 'Community',
   communityTitle: 'Announcements',

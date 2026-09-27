@@ -61,8 +61,9 @@ export function TechnicianJobs({ setToast, technicianId, withLoading }: {
           {numbered.map(({ job, taskNumber }) => {
             const meta = jobStatusMeta(job.status, t);
             const isExpanded = expandedJobIds.includes(job.id);
+            const cardClassName = job.status === 'completed' || job.status === 'cancelled' ? `mechanic-job-card ${job.status}` : 'mechanic-job-card';
             return (
-              <article className={job.status === 'completed' ? 'mechanic-job-card completed' : 'mechanic-job-card'} key={job.id}>
+              <article className={cardClassName} key={job.id}>
                 <div className="job-card-summary">
                   <div>
                     <div className="job-card-topline"><span>{job.jobCode || `${t('task')} ${taskNumber}`}</span><time>{formatDate(job.createdAt)}</time></div>
@@ -86,7 +87,7 @@ export function TechnicianJobs({ setToast, technicianId, withLoading }: {
                   </div>
                 )}
                 {(job.status === 'assigned' || job.status === 'reassigned' || job.status === 'accepted') && (
-                  <div className="button-row" style={{ marginTop: 14 }}>
+                  <div className="button-row mechanic-job-actions">
                     {(job.status === 'assigned' || job.status === 'reassigned') && (
                       <>
                         <button className="primary" onClick={() => void run(() => acceptJob(job.id), t('jobAcceptedToast'))} type="button">{t('accept')}</button>

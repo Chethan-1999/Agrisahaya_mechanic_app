@@ -1,10 +1,43 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import { PullToRefresh } from '../../components/PullToRefresh';
 import { formatDate } from '../../components/ui';
 import { useI18n } from '../../i18n/I18nContext';
 import { listAnnouncements } from '../../services/announcements';
 import type { Announcement } from '../../types';
+
+const urlPattern = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
+
+function normalizeUrl(url: string) {
+  return url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`;
+}
+
+function splitTrailingPunctuation(url: string) {
+  const match = url.match(/^(.+?)([.,!?;:)\]]*)$/);
+  return { cleanUrl: match?.[1] ?? url, trailing: match?.[2] ?? '' };
+}
+
+function LinkifiedPostBody({ body }: { body: string }) {
+  const parts: ReactNode[] = [];
+  let lastIndex = 0;
+
+  for (const match of body.matchAll(urlPattern)) {
+    const rawUrl = match[0];
+    const index = match.index ?? 0;
+    const { cleanUrl, trailing } = splitTrailingPunctuation(rawUrl);
+    const href = normalizeUrl(cleanUrl);
+
+    if (index > lastIndex) parts.push(body.slice(lastIndex, index));
+    parts.push(
+      <a className="community-post-link" href={href} key={`${href}-${index}`} rel="noopener noreferrer" target="_blank">{cleanUrl}</a>,
+    );
+    if (trailing) parts.push(trailing);
+    lastIndex = index + rawUrl.length;
+  }
+
+  if (lastIndex < body.length) parts.push(body.slice(lastIndex));
+  return <p className="community-post-body">{parts.length ? parts : body}</p>;
+}
 
 export function Community({ withLoading }: {
   withLoading: (action: () => Promise<void>) => Promise<void>;
@@ -34,7 +67,7 @@ export function Community({ withLoading }: {
           {announcements.map((announcement) => (
             <article className="community-post-card" key={announcement.id}>
               <div className="community-post-meta"><strong>{announcement.title}</strong><time>{formatDate(announcement.createdAt)}</time></div>
-              <p>{announcement.body}</p>
+              <LinkifiedPostBody body={announcement.body} />
             </article>
           ))}
           {announcements.length === 0 && (

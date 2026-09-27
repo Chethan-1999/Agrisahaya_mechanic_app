@@ -140,7 +140,8 @@ h2 { margin: 0 0 18px; font-size: 26px; }
 .community-post-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; color: var(--muted); font-size: 12px; font-weight: 900; }
 .community-post-meta strong { color: var(--primary-dark); font-size: 14px; }
 .community-post-meta time { text-align: right; }
-.community-post-card p { margin: 0; color: var(--text); font-size: 16px; font-weight: 850; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.community-post-body { margin: 0; color: var(--text); font-size: 16px; font-weight: 850; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.community-post-link { color: var(--primary-dark); font-weight: 950; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
 .community-empty-state { min-height: 360px; display: grid; place-items: center; align-content: center; gap: 10px; padding: 28px 20px; border: 1px dashed rgba(22, 128, 71, 0.3); border-radius: 24px; background: linear-gradient(145deg, #ffffff 0%, #f3fbf5 100%); text-align: center; box-shadow: var(--shadow); }
 .community-empty-state > span { width: 70px; height: 70px; display: grid; place-items: center; border-radius: 24px; background: #fff5dd; font-size: 34px; }
 .community-empty-state h1 { margin: 0; font-size: 25px; }
@@ -153,6 +154,8 @@ h2 { margin: 0 0 18px; font-size: 26px; }
 .mechanic-job-card { position: relative; padding: 42px 14px 14px; border: 1px solid rgba(22, 128, 71, 0.14); border-radius: 20px; background: linear-gradient(145deg, #ffffff 0%, #f8fdf9 100%); box-shadow: 0 18px 34px rgba(18, 63, 39, 0.1); }
 .mechanic-job-card.completed { padding-bottom: 38px; border-color: rgba(22, 128, 71, 0.42); background: linear-gradient(145deg, #dff8e7 0%, #baf0ce 100%); box-shadow: 0 18px 38px rgba(22, 128, 71, 0.18); }
 .mechanic-job-card.completed::after { content: 'Completed'; position: absolute; right: 14px; bottom: 10px; padding: 7px 10px; border-radius: 999px; background: var(--primary); color: white; font-size: 11px; font-weight: 950; text-transform: uppercase; }
+.mechanic-job-card.cancelled { padding-bottom: 38px; border-color: rgba(245, 158, 11, 0.42); background: linear-gradient(145deg, #fff8d8 0%, #fde68a 100%); box-shadow: 0 18px 38px rgba(245, 158, 11, 0.18); }
+.mechanic-job-card.cancelled::after { content: 'Cancelled'; position: absolute; right: 14px; bottom: 10px; padding: 7px 10px; border-radius: 999px; background: #b7791f; color: white; font-size: 11px; font-weight: 950; text-transform: uppercase; }
 .job-card-summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 76px; }
 .job-card-summary > div { min-width: 0; }
 .job-card-topline { position: absolute; left: 14px; right: 14px; top: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; color: var(--muted); font-size: 12px; font-weight: 900; }
@@ -187,15 +190,24 @@ h2 { margin: 0 0 18px; font-size: 26px; }
 .mechanic-bottom-nav button b { position: absolute; right: -8px; top: -8px; min-width: 20px; height: 20px; display: grid; place-items: center; padding: 0 5px; border: 2px solid white; border-radius: 999px; background: var(--danger); color: white; font-size: 10px; font-weight: 950; line-height: 1; }
 .mechanic-bottom-nav button.active { background: var(--primary); color: white; }
 .mechanic-bottom-nav button.active span { background: rgba(255, 255, 255, 0.2); color: white; }
-.mechanic-help-area { position: relative; display: flex; justify-content: flex-end; margin-bottom: 12px; }
+.mechanic-help-area { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.mechanic-welcome { min-width: 0; display: grid; gap: 2px; }
+.mechanic-welcome span { color: var(--muted); font-size: 11px; font-weight: 900; text-transform: uppercase; }
+.mechanic-welcome strong { overflow: hidden; color: var(--primary-dark); font-size: 18px; font-weight: 950; line-height: 1.08; text-overflow: ellipsis; white-space: nowrap; }
+.mechanic-support-area { position: relative; flex: 0 0 auto; }
 .mechanic-help-button { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 0 13px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); color: var(--primary); box-shadow: 0 10px 24px rgba(22, 128, 71, 0.12); font-weight: 950; }
 .mechanic-help-button span { color: var(--primary-dark); font-size: 12px; }
 .mechanic-support-popover { position: absolute; right: 0; top: calc(100% + 8px); z-index: 18; min-width: 210px; display: grid; gap: 5px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); }
 .mechanic-support-popover span { color: var(--muted); font-size: 11px; font-weight: 900; text-transform: uppercase; }
 .mechanic-support-popover a { display: inline-flex; align-items: center; gap: 8px; color: var(--primary-dark); font-size: 18px; font-weight: 950; text-decoration: none; }
+.mechanic-job-actions { margin-top: 12px; }
+.mechanic-job-actions .primary, .mechanic-job-actions .danger { min-height: 38px; padding: 8px 12px; border-radius: 12px; font-size: 13px; }
 .soon-box { margin: 18px 0; padding: 28px; border-radius: 20px; text-align: center; background: var(--surface-alt); color: var(--primary-dark); font-size: 24px; font-weight: 900; }
 .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 18px 0; }
 .detail-grid div { padding: 14px; border-radius: 16px; background: var(--surface-alt); }
+.job-stat-list { display: grid; gap: 6px; padding: 0 !important; background: transparent !important; }
+.job-stat-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--text); font-weight: 850; }
+.job-stat-row strong { color: var(--primary-dark); font-size: 15px; font-weight: 950; }
 dt { color: var(--muted); font-size: 12px; font-weight: 900; text-transform: uppercase; }
 dd { margin: 4px 0 0; font-weight: 850; }
 
@@ -350,15 +362,15 @@ th { color: var(--muted); font-size: 12px; font-weight: 950; text-transform: upp
   .landing-page, .auth-page { min-height: 100dvh; align-items: start; place-items: start center; padding: calc(max(12px, env(safe-area-inset-top)) + 48px) 12px max(18px, env(safe-area-inset-bottom)); overflow-y: auto; }
   .auth-page.admin-login-page { align-items: center; place-items: center; }
   .landing-page { align-items: start; place-items: start center; }
-  .hero-panel { padding: 18px 16px 22px; border-radius: 22px; }
+  .hero-panel { padding: 26px 16px 30px; border-radius: 22px; }
   .landing-page .hero-panel { min-height: auto; display: flex; flex-direction: column; justify-content: flex-start; margin-top: 0; }
   .landing-card-actions { justify-content: flex-end; gap: 8px; min-height: 0; margin-bottom: 8px; }
   .landing-card-actions .admin-link { min-height: 34px; padding: 7px 9px; font-size: 11px; }
   .landing-card-actions .language-select { position: fixed; top: max(12px, env(safe-area-inset-top)); right: 12px; z-index: 12; width: auto; justify-content: flex-end; gap: 6px; padding: 6px 8px; border: 1px solid rgba(217, 234, 223, 0.9); border-radius: 999px; background: rgba(255, 255, 255, 0.94); box-shadow: 0 10px 22px rgba(15, 85, 44, 0.12); font-size: 12px; backdrop-filter: blur(8px); }
   .landing-card-actions .language-select select { flex: 0 0 auto; }
-  .hero-logo { width: min(118px, 42vw); margin: 10px auto 12px; }
+  .hero-logo { width: min(118px, 42vw); margin: 22px auto 12px; }
   .landing-page .eyebrow { font-size: 12px; }
-  .landing-page h1 { margin-bottom: 10px; font-size: 34px; }
+  .landing-page h1 { margin-bottom: 10px; font-size: 36px; }
   .hero-panel p { margin: 0; font-size: 16px; line-height: 1.42; }
   .landing-page .hero-actions { gap: 11px; margin: 26px 0 0; }
   .landing-page .hero-actions .large { min-height: 56px; font-size: 17px; }
@@ -418,11 +430,11 @@ th { color: var(--muted); font-size: 12px; font-weight: 950; text-transform: upp
 
 @media (max-width: 560px) and (max-height: 700px) {
   .landing-page { padding-top: calc(max(10px, env(safe-area-inset-top)) + 44px); padding-bottom: max(10px, env(safe-area-inset-bottom)); }
-  .landing-page .hero-panel { min-height: auto; padding: 14px; }
+  .landing-page .hero-panel { min-height: auto; padding: 20px 14px 24px; }
   .landing-page .landing-card-actions { margin-bottom: 12px; }
-  .landing-page .hero-logo { width: min(96px, 34vw); margin: 6px auto 8px; }
+  .landing-page .hero-logo { width: min(96px, 34vw); margin: 14px auto 8px; }
   .landing-page .eyebrow { font-size: 11px; }
-  .landing-page h1 { margin-bottom: 8px; font-size: 30px; }
+  .landing-page h1 { margin-bottom: 8px; font-size: 32px; }
   .landing-page .hero-panel p:not(.eyebrow) { font-size: 14px; line-height: 1.32; }
   .landing-page .hero-actions { gap: 8px; margin: 18px 0 0; }
   .landing-page .hero-actions .large { min-height: 50px; font-size: 16px; }

@@ -316,7 +316,7 @@ export default function MechanicApp() {
       )}
 
       {session && currentMechanic && isMechanicTabPage(page) && (
-        <MechanicShell activePage={page} onNavigate={setPage} unreadAnnouncements={unreadAnnouncements}>
+        <MechanicShell activePage={page} mechanicName={currentMechanic.fullName} onNavigate={setPage} unreadAnnouncements={unreadAnnouncements}>
           {page === 'mechanicJobs' && (
             <TechnicianJobs
               setToast={setToast}
