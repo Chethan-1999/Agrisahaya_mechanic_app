@@ -1,6 +1,7 @@
 .PHONY: web sync apk local-phone prod-apks deploy-prod admin admin-prod emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean \
 	sync-admin apk-admin install-admin launch-admin run-admin logs-admin clean-admin local-phone-admin local-admin \
-	settings-show settings-set settings-seed
+	settings-show settings-set settings-seed call \
+	backend-up backend-down backend-restart backend-reset logs-functions logs-functions-prod
 
 # Override any of these on the command line, e.g. `make run AVD_NAME=Pixel_7`
 AVD_NAME     ?= Pixel_6
@@ -18,9 +19,42 @@ ADB      := $(ANDROID_HOME)/platform-tools/adb
 EMULATOR := $(ANDROID_HOME)/emulator/emulator
 EMU_LOG  := /tmp/agrisahaya-emulator.log
 
-## Run the web app in Docker (http://localhost:5173)
+## Both web apps in a browser against the local backend (start it first: make backend-up):
+## http://localhost:5173 (mechanic) and http://localhost:5173/admin/
 web:
-	docker compose up --build
+	VITE_FIREBASE_EMULATOR_HOST=localhost npm run dev
+
+## ── Local backend (Docker) ─────────────────────────────────────────────────────────────────────
+## Auth + Firestore + Functions emulators in one container (docker-compose.yml). Functions rebuild on
+## save; emulator-data/ is restored on start and saved every 30s and on stop. `make local` uses it too.
+## Emulator UI: http://localhost:4000
+
+## Start the local backend in the background and wait until every emulator answers
+backend-up:
+	docker compose up --detach --build --wait backend
+
+## Stop it (saves emulator-data/ first)
+backend-down:
+	docker compose stop backend
+
+backend-restart: backend-down backend-up
+
+## Stop it and start again from EMPTY data (emulator-data/ is kept as emulator-data.bak/)
+backend-reset: backend-down
+	rm -rf emulator-data.bak && mv emulator-data emulator-data.bak 2>/dev/null || true
+	$(MAKE) backend-up
+
+## Follow the local Cloud Functions logs (and the rest of the emulators') live
+logs-functions:
+	docker compose logs --follow --tail=100 backend
+
+## Follow the PRODUCTION Cloud Functions logs live (project from .env). Needs the Google Cloud CLI.
+logs-functions-prod:
+	@command -v gcloud >/dev/null || { \
+		echo "Needs the Google Cloud CLI: brew install --cask google-cloud-sdk, then: gcloud auth login"; \
+		echo "Until then, recent (not live) logs: npx firebase-tools functions:log --project $(PROD_PROJECT)"; exit 1; }
+	gcloud beta logging tail 'resource.type="cloud_run_revision"' --project $(PROD_PROJECT) \
+		--format='value(timestamp,resource.labels.service_name,severity,textPayload,jsonPayload.message)'
 
 ## Build the web assets and copy them into the native Android project (mechanic app)
 sync:
@@ -168,6 +202,21 @@ admin-prod:
 	@test -n "$(PROD_PROJECT)" || { echo "VITE_FIREBASE_PROJECT_ID missing in .env"; exit 1; }
 	@echo "Creating admin in PRODUCTION project '$(PROD_PROJECT)'"
 	cd functions && env -u FIRESTORE_EMULATOR_HOST -u FIREBASE_AUTH_EMULATOR_HOST GCLOUD_PROJECT=$(PROD_PROJECT) npm run create-admin -- "$(ADMIN_EMAIL)" "$(ADMIN_PASSWORD)" "$(ADMIN_NAME)"
+
+## Call a Cloud Function in the LOCAL emulators without signing in, using the fixed local auth header
+## (LOCAL_AUTH_TOKEN / LOCAL_AUTH_UID in functions/.env.local — runs as the local admin by default).
+## Usage: make call FN=createJob DATA='{"farmerName":"Ravi",...}' [AS_UID=<uid>] [PHONE=+919000011101]
+## (AS_UID acts as that user; PHONE makes them phone-verified, which completeSignup needs.)
+call:
+	@test -n "$(FN)" || { echo "Usage: make call FN=<function> [DATA='<json>'] [AS_UID=<uid>] [PHONE=<+91...>]"; exit 1; }
+	@token=$$(sed -n 's/^LOCAL_AUTH_TOKEN=//p' functions/.env.local); \
+	test -n "$$token" || { echo "Set LOCAL_AUTH_TOKEN in functions/.env.local (see functions/.env.local.example)"; exit 1; }; \
+	set -- -H "X-Local-Auth: $$token"; \
+	if [ -n "$$AS_UID" ]; then set -- "$$@" -H "X-Local-Uid: $$AS_UID"; fi; \
+	if [ -n "$$PHONE" ]; then set -- "$$@" -H "X-Local-Phone: $$PHONE"; fi; \
+	data="$$DATA"; [ -n "$$data" ] || data='{}'; \
+	printf '{"data": %s}' "$$data" | curl -sS -X POST "http://localhost:5001/$(FIREBASE_PROJECT)/asia-south1/$(FN)" \
+		-H 'Content-Type: application/json' "$$@" --data-binary @-; echo
 
 ## PRODUCTION business settings (Firestore config/app; keys and defaults in functions/src/shared/settings.ts).
 ## Local testing uses SETTING_* in .env instead. Needs the service account key in functions/.env.scripts.

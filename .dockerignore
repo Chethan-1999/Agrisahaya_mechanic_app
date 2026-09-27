@@ -1,10 +1,5 @@
-node_modules
-.dist
-dist
-.git
-.gitignore
-Dockerfile*
-docker-compose*.yml
-npm-debug.log
-android
-*.tsbuildinfo
+# Build context for the backend image — it only needs functions/package*.json and docker/.
+*
+!functions/package.json
+!functions/package-lock.json
+!docker/backend.sh

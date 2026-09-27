@@ -8,9 +8,9 @@
   "scripts": {
     "build": "node -e \"require('fs').rmSync('lib', { recursive: true, force: true })\" && tsc",
     "build:watch": "tsc --watch",
-    "serve": "npm run build && firebase emulators:start --only functions,firestore,auth",
+    "serve": "cd .. && docker compose up --build backend",
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log",
+    "logs": "cd .. && docker compose logs --follow --tail=100 backend",
     "create-admin": "tsx scripts/create-admin.ts",
     "otp-bypass": "tsx scripts/otp-bypass.ts",
     "settings": "tsx scripts/settings.ts"
