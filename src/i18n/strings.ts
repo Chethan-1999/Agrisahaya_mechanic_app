@@ -80,6 +80,7 @@ export type StringKey =
   | 'inactiveBody'
   | 'supportLabel'
   | 'welcome'
+  | 'welcomeToAgriSahaya'
   | 'jobsNav'
   | 'profileNav'
   | 'requestChangeNav'
@@ -191,6 +192,7 @@ const en: Record<StringKey, string> = {
   inactiveBody: 'Your account has been deactivated. Contact support to reactivate it.',
   supportLabel: 'Support',
   welcome: 'Welcome',
+  welcomeToAgriSahaya: 'Welcome to AgriSahaya',
   jobsNav: 'Jobs',
   profileNav: 'Profile',
   requestChangeNav: 'Request profile change',
@@ -303,6 +305,7 @@ const hi: Record<StringKey, string> = {
   inactiveBody: 'आपका खाता निष्क्रिय कर दिया गया है। दोबारा चालू करने के लिए सहायता से संपर्क करें।',
   supportLabel: 'सहायता',
   welcome: 'स्वागत है',
+  welcomeToAgriSahaya: 'एग्रीसहाय में आपका स्वागत है',
   jobsNav: 'जॉब्स',
   profileNav: 'प्रोफाइल',
   requestChangeNav: 'बदलाव का अनुरोध',
@@ -415,6 +418,7 @@ const kn: Record<StringKey, string> = {
   inactiveBody: 'ನಿಮ್ಮ ಖಾತೆಯನ್ನು ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ. ಮರುಸಕ್ರಿಯಗೊಳಿಸಲು ಸಹಾಯವಾಣಿಯನ್ನು ಸಂಪರ್ಕಿಸಿ.',
   supportLabel: 'ಸಹಾಯವಾಣಿ',
   welcome: 'ಸ್ವಾಗತ',
+  welcomeToAgriSahaya: 'ಅಗ್ರಿಸಹಾಯಕ್ಕೆ ಸ್ವಾಗತ',
   jobsNav: 'ಕೆಲಸಗಳು',
   profileNav: 'ಪ್ರೊಫೈಲ್',
   requestChangeNav: 'ಬದಲಾವಣೆ ಕೋರಿಕೆ',
@@ -527,6 +531,7 @@ const ta: Record<StringKey, string> = {
   inactiveBody: 'உங்கள் கணக்கு முடக்கப்பட்டுள்ளது. மீண்டும் இயக்க உதவி மையத்தை தொடர்பு கொள்ளவும்.',
   supportLabel: 'உதவி மையம்',
   welcome: 'வரவேற்பு',
+  welcomeToAgriSahaya: 'அக்ரிசஹாயாவிற்கு வரவேற்கிறோம்',
   jobsNav: 'வேலைகள்',
   profileNav: 'சுயவிவரம்',
   requestChangeNav: 'மாற்றம் கோரிக்கை',
@@ -639,6 +644,7 @@ const te: Record<StringKey, string> = {
   inactiveBody: 'మీ ఖాతా నిష్క్రియం చేయబడింది. మళ్లీ సక్రియం చేయడానికి సహాయ కేంద్రాన్ని సంప్రదించండి.',
   supportLabel: 'సహాయ కేంద్రం',
   welcome: 'స్వాగతం',
+  welcomeToAgriSahaya: 'అగ్రిసహాయకు స్వాగతం',
   jobsNav: 'పనులు',
   profileNav: 'ప్రొఫైల్',
   requestChangeNav: 'మార్పు అభ్యర్థన',
@@ -751,6 +757,7 @@ const ml: Record<StringKey, string> = {
   inactiveBody: 'നിങ്ങളുടെ അക്കൗണ്ട് നിർജ്ജീവമാക്കിയിരിക്കുന്നു. വീണ്ടും സജീവമാക്കാൻ സപ്പോർട്ടുമായി ബന്ധപ്പെടുക.',
   supportLabel: 'സപ്പോർട്ട്',
   welcome: 'സ്വാഗതം',
+  welcomeToAgriSahaya: 'അഗ്രിസഹായയിലേക്ക് സ്വാഗതം',
   jobsNav: 'ജോലികൾ',
   profileNav: 'പ്രൊഫൈൽ',
   requestChangeNav: 'മാറ്റത്തിനുള്ള അഭ്യർത്ഥന',

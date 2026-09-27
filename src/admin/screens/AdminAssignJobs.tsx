@@ -114,12 +114,20 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onJobSaved, onRef
                       <label className="job-completed-check"><input checked={markCompleted} disabled={!technicianId} onChange={(event) => setCompleted((current) => ({ ...current, [job.id]: event.target.checked }))} type="checkbox" /> Completed</label>
                     )}
                   </td>
-                  <td className="actions">
-                    {!finished && (locked
-                      ? <button onClick={() => { stopEditing(job); setEditing((current) => ({ ...current, [job.id]: true })); }} type="button">Edit</button>
-                      : <button className="icon-save" disabled={!technicianId || (technicianId === (job.technicianId ?? '') && held && !markCompleted)} onClick={() => save(job, technicianId, markCompleted)} type="button">Save</button>)}
-                    {isEditing && <button className="danger-text" onClick={() => stopEditing(job)} type="button">Cancel</button>}
-                    {!finished && !isEditing && <button className="danger-text" onClick={() => confirmCancel(job)} type="button">Cancel job</button>}
+                  <td className="assign-actions-cell">
+                    {/* Two fixed slots (primary, then cancel) so the buttons stay in the same place whatever the job's status. */}
+                    <div className="assign-actions">
+                      {finished
+                        ? <span className="assign-action-empty">-</span>
+                        : locked
+                          ? <button onClick={() => { stopEditing(job); setEditing((current) => ({ ...current, [job.id]: true })); }} type="button">Edit</button>
+                          : <button className="assign-save" disabled={!technicianId || (technicianId === (job.technicianId ?? '') && held && !markCompleted)} onClick={() => save(job, technicianId, markCompleted)} type="button">Save</button>}
+                      {finished
+                        ? <span aria-hidden="true" />
+                        : isEditing
+                          ? <button onClick={() => stopEditing(job)} type="button">Discard</button>
+                          : <button className="danger-text" onClick={() => confirmCancel(job)} type="button">Cancel</button>}
+                    </div>
                   </td>
                 </tr>
               );
