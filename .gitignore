@@ -3,11 +3,8 @@
 # dependencies
 node_modules/
 
-# Expo
-.expo/
+# Build output
 dist/
-web-build/
-expo-env.d.ts
 
 # Native
 .kotlin/
@@ -17,9 +14,6 @@ expo-env.d.ts
 *.p12
 *.key
 *.mobileprovision
-
-# Metro
-.metro-health-check*
 
 # debug
 npm-debug.*
