@@ -355,6 +355,13 @@ function ensureDebugCleartextConfig(androidDir) {
   );
 }
 
+// Same reason as ensureDebugCleartextConfig: the launcher icons live in the gitignored
+// native project, so they're regenerated from the committed assets/ every run.
+function writeLauncherIcons(targetApp) {
+  log(`Writing the ${targetApp.label} launcher icons from assets/...`);
+  run('npx', ['capacitor-assets', 'generate', '--android', '--assetPath', 'assets', '--androidProject', path.basename(targetApp.androidDir)]);
+}
+
 // Builds both apps into dist/ with `firebaseHost` baked in, then syncs the build into
 // `targetApp`'s Android project. Anything synced earlier keeps its own copy of the assets,
 // so rebuilding dist/ afterwards for a different host doesn't touch it. A null
@@ -373,6 +380,7 @@ function buildAndSync(targetApp, firebaseHost) {
   run('npx', ['vite', 'build'], buildEnv);
   run('npx', ['vite', 'build', '--config', 'vite.admin.config.ts'], buildEnv);
 
+  writeLauncherIcons(targetApp);
   if (!firebaseHost) {
     log(`Syncing the build into the ${targetApp.label} Android project...`);
     run('npx', ['cap', 'sync', 'android'], targetApp.capEnv);
