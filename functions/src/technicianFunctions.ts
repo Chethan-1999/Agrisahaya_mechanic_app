@@ -2,26 +2,32 @@ import { applicationDefault } from 'firebase-admin/app';
 import { FieldValue } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 
-import { requireAdmin } from './lib/authz';
+import { requireAdmin, requireUid } from './lib/authz';
 import { requireDoc } from './lib/docHelpers';
 import { auth, db } from './lib/firebaseAdmin';
 import { historyEntry } from './lib/jobHistory';
+import { jobRef } from './lib/jobs';
+import { applyStatsDelta } from './lib/jobStats';
 import { isHeld, statusStamp } from './lib/jobStatus';
+import * as notify from './lib/notifications';
 import { onCall } from './lib/onCall';
 import { pushToTechnician } from './lib/push';
+import { optionalTrimmed, requireString } from './lib/request';
 import { getSettings } from './lib/settings';
-import { assertValidProfile, type ProfileInput } from './lib/validation';
+import { technicianRef } from './lib/technicians';
+import { PROFILE_FIELDS, requireValidProfile, type ProfileInput } from './lib/validation';
 
 /** Admin approves or rejects a pending technician. This is the activation gate. */
 export const reviewSignup = onCall(async (request) => {
   const adminUid = await requireAdmin(request);
-  const { technicianId, decision, paymentVerified, reason } = request.data ?? {};
+  const technicianId = requireString(request.data, 'technicianId', 'technicianId and a valid decision are required.');
+  const { decision, paymentVerified, reason } = request.data;
 
-  if (typeof technicianId !== 'string' || (decision !== 'approve' && decision !== 'reject')) {
+  if (decision !== 'approve' && decision !== 'reject') {
     throw new HttpsError('invalid-argument', 'technicianId and a valid decision are required.');
   }
 
-  const ref = db.collection('technicians').doc(technicianId);
+  const ref = technicianRef(technicianId);
   const snap = await requireDoc(ref, 'Mechanic not found.');
 
   if (snap.data()?.status !== 'pending') {
@@ -30,7 +36,7 @@ export const reviewSignup = onCall(async (request) => {
 
   const now = new Date().toISOString();
   const approved = decision === 'approve';
-  const rejectionReason = !approved && typeof reason === 'string' && reason.trim() ? reason.trim().slice(0, 300) : null;
+  const rejectionReason = approved ? null : optionalTrimmed(reason)?.slice(0, 300) ?? null;
 
   await ref.update({
     status: approved ? 'active' : 'rejected',
@@ -44,13 +50,7 @@ export const reviewSignup = onCall(async (request) => {
     updatedAt: now,
   });
 
-  if (decision === 'approve') {
-    await pushToTechnician(technicianId, {
-      title: '🎉 Welcome to AgriSahaya!',
-      body: "You're verified and ready to go. New jobs will land right here — keep the app handy!",
-      data: { type: 'account-activated' },
-    });
-  }
+  if (approved) await pushToTechnician(technicianId, notify.accountActivated());
 
   return { status: 'ok' };
 });
@@ -58,14 +58,16 @@ export const reviewSignup = onCall(async (request) => {
 /** Admin toggles an already-reviewed technician between active and inactive. */
 export const setTechnicianStatus = onCall(async (request) => {
   const adminUid = await requireAdmin(request);
-  const { technicianId, status } = request.data ?? {};
+  const message = 'technicianId and a valid status ("active" or "inactive") are required.';
+  const technicianId = requireString(request.data, 'technicianId', message);
+  const { status } = request.data;
   const allowed = ['active', 'inactive'];
 
-  if (typeof technicianId !== 'string' || !allowed.includes(status)) {
-    throw new HttpsError('invalid-argument', 'technicianId and a valid status ("active" or "inactive") are required.');
+  if (!allowed.includes(status)) {
+    throw new HttpsError('invalid-argument', message);
   }
 
-  const ref = db.collection('technicians').doc(technicianId);
+  const ref = technicianRef(technicianId);
   const snap = await requireDoc(ref, 'Mechanic not found.');
 
   if (!allowed.includes(snap.data()?.status)) {
@@ -84,7 +86,7 @@ export const setTechnicianStatus = onCall(async (request) => {
 
   const released = await db.runTransaction(async (tx) => {
     const technician = await tx.get(ref);
-    const jobs = await Promise.all(heldJobIds.map((id) => tx.get(db.collection('jobs').doc(id))));
+    const jobs = await Promise.all(heldJobIds.map((id) => tx.get(jobRef(id))));
     // Re-check inside the transaction: the job may have been declined, completed or moved since the query ran.
     const stillHeld = jobs.filter((job) => {
       const data = job.data();
@@ -107,44 +109,27 @@ export const setTechnicianStatus = onCall(async (request) => {
       });
     }
 
-    const stats = (technician.data()?.jobStats ?? { pending: 0, completed: 0, cancelled: 0, deleted: 0 }) as Record<string, number>;
-
     tx.update(ref, {
       status,
       approvedBy: adminUid,
       updatedAt: now,
-      ...(stillHeld.length ? { jobStats: { ...stats, pending: Math.max(0, (stats.pending ?? 0) - stillHeld.length) } } : {}),
+      ...(stillHeld.length ? { jobStats: applyStatsDelta(technician.data()?.jobStats, { pending: -stillHeld.length }) } : {}),
     });
 
     return stillHeld.length;
   });
 
-  if (released > 0) {
-    await pushToTechnician(technicianId, {
-      title: 'Jobs taken back',
-      body: `Your account was deactivated, so ${released} job${released === 1 ? ' was' : 's were'} taken back and will be reassigned. Contact support if this looks wrong.`,
-      data: { type: 'jobs-released' },
-    });
-  }
+  if (released > 0) await pushToTechnician(technicianId, notify.jobsReleased(released));
 
   return { status: 'ok', released };
 });
 
 /** Self-service: a signed-in technician registers/refreshes their push token. */
 export const updateDeviceInfo = onCall(async (request) => {
-  const uid = request.auth?.uid;
+  const uid = requireUid(request);
+  const fcmToken = requireString(request.data, 'fcmToken');
 
-  if (!uid) {
-    throw new HttpsError('unauthenticated', 'Sign in required.');
-  }
-
-  const fcmToken = request.data?.fcmToken;
-
-  if (typeof fcmToken !== 'string' || !fcmToken) {
-    throw new HttpsError('invalid-argument', 'fcmToken is required.');
-  }
-
-  await db.collection('technicians').doc(uid).update({
+  await technicianRef(uid).update({
     fcmToken,
     updatedAt: new Date().toISOString(),
   });
@@ -192,8 +177,7 @@ async function revokeRefreshTokensBefore(uid: string, validSince: number): Promi
  * otherwise-successful sign-in.
  */
 export const revokeOtherSessions = onCall(async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', 'Sign in required.');
+  const uid = requireUid(request);
 
   try {
     // The emulator has no real Identity Toolkit endpoint to call; local sign-ins are one device anyway.
@@ -206,32 +190,21 @@ export const revokeOtherSessions = onCall(async (request) => {
   return { status: 'ok' };
 });
 
-const ADMIN_EDITABLE_FIELDS = [
-  'fullName',
-  'village',
-  'district',
-  'state',
-  'pincode',
-  'address',
-  'landmark',
-  'age',
-  'experience',
-] as const;
-
 /** Admin edits a technician's profile fields directly (phone number and status are not editable here). */
 export const adminUpdateProfile = onCall(async (request) => {
   const adminUid = await requireAdmin(request);
-  const { technicianId, profile } = request.data ?? {};
+  const technicianId = requireString(request.data, 'technicianId', 'technicianId and profile are required.');
+  const { profile } = request.data;
 
-  if (typeof technicianId !== 'string' || !profile || typeof profile !== 'object') {
+  if (!profile || typeof profile !== 'object') {
     throw new HttpsError('invalid-argument', 'technicianId and profile are required.');
   }
 
-  const ref = db.collection('technicians').doc(technicianId);
+  const ref = technicianRef(technicianId);
   const snap = await requireDoc(ref, 'Mechanic not found.');
 
   const updates: Record<string, string> = {};
-  for (const field of ADMIN_EDITABLE_FIELDS) {
+  for (const field of PROFILE_FIELDS) {
     const value = (profile as Record<string, unknown>)[field];
     if (value === undefined) continue;
     if (typeof value !== 'string') {
@@ -240,11 +213,7 @@ export const adminUpdateProfile = onCall(async (request) => {
     updates[field] = value.trim();
   }
 
-  try {
-    assertValidProfile({ ...(snap.data() as ProfileInput), ...updates }, await getSettings());
-  } catch (err) {
-    throw new HttpsError('invalid-argument', err instanceof Error ? err.message : 'Invalid profile.');
-  }
+  requireValidProfile({ ...(snap.data() as ProfileInput), ...updates }, await getSettings());
 
   await ref.update({ ...updates, editedBy: adminUid, updatedAt: new Date().toISOString() });
 

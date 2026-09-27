@@ -1,165 +1,41 @@
-import { FieldValue, type DocumentReference, type DocumentSnapshot, type Transaction } from 'firebase-admin/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 
-import { requireAdmin } from './lib/authz';
+import { requireAdmin, requireUid } from './lib/authz';
 import { db } from './lib/firebaseAdmin';
-import { historyEntry } from './lib/jobHistory';
+import { historyEntry, type JobAction } from './lib/jobHistory';
+import { describeJob, jobRef, jobResult, nextJobCode, parseJobFields, readJob, readOwnJob, readTechnician } from './lib/jobs';
+import { writeStats, type JobStatsDelta } from './lib/jobStats';
 import { isAwaitingResponse, isFinished, isHeld, statusStamp, type JobStatus } from './lib/jobStatus';
+import * as notify from './lib/notifications';
 import { onCall } from './lib/onCall';
 import { pushToAdmins, pushToTechnician } from './lib/push';
-
-type JobStatsDelta = Partial<Record<'pending' | 'completed' | 'cancelled' | 'deleted', number>>;
-
-type JobDoc = {
-  technicianId: string | null;
-  status: JobStatus;
-  jobCode?: string;
-  description: string;
-  deleted?: boolean;
-  /** Set when the job was taken back from a deactivated technician; cleared as soon as it is assigned again. */
-  needsReassignment?: boolean;
-};
-
-const technicianRef = (id: string) => db.collection('technicians').doc(id);
-
-/** Tells every admin what a technician just did to their job (accept/decline/complete). */
-function pushJobUpdateToAdmins(title: string, verb: string, technician: DocumentSnapshot, jobId: string, job: JobDoc) {
-  const name = String(technician.data()?.fullName ?? 'A mechanic');
-
-  return pushToAdmins({
-    title,
-    body: `${name} ${verb} ${job.jobCode ?? 'a job'} · ${job.description.slice(0, 80)}`,
-    data: { type: 'admin-job', jobId },
-  });
-}
-
-/** Reads a job inside a transaction. A soft-deleted job is treated as gone. */
-async function readJob(tx: Transaction, ref: DocumentReference): Promise<JobDoc> {
-  const snap = await tx.get(ref);
-  const data = snap.data() as JobDoc | undefined;
-
-  if (!snap.exists || !data || data.deleted) {
-    throw new HttpsError('not-found', 'Job not found.');
-  }
-
-  return data;
-}
-
-/**
- * A job mutation's response: the job as it now stands, so the client can show the change straight away instead of
- * waiting to reload every job (it still refreshes the full list in the background).
- */
-async function jobResult(ref: DocumentReference) {
-  const snap = await ref.get();
-  return { status: 'ok' as const, job: { id: ref.id, ...snap.data() } };
-}
-
-/** Reads a technician inside a transaction; every read in a transaction has to happen before its first write. */
-const readTechnician = (tx: Transaction, id: string) => tx.get(technicianRef(id));
-
-/** Applies counter deltas to a technician's `jobStats` (never below zero). A missing technician is skipped. */
-function writeStats(tx: Transaction, snap: DocumentSnapshot, delta: JobStatsDelta): void {
-  if (!snap.exists) return;
-
-  const stats = (snap.data()?.jobStats ?? { pending: 0, completed: 0, cancelled: 0, deleted: 0 }) as Record<string, number>;
-  const next = { ...stats };
-
-  for (const [key, value] of Object.entries(delta)) {
-    next[key] = Math.max(0, (next[key] ?? 0) + (value ?? 0));
-  }
-
-  tx.update(snap.ref, { jobStats: next });
-}
-
-type JobFields = {
-  farmerName: string;
-  farmerPhone: string;
-  equipment: string;
-  issue: string;
-  district: string;
-  additionalNotes: string;
-};
-
-const trimmed = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
-
-/** Validates the six admin-entered job fields; the client form checks the same rules, but never trust the client alone. */
-function parseJobFields(data: Record<string, unknown>): JobFields {
-  const fields: JobFields = {
-    farmerName: trimmed(data.farmerName),
-    farmerPhone: trimmed(data.farmerPhone),
-    equipment: trimmed(data.equipment),
-    issue: trimmed(data.issue),
-    district: trimmed(data.district),
-    additionalNotes: trimmed(data.additionalNotes),
-  };
-
-  if (!fields.farmerName || !fields.farmerPhone || !fields.equipment || !fields.issue || !fields.district) {
-    throw new HttpsError('invalid-argument', 'Customer name, phone number, equipment, issue, and district are required.');
-  }
-  if (!/^\d{10}$/.test(fields.farmerPhone)) {
-    throw new HttpsError('invalid-argument', 'Phone number must be exactly 10 digits.');
-  }
-
-  return fields;
-}
-
-/** `description` stays a single derived line so technician screens and push bodies keep working for every job. */
-const describeJob = ({ equipment, issue }: Pick<JobFields, 'equipment' | 'issue'>) => `${equipment} — ${issue}`;
-
-/** Short label for a push body: the human-readable code when the job has one, else a generic phrase. */
-const jobLabel = (job: Pick<JobDoc, 'jobCode'>) => (job.jobCode ? `Job ${job.jobCode}` : 'A job');
-
-const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
-
-/**
- * Human-readable id like "#26091901" (YYMMDD + per-day sequence), allocated in a transaction so concurrent creates never collide.
- * The day is the India day: Cloud Functions run in UTC, so using the server's own clock would date a job created
- * before 05:30 IST with the previous day.
- */
-async function nextJobCode(now: Date): Promise<string> {
-  const ist = new Date(now.getTime() + IST_OFFSET_MS);
-  const day = `${String(ist.getUTCFullYear()).slice(-2)}${String(ist.getUTCMonth() + 1).padStart(2, '0')}${String(ist.getUTCDate()).padStart(2, '0')}`;
-  const ref = db.collection('counters').doc(`jobs-${day}`);
-
-  const sequence = await db.runTransaction(async (tx) => {
-    const snap = await tx.get(ref);
-    const next = ((snap.data()?.value as number | undefined) ?? 0) + 1;
-    tx.set(ref, { value: next });
-    return next;
-  });
-
-  return `#${day}${String(sequence).padStart(2, '0')}`;
-}
+import { optionalTrimmed, requireString } from './lib/request';
+import { assertActiveTechnician, technicianName } from './lib/technicians';
 
 /** Admin logs a call. With a technicianId it's assigned immediately; without one it's left "open" for assignJob later. */
 export const createJob = onCall(async (request) => {
   const adminUid = await requireAdmin(request);
-  const data = request.data ?? {};
-  const fields = parseJobFields(data);
-  const { technicianId } = data;
-
-  const isAssigning = typeof technicianId === 'string' && technicianId;
+  const fields = parseJobFields(request.data);
+  const technicianId = optionalTrimmed(request.data?.technicianId);
 
   const now = new Date();
-  const createdAt = now.toISOString();
   const jobCode = await nextJobCode(now);
   const description = describeJob(fields);
   const ref = db.collection('jobs').doc();
 
   await db.runTransaction(async (tx) => {
-    const technician = isAssigning ? await readTechnician(tx, technicianId) : null;
+    const technician = technicianId ? await readTechnician(tx, technicianId) : null;
 
-    if (isAssigning && (!technician?.exists || technician.data()?.status !== 'active')) {
-      throw new HttpsError('failed-precondition', 'Only an active mechanic can be assigned a job.');
-    }
+    if (technicianId) assertActiveTechnician(technician);
 
     tx.set(ref, {
       ...fields,
       jobCode,
       description,
-      technicianId: isAssigning ? technicianId : null,
-      status: isAssigning ? 'assigned' : 'open',
-      createdAt,
+      technicianId,
+      status: technicianId ? 'assigned' : 'open',
+      createdAt: now.toISOString(),
       createdBy: adminUid,
       ...statusStamp(adminUid, 'admin'),
       deleted: false,
@@ -170,20 +46,14 @@ export const createJob = onCall(async (request) => {
       completedAt: null,
       history: [
         historyEntry('create', adminUid),
-        ...(isAssigning ? [historyEntry('assign', adminUid, { technicianId })] : []),
+        ...(technicianId ? [historyEntry('assign', adminUid, { technicianId })] : []),
       ],
     });
 
     if (technician) writeStats(tx, technician, { pending: 1 });
   });
 
-  if (isAssigning) {
-    await pushToTechnician(technicianId, {
-      title: '🔧 New job for you!',
-      body: `${description.slice(0, 100)} · Tap to view & accept`,
-      data: { type: 'job-assigned', jobId: ref.id },
-    });
-  }
+  if (technicianId) await pushToTechnician(technicianId, notify.jobAssigned(ref.id, description));
 
   return { ...(await jobResult(ref)), jobId: ref.id, jobCode };
 });
@@ -191,12 +61,9 @@ export const createJob = onCall(async (request) => {
 /** Admin edits the six entered fields. Finished jobs (completed/cancelled) are frozen; a technician holding the job is told. */
 export const updateJob = onCall(async (request) => {
   const adminUid = await requireAdmin(request);
-  const { jobId } = request.data ?? {};
-
-  if (typeof jobId !== 'string') throw new HttpsError('invalid-argument', 'jobId is required.');
-
+  const jobId = requireString(request.data, 'jobId');
   const fields = parseJobFields(request.data);
-  const ref = db.collection('jobs').doc(jobId);
+  const ref = jobRef(jobId);
 
   const job = await db.runTransaction(async (tx) => {
     const current = await readJob(tx, ref);
@@ -217,11 +84,7 @@ export const updateJob = onCall(async (request) => {
   });
 
   if (job.technicianId && isHeld(job.status)) {
-    await pushToTechnician(job.technicianId, {
-      title: '✏️ Job details updated',
-      body: `${jobLabel(job)} has fresh details — tap to take a look!`,
-      data: { type: 'job-updated', jobId },
-    });
+    await pushToTechnician(job.technicianId, notify.jobDetailsUpdated(jobId, job));
   }
 
   return jobResult(ref);
@@ -234,14 +97,10 @@ export const updateJob = onCall(async (request) => {
  */
 export const assignJob = onCall(async (request) => {
   const adminUid = await requireAdmin(request);
-  const { jobId, technicianId, markCompleted } = request.data ?? {};
-
-  if (typeof jobId !== 'string' || typeof technicianId !== 'string' || !technicianId) {
-    throw new HttpsError('invalid-argument', 'Job and mechanic are required.');
-  }
-
-  const ref = db.collection('jobs').doc(jobId);
-  const completeNow = markCompleted === true;
+  const jobId = requireString(request.data, 'jobId', 'Job and mechanic are required.');
+  const technicianId = requireString(request.data, 'technicianId', 'Job and mechanic are required.');
+  const completeNow = request.data?.markCompleted === true;
+  const ref = jobRef(jobId);
 
   const { job, previousTechnicianId, previouslyHeld, nextStatus } = await db.runTransaction(async (tx) => {
     const current = await readJob(tx, ref);
@@ -260,9 +119,7 @@ export const assignJob = onCall(async (request) => {
     const nextTechnician = await readTechnician(tx, technicianId);
     const previousTechnician = held && previousId ? await readTechnician(tx, previousId) : null;
 
-    if (!nextTechnician.exists || nextTechnician.data()?.status !== 'active') {
-      throw new HttpsError('failed-precondition', 'Only an active mechanic can be assigned a job.');
-    }
+    assertActiveTechnician(nextTechnician);
 
     // A job released from a deactivated technician is open again, but assigning it is still a reassignment.
     const isReassign = current.status !== 'open' || current.needsReassignment === true;
@@ -291,24 +148,11 @@ export const assignJob = onCall(async (request) => {
   // Tell the technician who just lost the job (a declined one already gave it up) and the one who received it — sent
   // together, so the admin isn't kept waiting on two push sends back to back.
   await Promise.all([
-    previousTechnicianId && previouslyHeld
-      ? pushToTechnician(previousTechnicianId, {
-          title: '🔄 Job update',
-          body: `${jobLabel(job)} has moved to another mechanic. More jobs are on the way!`,
-          data: { type: 'job-reassigned', jobId },
-        })
-      : undefined,
-    pushToTechnician(technicianId, completeNow
-      ? {
-          title: '✅ Job marked complete',
-          body: `Great work! ${jobLabel(job)} is now marked completed.`,
-          data: { type: 'job-completed', jobId },
-        }
-      : {
-          title: nextStatus === 'reassigned' ? '🔁 A job just came your way!' : '🔧 New job for you!',
-          body: `${job.description.slice(0, 100)} · Tap to view & accept`,
-          data: { type: 'job-assigned', jobId },
-        }),
+    previousTechnicianId && previouslyHeld ? pushToTechnician(previousTechnicianId, notify.jobMovedToAnother(jobId, job)) : undefined,
+    pushToTechnician(
+      technicianId,
+      completeNow ? notify.jobMarkedComplete(jobId, job) : notify.jobAssigned(jobId, job.description, nextStatus === 'reassigned'),
+    ),
   ]);
 
   return jobResult(ref);
@@ -317,11 +161,8 @@ export const assignJob = onCall(async (request) => {
 /** Admin closes a job on the technician's behalf (e.g. done by phone). Same end state and stats as completeJob, flagged in history. */
 export const completeJobAsAdmin = onCall(async (request) => {
   const adminUid = await requireAdmin(request);
-  const { jobId } = request.data ?? {};
-
-  if (typeof jobId !== 'string') throw new HttpsError('invalid-argument', 'jobId is required.');
-
-  const ref = db.collection('jobs').doc(jobId);
+  const jobId = requireString(request.data, 'jobId');
+  const ref = jobRef(jobId);
 
   const job = await db.runTransaction(async (tx) => {
     const current = await readJob(tx, ref);
@@ -344,133 +185,92 @@ export const completeJobAsAdmin = onCall(async (request) => {
     return current;
   });
 
-  await pushToTechnician(job.technicianId as string, {
-    title: '✅ Job marked complete',
-    body: `Great work! ${jobLabel(job)} is now marked completed.`,
-    data: { type: 'job-completed', jobId },
-  });
+  await pushToTechnician(job.technicianId as string, notify.jobMarkedComplete(jobId, job));
 
   return jobResult(ref);
 });
 
-/** Loads the caller's own job inside a transaction, or throws if it isn't theirs. */
-async function readOwnJob(tx: Transaction, uid: string, ref: DocumentReference): Promise<JobDoc> {
-  const job = await readJob(tx, ref);
+/**
+ * One of the three status changes a technician makes on their own job. They differ only in which status they start
+ * from, what they write, how the counters move, and what the admins are told — the rest is the same transaction.
+ */
+function technicianJobAction(action: {
+  allowedFrom: (status: JobStatus) => boolean;
+  notAllowedMessage: string;
+  nextStatus: JobStatus;
+  history: JobAction;
+  timestampField?: 'acceptedAt' | 'completedAt';
+  stats?: JobStatsDelta;
+  notifyAdmins: notify.TechnicianJobAction;
+}) {
+  return onCall(async (request) => {
+    const uid = requireUid(request);
+    const jobId = requireString(request.data, 'jobId');
+    const ref = jobRef(jobId);
 
-  if (job.technicianId !== uid) {
-    throw new HttpsError('permission-denied', 'This is not your job.');
-  }
+    const { job, technician } = await db.runTransaction(async (tx) => {
+      const current = await readOwnJob(tx, uid, ref);
 
-  return job;
-}
+      if (!action.allowedFrom(current.status)) {
+        throw new HttpsError('failed-precondition', action.notAllowedMessage);
+      }
 
-function requireTechnicianUid(request: { auth?: { uid: string } | undefined; data?: { jobId?: unknown } }) {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', 'Sign in required.');
+      const technicianSnap = await readTechnician(tx, uid);
 
-  const jobId = request.data?.jobId;
-  if (typeof jobId !== 'string') throw new HttpsError('invalid-argument', 'jobId is required.');
+      tx.update(ref, {
+        status: action.nextStatus,
+        ...(action.timestampField ? { [action.timestampField]: new Date().toISOString() } : {}),
+        ...statusStamp(uid, 'technician'),
+        history: FieldValue.arrayUnion(historyEntry(action.history, uid)),
+      });
+      if (action.stats) writeStats(tx, technicianSnap, action.stats);
 
-  return { uid, jobId };
+      return { job: current, technician: technicianSnap };
+    });
+
+    await pushToAdmins(notify.technicianJobAction(action.notifyAdmins, technicianName(technician), jobId, job));
+
+    return jobResult(ref);
+  });
 }
 
 /** Technician accepts an assigned (or reassigned) job — the only status change they can make besides declining. */
-export const acceptJob = onCall(async (request) => {
-  const { uid, jobId } = requireTechnicianUid(request);
-  const ref = db.collection('jobs').doc(jobId);
-
-  const { job, technician } = await db.runTransaction(async (tx) => {
-    const current = await readOwnJob(tx, uid, ref);
-
-    if (!isAwaitingResponse(current.status)) {
-      throw new HttpsError('failed-precondition', 'This job is no longer awaiting a response.');
-    }
-
-    const technicianSnap = await readTechnician(tx, uid);
-
-    tx.update(ref, {
-      status: 'accepted',
-      acceptedAt: new Date().toISOString(),
-      ...statusStamp(uid, 'technician'),
-      history: FieldValue.arrayUnion(historyEntry('accept', uid)),
-    });
-
-    return { job: current, technician: technicianSnap };
-  });
-
-  await pushJobUpdateToAdmins('✅ Job accepted', 'accepted', technician, jobId, job);
-
-  return jobResult(ref);
+export const acceptJob = technicianJobAction({
+  allowedFrom: isAwaitingResponse,
+  notAllowedMessage: 'This job is no longer awaiting a response.',
+  nextStatus: 'accepted',
+  history: 'accept',
+  timestampField: 'acceptedAt',
+  notifyAdmins: 'accepted',
 });
 
 /** Technician declines — hands the job back to the admin to reassign. Not the same as a cancellation. */
-export const declineJob = onCall(async (request) => {
-  const { uid, jobId } = requireTechnicianUid(request);
-  const ref = db.collection('jobs').doc(jobId);
-
-  const { job, technician } = await db.runTransaction(async (tx) => {
-    const current = await readOwnJob(tx, uid, ref);
-
-    if (!isAwaitingResponse(current.status)) {
-      throw new HttpsError('failed-precondition', 'This job is no longer awaiting a response.');
-    }
-
-    const technicianSnap = await readTechnician(tx, uid);
-
-    tx.update(ref, {
-      status: 'declined',
-      ...statusStamp(uid, 'technician'),
-      history: FieldValue.arrayUnion(historyEntry('decline', uid)),
-    });
-    writeStats(tx, technicianSnap, { pending: -1 });
-
-    return { job: current, technician: technicianSnap };
-  });
-
-  await pushJobUpdateToAdmins('↩️ Job declined — needs reassigning', 'declined', technician, jobId, job);
-
-  return jobResult(ref);
+export const declineJob = technicianJobAction({
+  allowedFrom: isAwaitingResponse,
+  notAllowedMessage: 'This job is no longer awaiting a response.',
+  nextStatus: 'declined',
+  history: 'decline',
+  stats: { pending: -1 },
+  notifyAdmins: 'declined',
 });
 
 /** Technician marks an accepted job done. */
-export const completeJob = onCall(async (request) => {
-  const { uid, jobId } = requireTechnicianUid(request);
-  const ref = db.collection('jobs').doc(jobId);
-
-  const { job, technician } = await db.runTransaction(async (tx) => {
-    const current = await readOwnJob(tx, uid, ref);
-
-    if (current.status !== 'accepted') {
-      throw new HttpsError('failed-precondition', 'Only an accepted job can be marked complete.');
-    }
-
-    const technicianSnap = await readTechnician(tx, uid);
-
-    tx.update(ref, {
-      status: 'completed',
-      completedAt: new Date().toISOString(),
-      ...statusStamp(uid, 'technician'),
-      history: FieldValue.arrayUnion(historyEntry('complete', uid)),
-    });
-    writeStats(tx, technicianSnap, { pending: -1, completed: 1 });
-
-    return { job: current, technician: technicianSnap };
-  });
-
-  await pushJobUpdateToAdmins('🏁 Job completed', 'completed', technician, jobId, job);
-
-  return jobResult(ref);
+export const completeJob = technicianJobAction({
+  allowedFrom: (status) => status === 'accepted',
+  notAllowedMessage: 'Only an accepted job can be marked complete.',
+  nextStatus: 'completed',
+  history: 'complete',
+  timestampField: 'completedAt',
+  stats: { pending: -1, completed: 1 },
+  notifyAdmins: 'completed',
 });
 
 /** Admin-only. Reason is optional — cancelling doesn't require an explanation. Any job that isn't already finished can be cancelled. */
 export const cancelJob = onCall(async (request) => {
   const adminUid = await requireAdmin(request);
-  const { jobId, reason } = request.data ?? {};
-
-  if (typeof jobId !== 'string') throw new HttpsError('invalid-argument', 'jobId is required.');
-
-  const ref = db.collection('jobs').doc(jobId);
-  const cancelReason = typeof reason === 'string' && reason.trim() ? reason.trim() : null;
+  const jobId = requireString(request.data, 'jobId');
+  const cancelReason = optionalTrimmed(request.data?.reason);
+  const ref = jobRef(jobId);
 
   const job = await db.runTransaction(async (tx) => {
     const current = await readJob(tx, ref);
@@ -497,11 +297,7 @@ export const cancelJob = onCall(async (request) => {
   });
 
   if (job.technicianId && isHeld(job.status)) {
-    await pushToTechnician(job.technicianId, {
-      title: '🚫 Job cancelled',
-      body: `${jobLabel(job)} was cancelled. Don't worry — new jobs are coming your way!`,
-      data: { type: 'job-cancelled', jobId },
-    });
+    await pushToTechnician(job.technicianId, notify.jobCancelled(jobId, job));
   }
 
   return jobResult(ref);

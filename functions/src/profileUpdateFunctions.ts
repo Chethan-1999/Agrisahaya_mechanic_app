@@ -1,42 +1,26 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 
-import { requireAdmin } from './lib/authz';
+import { requireAdmin, requireUid } from './lib/authz';
 import { requireDoc } from './lib/docHelpers';
 import { db } from './lib/firebaseAdmin';
-import { isIndianState } from './lib/indianStates';
+import * as notify from './lib/notifications';
 import { onCall } from './lib/onCall';
 import { profileHistoryEntry } from './lib/profileHistory';
 import { pushToAdmins, pushToTechnician } from './lib/push';
+import { optionalTrimmed, requireString } from './lib/request';
 import { getSettings } from './lib/settings';
-
-// Mirrors MechanicForm's keys (src/types.ts) minus phoneNumber, which is
-// never technician-editable. Kept as a plain list rather than a shared
-// package across the two separate TS projects (functions/ and src/) — one
-// small, rarely-changing array isn't worth a shared-types package at this
-// project's size; see the DRY/YAGNI note in the Blueprint.
-const EDITABLE_FIELDS = [
-  'fullName',
-  'village',
-  'district',
-  'state',
-  'pincode',
-  'address',
-  'landmark',
-  'age',
-  'experience',
-] as const;
-
-type EditableField = (typeof EDITABLE_FIELDS)[number];
+import { technicianName, technicianRef } from './lib/technicians';
+import { isProfileField } from './lib/validation';
+import { isIndianState } from './shared/indianStates';
 
 /** A technician never writes their own record — this is the only way a profile field changes. */
 export const submitProfileUpdate = onCall(async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', 'Sign in required.');
+  const uid = requireUid(request);
+  const { changes } = request.data ?? {};
+  const message = optionalTrimmed(request.data?.message);
 
-  const { changes, message } = request.data ?? {};
-
-  if (typeof message !== 'string' || !message.trim()) {
+  if (!message) {
     throw new HttpsError('invalid-argument', 'A reason for the change is required.');
   }
 
@@ -51,7 +35,7 @@ export const submitProfileUpdate = onCall(async (request) => {
   }
 
   for (const [field, value] of entries) {
-    if (!EDITABLE_FIELDS.includes(field as EditableField)) {
+    if (!isProfileField(field)) {
       throw new HttpsError('invalid-argument', `"${field}" cannot be changed this way.`);
     }
     if (typeof value !== 'string') {
@@ -62,7 +46,7 @@ export const submitProfileUpdate = onCall(async (request) => {
     }
   }
 
-  const technician = await requireDoc(db.collection('technicians').doc(uid), 'Mechanic profile not found.');
+  const technician = await requireDoc(technicianRef(uid), 'Mechanic profile not found.');
 
   const { count } = (
     await db.collection('profileUpdateRequests').where('technicianId', '==', uid).count().get()
@@ -81,7 +65,7 @@ export const submitProfileUpdate = onCall(async (request) => {
   await ref.set({
     technicianId: uid,
     changes,
-    message: message.trim(),
+    message,
     status: 'pending',
     createdAt: new Date().toISOString(),
     reviewedBy: null,
@@ -89,11 +73,7 @@ export const submitProfileUpdate = onCall(async (request) => {
     adminNote: null,
   });
 
-  await pushToAdmins({
-    title: '✏️ Profile change request',
-    body: `${String(technician.data()?.fullName ?? 'A mechanic')} wants to change: ${entries.map(([field]) => field).join(', ')}`,
-    data: { type: 'admin-profile-request', requestId: ref.id },
-  });
+  await pushToAdmins(notify.profileChangeRequested(ref.id, technicianName(technician), entries.map(([field]) => field)));
 
   return { status: 'submitted', requestId: ref.id };
 });
@@ -101,9 +81,10 @@ export const submitProfileUpdate = onCall(async (request) => {
 /** Admin approves (applies the diff) or rejects (with a note) a pending profile-change request. */
 export const reviewProfileUpdate = onCall(async (request) => {
   const adminUid = await requireAdmin(request);
-  const { requestId, decision, adminNote } = request.data ?? {};
+  const requestId = requireString(request.data, 'requestId', 'requestId and a valid decision are required.');
+  const { decision } = request.data;
 
-  if (typeof requestId !== 'string' || (decision !== 'approve' && decision !== 'reject')) {
+  if (decision !== 'approve' && decision !== 'reject') {
     throw new HttpsError('invalid-argument', 'requestId and a valid decision are required.');
   }
 
@@ -116,11 +97,11 @@ export const reviewProfileUpdate = onCall(async (request) => {
   }
 
   const now = new Date().toISOString();
-  const note = typeof adminNote === 'string' && adminNote.trim() ? adminNote.trim() : null;
+  const note = optionalTrimmed(request.data.adminNote);
 
   if (decision === 'approve') {
-    const technicianRef = db.collection('technicians').doc(data.technicianId);
-    const before = (await requireDoc(technicianRef, 'Mechanic not found.')).data() ?? {};
+    const technician = technicianRef(data.technicianId);
+    const before = (await requireDoc(technician, 'Mechanic not found.')).data() ?? {};
 
     const diffChanges: Record<string, { from: unknown; to: unknown }> = {};
     for (const [field, to] of Object.entries(data.changes)) {
@@ -128,7 +109,7 @@ export const reviewProfileUpdate = onCall(async (request) => {
       if (from !== to) diffChanges[field] = { from, to };
     }
 
-    await technicianRef.update({
+    await technician.update({
       ...data.changes,
       updatedAt: now,
       profileHistory: FieldValue.arrayUnion(profileHistoryEntry(adminUid, requestId, diffChanges)),
@@ -142,14 +123,7 @@ export const reviewProfileUpdate = onCall(async (request) => {
     adminNote: note,
   });
 
-  await pushToTechnician(data.technicianId, {
-    title: decision === 'approve' ? '✅ Profile updated!' : '📝 Profile update needs changes',
-    body:
-      decision === 'approve'
-        ? 'Your changes are live on your profile. Looking good!'
-        : note ?? 'Your admin needs a change to this request — open the app for details.',
-    data: { type: 'profile-update-reviewed', requestId },
-  });
+  await pushToTechnician(data.technicianId, notify.profileChangeReviewed(requestId, decision === 'approve', note));
 
   return { status: 'ok' };
 });

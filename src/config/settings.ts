@@ -1,8 +1,8 @@
 import { doc, getDoc } from 'firebase/firestore';
 
+import { DEFAULT_SETTINGS, resolveSettings, settingsFromEnv, SETTINGS_DOC_PATH, type Settings } from '../../functions/src/shared/settings';
 import { db } from '../firebase';
 import { withTimeout } from '../utils/withTimeout';
-import { DEFAULT_SETTINGS, resolveSettings, settingsFromEnv, SETTINGS_DOC_PATH, type Settings } from '../../functions/src/shared/settings';
 
 export type { Settings };
 

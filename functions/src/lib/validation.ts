@@ -1,5 +1,18 @@
+import { HttpsError } from 'firebase-functions/v2/https';
+
+import { isIndianState } from '../shared/indianStates';
 import type { Settings } from '../shared/settings';
-import { isIndianState } from './indianStates';
+
+/**
+ * A technician's profile fields — everything except the phone number, which only phone sign-in sets. Mirrors
+ * MechanicForm (src/types.ts) minus phoneNumber; the technician's change requests and the admin's edits are both
+ * limited to these.
+ */
+export const PROFILE_FIELDS = ['fullName', 'village', 'district', 'state', 'pincode', 'address', 'landmark', 'age', 'experience'] as const;
+
+export type ProfileField = (typeof PROFILE_FIELDS)[number];
+
+export const isProfileField = (field: string): field is ProfileField => (PROFILE_FIELDS as readonly string[]).includes(field);
 
 export type ProfileInput = {
   fullName: string;
@@ -13,7 +26,7 @@ export type ProfileInput = {
   experience: string;
 };
 
-/** Server-side mirror of the client's form checks — never trust the client alone. */
+/** Server-side mirror of the client's form checks — never trust the client alone. Limits come from the business settings. */
 export function assertValidProfile(
   profile: ProfileInput,
   { technicianMinAge, technicianMaxAge, maxExperienceYears }: Settings,
@@ -49,4 +62,35 @@ export function assertValidProfile(
   if (!Number.isFinite(experience) || experience < 0 || experience > maxExperienceYears) {
     throw new Error(`Experience must be between 0 and ${maxExperienceYears} years.`);
   }
+}
+
+/** assertValidProfile for a callable: the failure becomes an invalid-argument error the client can show as-is. */
+export function requireValidProfile(profile: ProfileInput, settings: Settings): void {
+  try {
+    assertValidProfile(profile, settings);
+  } catch (err) {
+    throw new HttpsError('invalid-argument', err instanceof Error ? err.message : 'Invalid profile.');
+  }
+}
+
+/** A callable's `profile` argument, validated and normalised into the fields stored on the technician record. */
+export function parseProfile(raw: unknown, settings: Settings) {
+  if (!raw || typeof raw !== 'object') {
+    throw new HttpsError('invalid-argument', 'Profile is required.');
+  }
+
+  const profile = raw as ProfileInput;
+  requireValidProfile(profile, settings);
+
+  return {
+    fullName: profile.fullName.trim(),
+    village: profile.village.trim(),
+    district: profile.district.trim(),
+    state: (profile.state ?? '').trim(),
+    pincode: (profile.pincode ?? '').trim(),
+    address: (profile.address ?? '').trim(),
+    landmark: (profile.landmark ?? '').trim() || null,
+    age: String(profile.age).trim(),
+    experience: String(profile.experience).trim(),
+  };
 }

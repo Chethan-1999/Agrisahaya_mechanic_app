@@ -1,11 +1,15 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 
+import { requireUid } from './lib/authz';
 import { db } from './lib/firebaseAdmin';
+import { EMPTY_JOB_STATS } from './lib/jobStats';
+import * as notify from './lib/notifications';
 import { onCall } from './lib/onCall';
 import { pushToAdmins } from './lib/push';
 import { getSettings } from './lib/settings';
-import { assertValidProfile, type ProfileInput } from './lib/validation';
+import { technicianRef } from './lib/technicians';
+import { parseProfile } from './lib/validation';
 
 /**
  * Creates the technician record for an already-verified phone number.
@@ -25,19 +29,8 @@ export const completeSignup = onCall(async (request) => {
     throw new HttpsError('unauthenticated', 'Verify your phone number first.');
   }
 
-  const profile = request.data?.profile as ProfileInput | undefined;
-
-  if (!profile) {
-    throw new HttpsError('invalid-argument', 'Profile is required.');
-  }
-
-  try {
-    assertValidProfile(profile, await getSettings());
-  } catch (err) {
-    throw new HttpsError('invalid-argument', err instanceof Error ? err.message : 'Invalid profile.');
-  }
-
-  const ref = db.collection('technicians').doc(uid);
+  const profile = parseProfile(request.data?.profile, await getSettings());
+  const ref = technicianRef(uid);
   const existing = await ref.get();
 
   if (existing.exists) {
@@ -47,31 +40,19 @@ export const completeSignup = onCall(async (request) => {
   const now = new Date().toISOString();
 
   await ref.set({
-    fullName: profile.fullName.trim(),
+    ...profile,
     phoneNumber: phone,
-    village: profile.village.trim(),
-    district: profile.district.trim(),
-    state: (profile.state ?? '').trim(),
-    pincode: (profile.pincode ?? '').trim(),
-    address: (profile.address ?? '').trim(),
-    landmark: (profile.landmark ?? '').trim() || null,
-    age: String(profile.age).trim(),
-    experience: String(profile.experience).trim(),
     status: 'pending',
     paymentVerified: false,
     fcmToken: null,
-    jobStats: { pending: 0, completed: 0, cancelled: 0, deleted: 0 },
+    jobStats: EMPTY_JOB_STATS,
     profileHistory: [],
     createdAt: now,
     updatedAt: now,
     approvedBy: null,
   });
 
-  await pushToAdmins({
-    title: '🆕 New mechanic signup',
-    body: `${profile.fullName.trim()} · ${profile.village.trim()}, ${profile.district.trim()} — tap to review`,
-    data: { type: 'admin-signup', technicianId: uid },
-  });
+  await pushToAdmins(notify.newSignup(uid, profile));
 
   return { status: 'created' };
 });
@@ -81,25 +62,9 @@ export const completeSignup = onCall(async (request) => {
  * is overwritten with the (possibly corrected) details and the status goes back to `pending` for the admin to review.
  */
 export const reapplySignup = onCall(async (request) => {
-  const uid = request.auth?.uid;
-
-  if (!uid) {
-    throw new HttpsError('unauthenticated', 'Sign in required.');
-  }
-
-  const profile = request.data?.profile as ProfileInput | undefined;
-
-  if (!profile) {
-    throw new HttpsError('invalid-argument', 'Profile is required.');
-  }
-
-  try {
-    assertValidProfile(profile, await getSettings());
-  } catch (err) {
-    throw new HttpsError('invalid-argument', err instanceof Error ? err.message : 'Invalid profile.');
-  }
-
-  const ref = db.collection('technicians').doc(uid);
+  const uid = requireUid(request);
+  const profile = parseProfile(request.data?.profile, await getSettings());
+  const ref = technicianRef(uid);
 
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
@@ -114,15 +79,7 @@ export const reapplySignup = onCall(async (request) => {
     const now = new Date().toISOString();
 
     tx.update(ref, {
-      fullName: profile.fullName.trim(),
-      village: profile.village.trim(),
-      district: profile.district.trim(),
-      state: (profile.state ?? '').trim(),
-      pincode: (profile.pincode ?? '').trim(),
-      address: (profile.address ?? '').trim(),
-      landmark: (profile.landmark ?? '').trim() || null,
-      age: String(profile.age).trim(),
-      experience: String(profile.experience).trim(),
+      ...profile,
       status: 'pending',
       rejectionReason: null,
       reapplyCount: FieldValue.increment(1),
@@ -131,11 +88,7 @@ export const reapplySignup = onCall(async (request) => {
     });
   });
 
-  await pushToAdmins({
-    title: '🔁 Signup sent again',
-    body: `${profile.fullName.trim()} updated their rejected signup — tap to review`,
-    data: { type: 'admin-signup', technicianId: uid },
-  });
+  await pushToAdmins(notify.signupResent(uid, profile.fullName));
 
   return { status: 'ok' };
 });

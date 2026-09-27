@@ -1,6 +1,6 @@
+import { isIndianState } from '../../functions/src/shared/indianStates';
 import { getSettings } from '../config/settings';
 import type { MechanicForm } from '../types';
-import { isIndianState } from './indianStates';
 
 export type ValidationErrors = Partial<Record<keyof MechanicForm, string>>;
 

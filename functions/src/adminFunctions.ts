@@ -1,19 +1,9 @@
 import { FieldValue } from 'firebase-admin/firestore';
-import { HttpsError } from 'firebase-functions/v2/https';
 
 import { requireAdmin } from './lib/authz';
 import { db } from './lib/firebaseAdmin';
 import { onCall } from './lib/onCall';
-
-function requireFcmToken(data: unknown): string {
-  const fcmToken = (data as { fcmToken?: unknown } | undefined)?.fcmToken;
-
-  if (typeof fcmToken !== 'string' || !fcmToken) {
-    throw new HttpsError('invalid-argument', 'fcmToken is required.');
-  }
-
-  return fcmToken;
-}
+import { requireString } from './lib/request';
 
 /**
  * The admin app registers its push token on every sign-in/app open. Unlike a technician's single `fcmToken`, admins
@@ -21,7 +11,7 @@ function requireFcmToken(data: unknown): string {
  */
 export const registerAdminDevice = onCall(async (request) => {
   const uid = await requireAdmin(request);
-  const fcmToken = requireFcmToken(request.data);
+  const fcmToken = requireString(request.data, 'fcmToken');
 
   await db.collection('admins').doc(uid).update({ fcmTokens: FieldValue.arrayUnion(fcmToken) });
 
@@ -31,7 +21,7 @@ export const registerAdminDevice = onCall(async (request) => {
 /** Called on logout, before signing out, so a device nobody is signed in on stops getting admin pushes. */
 export const unregisterAdminDevice = onCall(async (request) => {
   const uid = await requireAdmin(request);
-  const fcmToken = requireFcmToken(request.data);
+  const fcmToken = requireString(request.data, 'fcmToken');
 
   await db.collection('admins').doc(uid).update({ fcmTokens: FieldValue.arrayRemove(fcmToken) });
 
