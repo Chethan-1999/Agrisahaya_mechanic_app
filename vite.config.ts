@@ -8,6 +8,8 @@ import { defineConfig } from 'vite';
 // both: admin/index.html is available at /admin/.
 export default defineConfig({
   plugins: [react()],
+  // SETTING_* (business settings for local testing — functions/src/shared/settings.ts) reach the app next to VITE_*.
+  envPrefix: ['VITE_', 'SETTING_'],
   build: {
     rollupOptions: {
       input: {

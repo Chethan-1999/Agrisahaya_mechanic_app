@@ -1,3 +1,4 @@
+/** The states a technician can pick. Shared by the functions and both apps — keep this file free of imports. */
 export const indianStates = [
   'Andhra Pradesh',
   'Arunachal Pradesh',

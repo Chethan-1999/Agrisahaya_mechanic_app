@@ -2,12 +2,14 @@ import { HttpsError } from 'firebase-functions/v2/https';
 
 import { requireAdmin } from './lib/authz';
 import { db } from './lib/firebaseAdmin';
+import * as notify from './lib/notifications';
 import { onCall } from './lib/onCall';
-import { pushBroadcast } from './lib/push';
+import { pushBroadcast, type PushPayload } from './lib/push';
+import { optionalTrimmed } from './lib/request';
 
 const PUSH_BROADCAST_TIMEOUT_MS = 5000;
 
-async function pushBroadcastBestEffort(tokens: string[], payload: Parameters<typeof pushBroadcast>[1]): Promise<void> {
+async function pushBroadcastBestEffort(tokens: string[], payload: PushPayload): Promise<void> {
   if (tokens.length === 0) return;
 
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -29,17 +31,15 @@ async function pushBroadcastBestEffort(tokens: string[], payload: Parameters<typ
 /** Admin posts a community broadcast — stored for the technician-facing inbox, then pushed to every active technician's device. */
 export const postAnnouncement = onCall(async (request) => {
   const adminUid = await requireAdmin(request);
-  const { title, body } = request.data ?? {};
+  const trimmedTitle = optionalTrimmed(request.data?.title);
+  const trimmedBody = optionalTrimmed(request.data?.body);
 
-  if (typeof title !== 'string' || !title.trim()) {
+  if (!trimmedTitle) {
     throw new HttpsError('invalid-argument', 'A title is required.');
   }
-  if (typeof body !== 'string' || !body.trim()) {
+  if (!trimmedBody) {
     throw new HttpsError('invalid-argument', 'A message body is required.');
   }
-
-  const trimmedTitle = title.trim();
-  const trimmedBody = body.trim();
 
   const ref = db.collection('announcements').doc();
   await ref.set({
@@ -54,11 +54,7 @@ export const postAnnouncement = onCall(async (request) => {
     .map((doc) => doc.data().fcmToken as string | undefined)
     .filter((token): token is string => Boolean(token));
 
-  await pushBroadcastBestEffort(tokens, {
-    title: `📢 ${trimmedTitle}`,
-    body: trimmedBody.slice(0, 120),
-    data: { type: 'announcement', announcementId: ref.id },
-  });
+  await pushBroadcastBestEffort(tokens, notify.announcement(ref.id, trimmedTitle, trimmedBody));
 
   return { status: 'ok', announcementId: ref.id };
 });

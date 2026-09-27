@@ -1,15 +1,28 @@
 import { FieldValue } from 'firebase-admin/firestore';
-import { getMessaging } from 'firebase-admin/messaging';
+import { getMessaging, type TokenMessage } from 'firebase-admin/messaging';
 
 import { app, db } from './firebaseAdmin';
 
 const messaging = getMessaging(app);
 
-type PushPayload = {
+/** What a push says and carries — built by lib/notifications.ts, sent by the helpers below. */
+export type PushPayload = {
   title: string;
   body: string;
   data?: Record<string, string>;
 };
+
+const FCM_BATCH_SIZE = 500; // sendEach's per-call cap
+
+// FCM error codes meaning the token will never work again (app uninstalled, data cleared, token rotated).
+const DEAD_TOKEN_CODES = new Set(['messaging/registration-token-not-registered', 'messaging/invalid-registration-token']);
+
+const toMessage = (token: string, { title, body, data }: PushPayload): TokenMessage => ({
+  token,
+  notification: { title, body },
+  data,
+  android: { priority: 'high' },
+});
 
 /** Best-effort push to one technician's registered device. Never throws — a missing/stale token just means no push goes out. */
 export async function pushToTechnician(technicianId: string, payload: PushPayload): Promise<void> {
@@ -19,59 +32,22 @@ export async function pushToTechnician(technicianId: string, payload: PushPayloa
   if (!token) return;
 
   try {
-    await messaging.send({
-      token,
-      notification: { title: payload.title, body: payload.body },
-      data: payload.data,
-      android: { priority: 'high' },
-    });
+    await messaging.send(toMessage(token, payload));
   } catch (err) {
     console.warn(`push failed for technician ${technicianId}:`, err);
   }
 }
 
-const FCM_BATCH_SIZE = 500; // sendEach's per-call cap
-
 /** Best-effort broadcast to many tokens at once, chunked to FCM's 500-per-call limit. Never throws — same ethos as pushToTechnician. */
 export async function pushBroadcast(tokens: string[], payload: PushPayload): Promise<void> {
   for (let i = 0; i < tokens.length; i += FCM_BATCH_SIZE) {
-    const batch = tokens.slice(i, i + FCM_BATCH_SIZE);
-
     try {
-      await messaging.sendEach(
-        batch.map((token) => ({
-          token,
-          notification: { title: payload.title, body: payload.body },
-          data: payload.data,
-          android: { priority: 'high' as const },
-        })),
-      );
+      await messaging.sendEach(tokens.slice(i, i + FCM_BATCH_SIZE).map((token) => toMessage(token, payload)));
     } catch (err) {
       console.warn('broadcast push batch failed:', err);
     }
   }
 }
-
-/** Silent data-only push — the client uses this to cancel one specific tagged notification (job:{id}) on the device. */
-export async function pushDismiss(technicianId: string, jobId: string): Promise<void> {
-  const snap = await db.collection('technicians').doc(technicianId).get();
-  const token = snap.data()?.fcmToken as string | undefined;
-
-  if (!token) return;
-
-  try {
-    await messaging.send({
-      token,
-      data: { type: 'dismiss', jobId },
-      android: { priority: 'high' },
-    });
-  } catch (err) {
-    console.warn(`dismiss push failed for technician ${technicianId}:`, err);
-  }
-}
-
-// FCM error codes meaning the token will never work again (app uninstalled, data cleared, token rotated).
-const DEAD_TOKEN_CODES = new Set(['messaging/registration-token-not-registered', 'messaging/invalid-registration-token']);
 
 /**
  * Best-effort push to every admin's registered devices (`admins/{uid}.fcmTokens` — an admin can be signed in on
@@ -86,14 +62,7 @@ export async function pushToAdmins(payload: PushPayload): Promise<void> {
 
     if (targets.length === 0) return;
 
-    const { responses } = await messaging.sendEach(
-      targets.map(({ token }) => ({
-        token,
-        notification: { title: payload.title, body: payload.body },
-        data: payload.data,
-        android: { priority: 'high' as const },
-      })),
-    );
+    const { responses } = await messaging.sendEach(targets.map(({ token }) => toMessage(token, payload)));
 
     await Promise.all(
       responses.map(async (response, i) => {

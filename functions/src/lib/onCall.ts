@@ -1,3 +1,4 @@
+import type { DecodedIdToken } from 'firebase-admin/auth';
 import { onCall as onCallV2, type CallableRequest } from 'firebase-functions/v2/https';
 
 /**
@@ -8,7 +9,33 @@ import { onCall as onCallV2, type CallableRequest } from 'firebase-functions/v2/
  */
 const REGIONS = ['asia-south1', 'us-central1'];
 
+/**
+ * Local testing only: a request carrying `X-Local-Auth: <LOCAL_AUTH_TOKEN>` is treated as signed in — as
+ * `X-Local-Uid` if given, else LOCAL_AUTH_UID — so a function can be called with curl (`make call`) without a real
+ * sign-in. Add `X-Local-Phone` to act as a phone-verified user (completeSignup needs it).
+ *
+ * Inert outside the emulator, twice over: FUNCTIONS_EMULATOR is only set by `firebase emulators:start` (the same guard
+ * devSignIn uses), and LOCAL_AUTH_TOKEN lives in functions/.env.local, which only the emulator loads — deploys never do.
+ */
+function withLocalAuth(request: CallableRequest): CallableRequest {
+  const token = process.env.LOCAL_AUTH_TOKEN;
+  if (process.env.FUNCTIONS_EMULATOR !== 'true' || !token || request.rawRequest.header('x-local-auth') !== token) return request;
+
+  const uid = request.rawRequest.header('x-local-uid') || process.env.LOCAL_AUTH_UID;
+  if (!uid) return request;
+
+  const now = Math.floor(Date.now() / 1000);
+  const phone = request.rawRequest.header('x-local-phone');
+  const claims = {
+    uid, sub: uid, aud: process.env.GCLOUD_PROJECT, iss: 'local-auth', iat: now, exp: now + 3600, auth_time: now,
+    ...(phone ? { phone_number: phone } : {}),
+    firebase: { identities: {}, sign_in_provider: 'custom' },
+  } as DecodedIdToken;
+
+  return { ...request, auth: { uid, token: claims } };
+}
+
 /** `onCall` from firebase-functions/v2/https, deployed to REGIONS. Use this for every callable. */
 export function onCall<Return>(handler: (request: CallableRequest) => Return) {
-  return onCallV2({ region: REGIONS }, handler);
+  return onCallV2({ region: REGIONS }, (request) => handler(withLocalAuth(request)));
 }

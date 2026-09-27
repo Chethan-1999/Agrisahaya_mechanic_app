@@ -3,11 +3,8 @@
 # dependencies
 node_modules/
 
-# Expo
-.expo/
+# Build output
 dist/
-web-build/
-expo-env.d.ts
 
 # Native
 .kotlin/
@@ -17,9 +14,6 @@ expo-env.d.ts
 *.p12
 *.key
 *.mobileprovision
-
-# Metro
-.metro-health-check*
 
 # debug
 npm-debug.*
@@ -39,14 +33,13 @@ ui-debug.log
 # Claude Code project instructions (local only)
 CLAUDE.md
 
-# local env files (see .env.example / functions/.env.example for the template)
+# local env files (see .env.example / functions/.env.*.example for the templates)
 .env
 .env.*
 !.env.example
 functions/.env
 functions/.env.*
-!functions/.env.example
-!functions/.env.scripts.example
+!functions/.env.*.example
 push-github-api.ps1
 
 # typescript

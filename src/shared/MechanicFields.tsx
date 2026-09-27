@@ -1,9 +1,9 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 
+import { indianStates } from '../../functions/src/shared/indianStates';
 import { Input } from '../components/ui';
 import { useI18n } from '../i18n/I18nContext';
 import type { MechanicForm } from '../types';
-import { indianStates } from '../utils/indianStates';
 import type { ValidationErrors } from '../utils/validation';
 
 // `translated` is only true on the technician's own signup form — the admin's

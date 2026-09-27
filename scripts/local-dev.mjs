@@ -32,16 +32,18 @@
 //   5. Starts a browser-accessible Vite dev server (http://localhost:5173), using
 //      'localhost' for the emulator host since this process runs directly on the
 //      host machine — no NAT hop to route around here.
-//   6. Starts the Firebase Emulator Suite (Auth, Firestore, Functions) in the
-//      foreground, bound to 0.0.0.0 so other devices on the network can reach it.
+//   6. Starts the local backend — the Firebase Emulator Suite (Auth, Firestore,
+//      Functions) in Docker (`docker compose up backend`), published on 0.0.0.0 so
+//      other devices on the network can reach it — and follows its logs.
 //      Ctrl+C stops everything (the dev server included — it's a child of this
-//      process, not detached like the Android emulator).
+//      process, not detached like the Android emulator) and the backend container,
+//      which saves emulator-data/ on the way down.
 //
 // Works the same on macOS and Windows: every step below is plain Node.js — no
 // bash-only syntax, so nothing here depends on WSL, Git Bash, or GNU Make.
 
 import { spawnSync, spawn } from 'node:child_process';
-import { copyFileSync, cpSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
@@ -223,11 +225,7 @@ function verifyAppLaunched(adb, appId, { timeoutMs = 12_000, settleMs = 2000 } =
   return false;
 }
 
-// The Firebase emulators fail with a confusing, easy-to-miss "port not open,
-// could not start" per-service warning (rather than a clear error) when a
-// previous run's process got orphaned — e.g. this script's terminal was
-// killed instead of Ctrl+C'd, leaving `firebase emulators:start` and the
-// Firestore JAR running. Check up front and name the actual conflicting port.
+// Vite quietly moves to another port when 5173 is taken, which would leave the URL printed below wrong.
 function isPortFree(port) {
   return new Promise((resolve) => {
     const server = net.createServer();
@@ -261,23 +259,27 @@ const PROD = process.argv.includes('--prod');
 const WEB_DEV_PORT = 5173;
 const WEB_DEV_LOG = path.join(os.tmpdir(), 'agrisahaya-vite-dev.log');
 
-async function checkEmulatorPortsFree() {
-  const ports = [8080, 9099, 5001, 4000, 4400, 4500, 9150, WEB_DEV_PORT];
-  const busy = [];
-  for (const port of ports) {
-    if (!(await isPortFree(port))) busy.push(port);
+async function checkWebPortFree() {
+  if (await isPortFree(WEB_DEV_PORT)) return;
+  const howToFind = isWindows ? `netstat -ano | findstr :${WEB_DEV_PORT}` : `lsof -i :${WEB_DEV_PORT} -sTCP:LISTEN`;
+  fail(
+    `Port ${WEB_DEV_PORT} is already in use — most likely a Vite dev server from a previous run ` +
+      `(e.g. this script's terminal was closed instead of Ctrl+C'd).\n` +
+      `Find and stop it:\n  ${howToFind}\n` +
+      (isWindows ? '  taskkill /PID <pid> /F' : '  kill <pid>'),
+  );
+}
+
+// The Auth/Firestore/Functions emulators run in Docker (docker-compose.yml, docker/backend.sh), which also handles
+// restoring and saving emulator-data/, the backup copy, the 30s autosave, and rebuilding functions on save.
+// `--wait` returns once the container's healthcheck passes, i.e. all three emulators answer.
+function startBackend() {
+  if (spawnSync('docker', ['info'], { stdio: 'ignore' }).status !== 0) {
+    fail('Docker is not running. Start Docker Desktop, then run this again — the local backend runs in a container.');
   }
-  if (busy.length > 0) {
-    const howToFind = isWindows
-      ? `netstat -ano | findstr :${busy[0]}`
-      : `lsof -i :${busy[0]} -sTCP:LISTEN`;
-    fail(
-      `Port(s) ${busy.join(', ')} are already in use — most likely an orphaned Firebase emulator or ` +
-        `Vite dev server from a previous run (e.g. this script's terminal was closed instead of Ctrl+C'd).\n` +
-        `Find and stop it:\n  ${howToFind}\n` +
-        (isWindows ? '  taskkill /PID <pid> /F' : '  kill <pid>'),
-    );
-  }
+  log('Starting the local backend in Docker (first run builds the image and takes a few minutes)...');
+  const up = spawnSync('docker', ['compose', 'up', '--detach', '--build', '--wait', 'backend'], { cwd: repoRoot, stdio: 'inherit' });
+  if (up.status !== 0) fail('The local backend did not start — see the output above, or run `make logs-functions`.');
 }
 
 function detectLanIp() {
@@ -556,75 +558,33 @@ async function main() {
     process.exit(0);
   }
 
-  if (existsSync(path.join(repoRoot, 'functions', 'package.json'))) {
-    log('Building Cloud Functions...');
-    const functionsBuild = spawnSync('npm run build', {
-      cwd: path.join(repoRoot, 'functions'),
-      stdio: 'inherit',
-      shell: true,
-    });
-    if (functionsBuild.status !== 0) fail('Cloud Functions build failed. See output above.');
-  }
+  startBackend();
 
-  log('Checking that the emulator ports are free...');
-  await checkEmulatorPortsFree();
-
+  log('Checking that the web dev server port is free...');
+  await checkWebPortFree();
   startWebDevServer();
 
-  log(`Starting the Firebase Emulator Suite on 0.0.0.0 (reachable at ${lanIp})...`);
-  log(`Browser:    http://localhost:${WEB_DEV_PORT}   (talks to this same local emulator)`);
-  log('Emulator UI: http://localhost:4000   Ctrl+C to stop everything.');
+  log(`Local backend is up (reachable at ${lanIp}). Its logs follow — Ctrl+C stops everything and saves emulator-data/.`);
+  log(`Browser:    http://localhost:${WEB_DEV_PORT}   (talks to this same local backend)`);
+  log('Emulator UI: http://localhost:4000');
   if (extraPhoneApk) log(`Phone APK (${phoneApkApp.label}): ${extraPhoneApk} — install it on your phone (same network as ${lanIp}).`);
-  // The Firebase CLI shells out to `java` on PATH (not JAVA_HOME) for the Firestore/Auth
-  // emulators, so make sure the resolved JDK's bin/ is actually on PATH for this step.
-  const pathWithJava = javaHome
-    ? `${path.join(javaHome, 'bin')}${path.delimiter}${process.env.PATH}`
-    : process.env.PATH;
-  // Persist Auth + Firestore across restarts. Import the last export if there is one, export on a
-  // clean exit, AND export every 30s through the emulator hub so a killed terminal or a crash
-  // loses at most the last 30 seconds instead of the whole session.
-  const dataDir = path.join(repoRoot, 'emulator-data');
-  const hasExport = existsSync(path.join(dataDir, 'firebase-export-metadata.json'));
-  const args = ['firebase', 'emulators:start', '--only', 'auth,firestore,functions', `--export-on-exit=${dataDir}`];
-  if (hasExport) args.push(`--import=${dataDir}`);
-  if (hasExport) {
-    // Keep the previous export: a session that starts from bad/empty data would otherwise overwrite the only good copy.
-    const backupDir = `${dataDir}.bak`;
-    rmSync(backupDir, { recursive: true, force: true });
-    cpSync(dataDir, backupDir, { recursive: true });
-    let users = [];
-    try {
-      users = JSON.parse(readFileSync(path.join(dataDir, 'auth_export', 'accounts.json'), 'utf8')).users ?? [];
-    } catch {
-      // unreadable accounts file: report zero users below
-    }
-    log(`Restoring emulator data from ${dataDir} (${users.length} auth user(s): ${users.map((u) => u.email || u.phoneNumber).join(', ') || 'none'}). Previous copy kept in ${backupDir}.`);
-  } else {
-    log(`No saved emulator data yet — starting empty; will save to ${dataDir}. Create the admin once (see README).`);
-  }
 
-  const emulators = spawn(['npx', ...args].join(' '), {
-    cwd: repoRoot,
-    stdio: 'inherit',
-    shell: true,
-    env: { ...process.env, PATH: pathWithJava },
-  });
+  const logs = spawn('docker', ['compose', 'logs', '--follow', '--tail=20', 'backend'], { cwd: repoRoot, stdio: 'inherit' });
 
-  const exportTimer = setInterval(() => {
-    fetch('http://127.0.0.1:4400/_admin/export', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: dataDir, initiatedBy: 'local-dev-autosave' }),
-    }).catch(() => undefined);
-  }, 30_000);
+  // Ctrl+C reaches `docker compose logs` too (same process group); stopping the container is what saves the data.
+  let stopping = false;
+  const stop = () => {
+    if (stopping) return;
+    stopping = true;
+    log('Stopping the local backend (saving emulator-data/)...');
+    spawnSync('docker', ['compose', 'stop', 'backend'], { cwd: repoRoot, stdio: 'inherit' });
+    process.exit(0);
+  };
+  process.on('SIGINT', stop);
+  process.on('SIGTERM', stop);
 
-  // Ctrl+C reaches the emulator too (same process group); stay alive until its export-on-exit finishes.
-  process.on('SIGINT', () => undefined);
-  process.on('SIGTERM', () => emulators.kill('SIGINT'));
-
-  await new Promise((resolve) => emulators.once('close', resolve));
-  clearInterval(exportTimer);
-  log('Emulators stopped; data saved to emulator-data/.');
+  await new Promise((resolve) => logs.once('close', resolve));
+  if (!stopping) log('The backend container stopped on its own — see the log above. `make backend-up` starts it again.');
   process.exit(0);
 }
 

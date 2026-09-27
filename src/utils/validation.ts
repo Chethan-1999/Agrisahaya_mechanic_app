@@ -1,5 +1,6 @@
+import { isIndianState } from '../../functions/src/shared/indianStates';
+import { getSettings } from '../config/settings';
 import type { MechanicForm } from '../types';
-import { isIndianState } from './indianStates';
 
 export type ValidationErrors = Partial<Record<keyof MechanicForm, string>>;
 
@@ -38,14 +39,16 @@ export function validateProfileForm(form: Omit<MechanicForm, 'phoneNumber'>): Va
     errors.pincode = 'Pincode must be 6 digits';
   }
 
+  const { technicianMinAge, technicianMaxAge, maxExperienceYears } = getSettings();
+
   const age = Number(form.age);
-  if (!form.age.trim() || Number.isNaN(age) || age < 18 || age > 70) {
-    errors.age = 'Age must be between 18 and 70';
+  if (!form.age.trim() || Number.isNaN(age) || age < technicianMinAge || age > technicianMaxAge) {
+    errors.age = `Age must be between ${technicianMinAge} and ${technicianMaxAge}`;
   }
 
   const experience = Number(form.experience);
-  if (form.experience.trim() && (Number.isNaN(experience) || experience < 0 || experience > 50)) {
-    errors.experience = 'Experience must be between 0 and 50 years';
+  if (form.experience.trim() && (Number.isNaN(experience) || experience < 0 || experience > maxExperienceYears)) {
+    errors.experience = `Experience must be between 0 and ${maxExperienceYears} years`;
   }
 
   return errors;

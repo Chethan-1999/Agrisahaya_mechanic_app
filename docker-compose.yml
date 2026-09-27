@@ -1,12 +1,36 @@
+# The whole local backend in one container — `make backend-up` / `make backend-down`, or `make local`, which uses it.
 services:
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: agrisahaya-frontend
+  backend:
+    build: .
+    container_name: agrisahaya-backend
+    init: true
+    # SETTING_* business settings (functions/src/shared/settings.ts) come from the same .env the apps use.
+    # functions/.env.local (the local auth header) is loaded by the emulator itself.
+    env_file:
+      - path: .env
+        required: false
     ports:
-      - "5173:5173"
+      - "4000:4000" # Emulator UI
+      - "4400:4400" # Emulator hub
+      - "4500:4500" # Emulator logging (UI log viewer)
+      - "9150:9150" # Firestore websocket (UI)
+      - "5001:5001" # Functions
+      - "8080:8080" # Firestore
+      - "9099:9099" # Auth
     volumes:
-      - .:/app
-      - /app/node_modules
-    command: npm run dev -- --host 0.0.0.0
+      - .:/workspace
+      # Linux-built dependencies kept apart from the Mac's functions/node_modules.
+      - functions_node_modules:/workspace/functions/node_modules
+    # The emulators save emulator-data/ on SIGINT; give the export time to finish.
+    stop_signal: SIGINT
+    stop_grace_period: 60s
+    healthcheck:
+      # Healthy once Firestore, Auth and Functions all answer — not just the hub, which starts first.
+      test: ["CMD-SHELL", "curl -fs http://127.0.0.1:8080 && curl -fs http://127.0.0.1:9099 && curl -s -o /dev/null http://127.0.0.1:5001"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 20s
+
+volumes:
+  functions_node_modules:

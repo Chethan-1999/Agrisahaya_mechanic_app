@@ -15,6 +15,8 @@ import { defineConfig } from 'vite';
 // serves admin/index.html at /admin/.
 export default defineConfig({
   plugins: [react()],
+  // SETTING_* (business settings for local testing — functions/src/shared/settings.ts) reach the app next to VITE_*.
+  envPrefix: ['VITE_', 'SETTING_'],
   root: resolve(__dirname, 'admin'),
   envDir: __dirname, // root moved to admin/, but .env lives at the repo root
   publicDir: false, // public/ holds mechanic-site pages (privacy policy etc.)

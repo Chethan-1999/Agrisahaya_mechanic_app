@@ -6,20 +6,20 @@
   },
   "main": "lib/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "node -e \"require('fs').rmSync('lib', { recursive: true, force: true })\" && tsc",
     "build:watch": "tsc --watch",
-    "serve": "npm run build && firebase emulators:start --only functions,firestore,auth",
+    "serve": "cd .. && docker compose up --build backend",
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log",
-    "create-admin": "tsx scripts/create-admin.ts"
+    "logs": "cd .. && docker compose logs --follow --tail=100 backend",
+    "create-admin": "tsx scripts/create-admin.ts",
+    "otp-bypass": "tsx scripts/otp-bypass.ts",
+    "settings": "tsx scripts/settings.ts"
   },
   "dependencies": {
-    "bcryptjs": "^2.4.3",
     "firebase-admin": "^12.6.0",
     "firebase-functions": "^5.1.1"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
     "dotenv": "^16.4.5",
     "tsx": "^4.19.1",
     "typescript": "^5.5.4"
