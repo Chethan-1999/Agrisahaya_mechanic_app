@@ -43,7 +43,13 @@ export function AdminProfileRequests({ mechanics, setToast, withLoading }: {
   return (
     <PullToRefresh onRefresh={refresh}>
       <section>
-        <div className="section-heading"><h1>Profile change request</h1><button className="secondary refresh-button" onClick={() => void refresh()}>Refresh</button></div>
+        <div className="section-heading profile-requests-heading">
+          <div>
+            <h1>Profile change request</h1>
+            <p className="muted">Review the profile change requests from mechanics.</p>
+          </div>
+          <button className="secondary refresh-button compact-refresh-button" onClick={() => void refresh()} type="button">Refresh</button>
+        </div>
         {requests.length === 0 && <p className="empty">No pending requests.</p>}
         <div className="request-list">
           {requests.map((request) => (

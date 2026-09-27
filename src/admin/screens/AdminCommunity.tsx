@@ -55,8 +55,7 @@ export function AdminCommunity({ setToast, withLoading }: {
     <PullToRefresh onRefresh={refresh}>
       <section className="admin-community-page">
         <div className="admin-community-composer card">
-          <p className="eyebrow">Broadcast message</p>
-          <h1>Community</h1>
+          <p className="eyebrow">Broadcast a message to the community</p>
           <p className="muted">Post updates that every mechanic can read after login.</p>
           <form onSubmit={(event) => void submit(event)}>
             <Input label="Title" onChange={setTitle} value={title} />

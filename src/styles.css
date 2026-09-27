@@ -237,6 +237,10 @@ dd { margin: 4px 0 0; font-weight: 850; }
 .admin-content .section-heading { align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
 .admin-content .section-heading h1 { margin: 0; font-size: 26px; line-height: 1.08; }
 .admin-content .section-heading h2 { margin: 0; font-size: 20px; line-height: 1.12; }
+.profile-requests-heading { flex-wrap: nowrap; }
+.profile-requests-heading > div { min-width: 0; display: grid; gap: 6px; }
+.profile-requests-heading .muted { font-size: 13px; font-weight: 850; line-height: 1.35; }
+.compact-refresh-button { flex: 0 0 auto; min-height: 36px; padding: 8px 12px; border-radius: 12px; font-size: 13px; }
 .admin-dashboard-page { display: grid; gap: 20px; }
 .admin-dashboard-hero { display: grid; grid-template-columns: minmax(0, 1fr) 118px; align-items: stretch; gap: 12px; padding: 16px; border: 1px solid rgba(22, 128, 71, 0.16); border-radius: 22px; background: linear-gradient(135deg, #ffffff 0%, #eefbf2 54%, #fff7dc 100%); box-shadow: var(--shadow); overflow: hidden; }
 .admin-dashboard-hero h1 { margin: 5px 0 6px; font-size: 26px; line-height: 1.04; }
