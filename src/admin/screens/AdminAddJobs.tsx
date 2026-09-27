@@ -58,7 +58,6 @@ export function AdminAddJobs({ jobs, onJobSaved, onRefresh, setToast, withLoadin
       ].some((value) => String(value ?? '').toLowerCase().includes(needle));
     });
   }, [jobs, search]);
-  const deletedCount = jobs.filter((job) => job.deleted).length;
   const editingJob = editingJobId ? jobs.find((job) => job.id === editingJobId) : null;
   const canShowPhone = Boolean(form.farmerName.trim());
   const canShowEquipment = /^\d{10}$/.test(form.farmerPhone);
@@ -206,7 +205,6 @@ export function AdminAddJobs({ jobs, onJobSaved, onRefresh, setToast, withLoadin
           );
         })}
         {board.length === 0 && <p className="empty">{search.trim() ? 'No jobs match your search.' : 'No jobs saved yet.'}</p>}
-        {deletedCount > 0 && <p className="muted">{deletedCount} deleted {deletedCount === 1 ? 'job' : 'jobs'} on record.</p>}
       </div>
     </section>
     </PullToRefresh>

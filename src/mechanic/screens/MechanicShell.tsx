@@ -34,16 +34,19 @@ export function MechanicShell({ activePage, children, onNavigate, unreadAnnounce
     <main className="mechanic-app-page">
       <div className="mechanic-app-content">
         {canShowSupport && <div className="mechanic-help-area">
-          <button aria-expanded={showSupport} aria-label={t('supportLabel')} className="mechanic-help-button" onClick={() => setShowSupport((isVisible) => !isVisible)} type="button">
-            <Headphones size={20} strokeWidth={2.5} />
-            <span>{t('supportLabel')}</span>
-          </button>
-          {showSupport && (
-            <div className="mechanic-support-popover">
-              <span>For Support</span>
-              <a href={`tel:${getSettings().supportPhoneNumber}`}><PhoneCall size={18} strokeWidth={2.6} />{getSettings().supportPhoneNumber}</a>
-            </div>
-          )}
+          <p className="mechanic-welcome-title">{t('welcomeToAgriSahaya')}</p>
+          <div className="mechanic-support-area">
+            <button aria-expanded={showSupport} aria-label={t('supportLabel')} className="mechanic-help-button" onClick={() => setShowSupport((isVisible) => !isVisible)} type="button">
+              <Headphones size={20} strokeWidth={2.5} />
+              <span>{t('supportLabel')}</span>
+            </button>
+            {showSupport && (
+              <div className="mechanic-support-popover">
+                <span>For Support</span>
+                <a href={`tel:${getSettings().supportPhoneNumber}`}><PhoneCall size={18} strokeWidth={2.6} />{getSettings().supportPhoneNumber}</a>
+              </div>
+            )}
+          </div>
         </div>}
         {children}
       </div>

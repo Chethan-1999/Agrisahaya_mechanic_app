@@ -41,8 +41,8 @@ export async function listOwnJobs(technicianId: string) {
 }
 
 /**
- * Admin's full job board — every job regardless of status, deleted ones included so the deleted count stays available.
- * Screens show `visibleJobs(jobs)`; the dashboard/summary counts read `jobs.filter(job => job.deleted)`.
+ * Admin's full job board — every job regardless of status, including legacy soft-deleted ones.
+ * Screens show `visibleJobs(jobs)`, which hides the soft-deleted jobs.
  */
 export async function listAllJobs() {
   const q = query(collection(db, collectionName), orderBy('createdAt', 'desc'));

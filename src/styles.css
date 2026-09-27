@@ -195,7 +195,8 @@ h2 { margin: 0 0 18px; font-size: 26px; }
 .mechanic-welcome { min-width: 0; display: grid; gap: 2px; }
 .mechanic-welcome span { color: var(--muted); font-size: 11px; font-weight: 900; text-transform: uppercase; }
 .mechanic-welcome strong { overflow: hidden; color: var(--primary-dark); font-size: 18px; font-weight: 950; line-height: 1.08; text-overflow: ellipsis; white-space: nowrap; }
-.mechanic-support-area { position: relative; flex: 0 0 auto; }
+.mechanic-support-area { position: relative; flex: 0 0 auto; margin-left: auto; }
+.mechanic-welcome-title { min-width: 0; margin: 0; color: var(--primary-dark); font-size: 13px; font-weight: 950; line-height: 1.2; }
 .mechanic-help-button { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 0 13px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); color: var(--primary); box-shadow: 0 10px 24px rgba(22, 128, 71, 0.12); font-weight: 950; }
 .mechanic-help-button span { color: var(--primary-dark); font-size: 12px; }
 .mechanic-support-popover { position: absolute; right: 0; top: calc(100% + 8px); z-index: 18; min-width: 210px; display: grid; gap: 5px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); }
@@ -286,7 +287,12 @@ th { color: var(--muted); font-size: 12px; font-weight: 950; text-transform: upp
 .jobs-table { min-width: 1180px; }
 .jobs-table th:last-child, .jobs-table td:last-child { width: 160px; }
 .assign-table { min-width: 1540px; }
-.assign-table th:last-child, .assign-table td:last-child { width: 110px; text-align: center; }
+.assign-table th:last-child, .assign-table td:last-child { width: 180px; text-align: center; }
+.assign-actions { display: grid; grid-template-columns: 76px 76px; gap: 8px; justify-content: center; align-items: center; }
+.assign-actions button { min-height: 38px; width: 100%; padding: 0 8px; border-radius: 12px; background: transparent; color: var(--primary); font-weight: 850; }
+.assign-actions .assign-save { background: var(--primary); color: white; font-weight: 900; }
+.assign-actions .danger-text { color: var(--danger); }
+.assign-action-empty { color: var(--muted); }
 .assignment-status { display: grid; gap: 4px; justify-items: center; text-align: center; }
 .assignment-status strong { color: #d18400; font-size: 16px; letter-spacing: 0; }
 .assignment-status.completed strong { color: #0b8d46; }
@@ -341,7 +347,8 @@ th { color: var(--muted); font-size: 12px; font-weight: 950; text-transform: upp
 .error-text { color: var(--danger); font-weight: 850; margin: 12px 0 0; }
 .loading { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(0,0,0,0.35); color: white; font-weight: 900; }
 .loading span { width: 34px; height: 34px; border: 4px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 800ms linear infinite; margin-bottom: 64px; position: absolute; }
-.toast { position: fixed; right: 22px; top: 22px; z-index: 30; max-width: min(420px, calc(100vw - 44px)); padding: 14px 18px; border-radius: 16px; color: white; box-shadow: var(--shadow); font-weight: 900; }
+/* Above the admin top bar (.sidebar, z-index 30-33) and clear of the status bar / notch. */
+.toast { position: fixed; right: 22px; top: calc(env(safe-area-inset-top) + 14px); z-index: 50; max-width: min(420px, calc(100vw - 44px)); padding: 14px 18px; border-radius: 16px; color: white; box-shadow: var(--shadow); font-weight: 900; }
 .toast.success { background: var(--primary); }
 .toast.error { background: var(--danger); }
 .modal-backdrop { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 20px; background: rgba(7, 18, 12, 0.52); backdrop-filter: blur(6px); }

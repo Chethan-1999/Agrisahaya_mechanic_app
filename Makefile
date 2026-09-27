@@ -1,4 +1,4 @@
-.PHONY: web sync apk local-phone prod-apks deploy-prod admin admin-prod emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean \
+.PHONY: web sync icons icons-admin apk local-phone prod-apks deploy-prod admin admin-prod emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean \
 	sync-admin apk-admin install-admin launch-admin run-admin logs-admin clean-admin local-phone-admin local-admin \
 	settings-show settings-set settings-seed call \
 	backend-up backend-down backend-restart backend-reset logs-functions logs-functions-prod
@@ -57,14 +57,21 @@ logs-functions-prod:
 		--format='value(timestamp,resource.labels.service_name,severity,textPayload,jsonPayload.message)'
 
 ## Build the web assets and copy them into the native Android project (mechanic app)
-sync:
+sync: icons
 	npm run build
 	npx cap sync android
 
 ## Same as `sync`, but for the admin app (separate appId, native project in android-admin/)
-sync-admin:
+sync-admin: icons-admin
 	npm run build
 	CAP_APP=admin npx cap sync android
+
+## Write the launcher icons from assets/ into the (gitignored) native project — mechanic / admin
+icons:
+	npx capacitor-assets generate --android --assetPath assets --androidProject android
+
+icons-admin:
+	npx capacitor-assets generate --android --assetPath assets --androidProject android-admin
 
 ## Boot the Android emulator in the background if it isn't already running.
 ## -no-snapshot forces a clean cold boot every time: the crash mode we've hit
