@@ -4,6 +4,7 @@ import { HttpsError } from 'firebase-functions/v2/https';
 import { db } from './lib/firebaseAdmin';
 import { onCall } from './lib/onCall';
 import { pushToAdmins } from './lib/push';
+import { getSettings } from './lib/settings';
 import { assertValidProfile, type ProfileInput } from './lib/validation';
 
 /**
@@ -31,7 +32,7 @@ export const completeSignup = onCall(async (request) => {
   }
 
   try {
-    assertValidProfile(profile);
+    assertValidProfile(profile, await getSettings());
   } catch (err) {
     throw new HttpsError('invalid-argument', err instanceof Error ? err.message : 'Invalid profile.');
   }
@@ -93,7 +94,7 @@ export const reapplySignup = onCall(async (request) => {
   }
 
   try {
-    assertValidProfile(profile);
+    assertValidProfile(profile, await getSettings());
   } catch (err) {
     throw new HttpsError('invalid-argument', err instanceof Error ? err.message : 'Invalid profile.');
   }

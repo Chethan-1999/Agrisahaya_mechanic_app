@@ -9,6 +9,7 @@ import { historyEntry } from './lib/jobHistory';
 import { isHeld, statusStamp } from './lib/jobStatus';
 import { onCall } from './lib/onCall';
 import { pushToTechnician } from './lib/push';
+import { getSettings } from './lib/settings';
 import { assertValidProfile, type ProfileInput } from './lib/validation';
 
 /** Admin approves or rejects a pending technician. This is the activation gate. */
@@ -240,7 +241,7 @@ export const adminUpdateProfile = onCall(async (request) => {
   }
 
   try {
-    assertValidProfile({ ...(snap.data() as ProfileInput), ...updates });
+    assertValidProfile({ ...(snap.data() as ProfileInput), ...updates }, await getSettings());
   } catch (err) {
     throw new HttpsError('invalid-argument', err instanceof Error ? err.message : 'Invalid profile.');
   }

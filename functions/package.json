@@ -12,7 +12,8 @@
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
     "create-admin": "tsx scripts/create-admin.ts",
-    "otp-bypass": "tsx scripts/otp-bypass.ts"
+    "otp-bypass": "tsx scripts/otp-bypass.ts",
+    "settings": "tsx scripts/settings.ts"
   },
   "dependencies": {
     "firebase-admin": "^12.6.0",

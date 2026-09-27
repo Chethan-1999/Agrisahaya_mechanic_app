@@ -6,9 +6,9 @@ import { requireDoc } from './lib/docHelpers';
 import { db } from './lib/firebaseAdmin';
 import { isIndianState } from './lib/indianStates';
 import { onCall } from './lib/onCall';
-import { PROFILE_UPDATE_LIFETIME_CAP } from './lib/params';
 import { profileHistoryEntry } from './lib/profileHistory';
 import { pushToAdmins, pushToTechnician } from './lib/push';
+import { getSettings } from './lib/settings';
 
 // Mirrors MechanicForm's keys (src/types.ts) minus phoneNumber, which is
 // never technician-editable. Kept as a plain list rather than a shared
@@ -68,10 +68,12 @@ export const submitProfileUpdate = onCall(async (request) => {
     await db.collection('profileUpdateRequests').where('technicianId', '==', uid).count().get()
   ).data();
 
-  if (count >= PROFILE_UPDATE_LIFETIME_CAP.value()) {
+  const { profileUpdateLifetimeCap } = await getSettings();
+
+  if (count >= profileUpdateLifetimeCap) {
     throw new HttpsError(
       'resource-exhausted',
-      `You've used all ${PROFILE_UPDATE_LIFETIME_CAP.value()} profile-change requests allowed for this account.`,
+      `You've used all ${profileUpdateLifetimeCap} profile-change requests allowed for this account.`,
     );
   }
 

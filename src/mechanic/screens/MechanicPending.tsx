@@ -1,8 +1,8 @@
 import { PhoneCall } from 'lucide-react';
 
+import { getSettings } from '../../config/settings';
 import { useI18n } from '../../i18n/I18nContext';
 import type { Mechanic } from '../../types';
-import { SUPPORT_NUMBER } from '../constants';
 
 export function MechanicPending({ mechanic, onLogout, onReapply }: { mechanic: Mechanic | null; onLogout: () => void; onReapply: () => void }) {
   const { t } = useI18n();
@@ -21,7 +21,7 @@ export function MechanicPending({ mechanic, onLogout, onReapply }: { mechanic: M
         <p>{body}</p>
         {status === 'rejected' && mechanic?.rejectionReason && <p><strong>{t('rejectionReasonLabel')}:</strong> {mechanic.rejectionReason}</p>}
         {status === 'rejected' && <button className="primary" onClick={onReapply} type="button">{t('reapplyButton')}</button>}
-        <p className="support-call-line"><PhoneCall size={16} strokeWidth={2.5} /> For Support Call: <a href={`tel:${SUPPORT_NUMBER}`}>{SUPPORT_NUMBER}</a></p>
+        <p className="support-call-line"><PhoneCall size={16} strokeWidth={2.5} /> For Support Call: <a href={`tel:${getSettings().supportPhoneNumber}`}>{getSettings().supportPhoneNumber}</a></p>
         <button className="secondary approval-logout" onClick={onLogout} type="button">{t('logout')}</button>
       </section>
     </main>

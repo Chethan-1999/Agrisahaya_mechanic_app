@@ -1,3 +1,4 @@
+import type { Settings } from '../shared/settings';
 import { isIndianState } from './indianStates';
 
 export type ProfileInput = {
@@ -13,7 +14,10 @@ export type ProfileInput = {
 };
 
 /** Server-side mirror of the client's form checks — never trust the client alone. */
-export function assertValidProfile(profile: ProfileInput): void {
+export function assertValidProfile(
+  profile: ProfileInput,
+  { technicianMinAge, technicianMaxAge, maxExperienceYears }: Settings,
+): void {
   if (!profile.fullName?.trim()) {
     throw new Error('Full name is required.');
   }
@@ -37,12 +41,12 @@ export function assertValidProfile(profile: ProfileInput): void {
   }
 
   const age = Number(profile.age);
-  if (!Number.isFinite(age) || age < 18 || age > 70) {
-    throw new Error('Age must be between 18 and 70.');
+  if (!Number.isFinite(age) || age < technicianMinAge || age > technicianMaxAge) {
+    throw new Error(`Age must be between ${technicianMinAge} and ${technicianMaxAge}.`);
   }
 
   const experience = Number(profile.experience);
-  if (!Number.isFinite(experience) || experience < 0 || experience > 50) {
-    throw new Error('Experience must be between 0 and 50 years.');
+  if (!Number.isFinite(experience) || experience < 0 || experience > maxExperienceYears) {
+    throw new Error(`Experience must be between 0 and ${maxExperienceYears} years.`);
   }
 }

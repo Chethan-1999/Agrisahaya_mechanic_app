@@ -1,5 +1,6 @@
 .PHONY: web sync apk local-phone prod-apks deploy-prod admin admin-prod emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean \
-	sync-admin apk-admin install-admin launch-admin run-admin logs-admin clean-admin local-phone-admin local-admin
+	sync-admin apk-admin install-admin launch-admin run-admin logs-admin clean-admin local-phone-admin local-admin \
+	settings-show settings-set settings-seed
 
 # Override any of these on the command line, e.g. `make run AVD_NAME=Pixel_7`
 AVD_NAME     ?= Pixel_6
@@ -167,6 +168,21 @@ admin-prod:
 	@test -n "$(PROD_PROJECT)" || { echo "VITE_FIREBASE_PROJECT_ID missing in .env"; exit 1; }
 	@echo "Creating admin in PRODUCTION project '$(PROD_PROJECT)'"
 	cd functions && env -u FIRESTORE_EMULATOR_HOST -u FIREBASE_AUTH_EMULATOR_HOST GCLOUD_PROJECT=$(PROD_PROJECT) npm run create-admin -- "$(ADMIN_EMAIL)" "$(ADMIN_PASSWORD)" "$(ADMIN_NAME)"
+
+## PRODUCTION business settings (Firestore config/app; keys and defaults in functions/src/shared/settings.ts).
+## Local testing uses SETTING_* in .env instead. Needs the service account key in functions/.env.scripts.
+## Usage: make settings-show | make settings-set KEY=otpMaxSendsPerHour VALUE=4 | make settings-seed
+SETTINGS_ENV = env -u FIRESTORE_EMULATOR_HOST -u FIREBASE_AUTH_EMULATOR_HOST GCLOUD_PROJECT=$(PROD_PROJECT)
+settings-show:
+	cd functions && $(SETTINGS_ENV) npm run --silent settings -- show
+
+settings-set:
+	@test -n "$(KEY)" -a -n "$(VALUE)" || { echo "Usage: make settings-set KEY=<setting> VALUE=<value>"; exit 1; }
+	cd functions && $(SETTINGS_ENV) npm run --silent settings -- set "$(KEY)" "$(VALUE)"
+
+## Writes every setting that isn't set yet with its default (never overwrites one that is).
+settings-seed:
+	cd functions && $(SETTINGS_ENV) npm run --silent settings -- seed
 
 ## Launch the installed app (mechanic app)
 launch:

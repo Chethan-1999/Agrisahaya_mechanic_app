@@ -2,10 +2,10 @@ import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Input, Textarea, type Toast } from '../../components/ui';
+import { getSettings } from '../../config/settings';
 import { useI18n } from '../../i18n/I18nContext';
 import { listOwnProfileUpdateRequests, submitProfileUpdate } from '../../services/profileUpdates';
 import type { Mechanic, MechanicForm } from '../../types';
-import { PROFILE_UPDATE_LIFETIME_CAP_DISPLAY } from '../../types';
 import { hasErrors, validateProfileForm, type ValidationErrors } from '../../utils/validation';
 
 type EditableKey = Exclude<keyof MechanicForm, 'phoneNumber'>;
@@ -38,7 +38,7 @@ export function RequestProfileChange({ mechanic, onBack, onSubmitted, setToast, 
     void listOwnProfileUpdateRequests(mechanic.id).then((requests) => setUsedCount(requests.length));
   }, [mechanic.id]);
 
-  const capReached = usedCount !== null && usedCount >= PROFILE_UPDATE_LIFETIME_CAP_DISPLAY;
+  const capReached = usedCount !== null && usedCount >= getSettings().profileUpdateLifetimeCap;
 
   function updateField(key: EditableKey, value: string) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -84,7 +84,7 @@ export function RequestProfileChange({ mechanic, onBack, onSubmitted, setToast, 
         <p className="muted">{t('requestChangeHint')}</p>
         {usedCount !== null && (
           <p className="muted">
-            {t('changesUsedLabel')}: {usedCount}/{PROFILE_UPDATE_LIFETIME_CAP_DISPLAY}
+            {t('changesUsedLabel')}: {usedCount}/{getSettings().profileUpdateLifetimeCap}
           </p>
         )}
         {capReached && <p className="muted error">{t('changesCapReachedError')}</p>}

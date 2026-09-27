@@ -1,8 +1,8 @@
 import { BriefcaseBusiness, Headphones, PhoneCall, Store, UserRound, UsersRound } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 
+import { getSettings } from '../../config/settings';
 import { useI18n } from '../../i18n/I18nContext';
-import { SUPPORT_NUMBER } from '../constants';
 import type { MechanicPage } from '../MechanicApp';
 
 const mechanicTabs: Array<{ Icon: typeof BriefcaseBusiness; label: string; page: MechanicPage }> = [
@@ -41,7 +41,7 @@ export function MechanicShell({ activePage, children, onNavigate, unreadAnnounce
           {showSupport && (
             <div className="mechanic-support-popover">
               <span>For Support</span>
-              <a href={`tel:${SUPPORT_NUMBER}`}><PhoneCall size={18} strokeWidth={2.6} />{SUPPORT_NUMBER}</a>
+              <a href={`tel:${getSettings().supportPhoneNumber}`}><PhoneCall size={18} strokeWidth={2.6} />{getSettings().supportPhoneNumber}</a>
             </div>
           )}
         </div>}

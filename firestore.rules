@@ -19,6 +19,13 @@ service cloud.firestore {
     // the Admin SDK, which isn't subject to these rules at all. See
     // Blueprint §10 — reads are the only thing the client does directly.
 
+    // Business settings (functions/src/shared/settings.ts). Readable before sign-in because the login screen
+    // needs the OTP limits; nothing in it is secret. Changed only with `make settings-set`.
+    match /config/app {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /technicians/{uid} {
       allow read: if isOwner(uid) || isAdmin();
       allow write: if false;
