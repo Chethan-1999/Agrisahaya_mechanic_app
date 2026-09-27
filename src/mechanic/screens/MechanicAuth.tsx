@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 
 import { Input, type Toast } from '../../components/ui';
 import { auth } from '../../firebase';
-import { OTP_REUSE_MS, usePhoneOtp } from '../../hooks/usePhoneOtp';
+import { OtpLimitError, usePhoneOtp } from '../../hooks/usePhoneOtp';
 import { useI18n } from '../../i18n/I18nContext';
 import { completeSignup } from '../../services/auth';
 import { getMechanic, revokeOtherSessions } from '../../services/mechanics';
@@ -21,18 +21,18 @@ const formatCountdown = (ms: number) => {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 };
 
-/** Seconds left to reuse the code sent at `sentAt`, ticking every second; null when no code was sent. */
-function useOtpTimeLeft(sentAt: number | null): number | null {
+/** Milliseconds left to reuse the current code, ticking every second; null when no code was sent. */
+function useOtpTimeLeft(expiresAt: number | null): number | null {
   const [now, setNow] = useState(Date.now);
 
   useEffect(() => {
-    if (sentAt === null) return;
+    if (expiresAt === null) return;
     setNow(Date.now());
     const intervalId = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(intervalId);
-  }, [sentAt]);
+  }, [expiresAt]);
 
-  return sentAt === null ? null : Math.max(0, sentAt + OTP_REUSE_MS - now);
+  return expiresAt === null ? null : Math.max(0, expiresAt - now);
 }
 
 // Sending an OTP can put a reCAPTCHA image puzzle in front of the technician, so the
@@ -56,8 +56,8 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
   withLoading: (action: () => Promise<void>) => Promise<void>;
 }) {
   const { t } = useI18n();
-  const { clearOtpSession, confirmOtp, otp, phoneNumber, sendOtp, sentAt, session, setOtp, setPhoneNumber } = usePhoneOtp();
-  const otpTimeLeft = useOtpTimeLeft(sentAt);
+  const { clearOtpSession, confirmOtp, expiresAt, otp, phoneNumber, sendOtp, session, setOtp, setPhoneNumber } = usePhoneOtp();
+  const otpTimeLeft = useOtpTimeLeft(expiresAt);
   const [step, setStep] = useState<'verify' | 'profile'>('verify');
   const [form, setForm] = useState<MechanicForm>(emptyMechanicForm);
   const [sentOtp, setSentOtp] = useState<string | null>(null);
@@ -109,6 +109,11 @@ export function MechanicAuth({ mode, onExisting, onNew, setToast, withLoading }:
   // no error codes on screen. The original stays in the console for debugging.
   function toOtpError(err: unknown): unknown {
     if (err instanceof Error && err.message === 'INVALID_PHONE') return new Error(t('enterValidPhone'));
+    if (err instanceof OtpLimitError) {
+      if (err.limit === 'wrong-codes') return new Error(t('otpTooManyWrongCodes'));
+      const minutes = Math.max(1, Math.ceil(((err.retryAt ?? Date.now()) - Date.now()) / 60000));
+      return new Error(t('otpSendLimit').replace('{minutes}', String(minutes)));
+    }
 
     const key = otpErrorKey(err);
     if (!key) return err;

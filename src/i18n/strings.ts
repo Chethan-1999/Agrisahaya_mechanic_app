@@ -57,6 +57,8 @@ export type StringKey =
   | 'otpAlreadySent'
   | 'otpReuseTimer'
   | 'otpTimerExpired'
+  | 'otpSendLimit'
+  | 'otpTooManyWrongCodes'
   | 'noAccountSignUpNow'
   | 'alreadyRegisteredOpening'
   | 'signInFailed'
@@ -166,6 +168,8 @@ const en: Record<StringKey, string> = {
   otpAlreadySent: "We already sent a code to this number. Please use the same code.",
   otpReuseTimer: "Use the code sent to your phone. You can use the same code for {time} more, for both login and sign up.",
   otpTimerExpired: "The code time is over. Tap Send OTP to get a new code.",
+  otpSendLimit: "You have asked for too many codes. Please try again in {minutes} minutes.",
+  otpTooManyWrongCodes: "Too many wrong codes. Tap Send OTP to get a new code.",
   noAccountSignUpNow: "No account found for this number. Fill in your details below to sign up.",
   alreadyRegisteredOpening: "This number is already registered. Opening your account.",
   signInFailed: "Could not log you in. Please try again.",
@@ -276,6 +280,8 @@ const hi: Record<StringKey, string> = {
   otpAlreadySent: "इस नंबर पर कोड पहले ही भेजा जा चुका है। कृपया वही कोड डालें।",
   otpReuseTimer: "आपके फ़ोन पर भेजा गया कोड डालें। यही कोड अगले {time} तक लॉगिन और साइन अप दोनों के लिए चलेगा।",
   otpTimerExpired: "कोड का समय खत्म हो गया। नया कोड पाने के लिए Send OTP दबाएँ।",
+  otpSendLimit: "आपने बहुत ज़्यादा कोड मँगवाए हैं। कृपया {minutes} मिनट बाद फिर से कोशिश करें।",
+  otpTooManyWrongCodes: "बहुत बार गलत कोड डाला गया। नया कोड पाने के लिए Send OTP दबाएँ।",
   noAccountSignUpNow: "इस नंबर का कोई खाता नहीं मिला। साइन अप के लिए नीचे अपनी जानकारी भरें।",
   alreadyRegisteredOpening: "यह नंबर पहले से रजिस्टर है। आपका खाता खोला जा रहा है।",
   signInFailed: "लॉगिन नहीं हो पाया। कृपया फिर से कोशिश करें।",
@@ -386,6 +392,8 @@ const kn: Record<StringKey, string> = {
   otpAlreadySent: "ಈ ಸಂಖ್ಯೆಗೆ ಈಗಾಗಲೇ ಕೋಡ್ ಕಳುಹಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ಅದೇ ಕೋಡ್ ಬಳಸಿ.",
   otpReuseTimer: "ನಿಮ್ಮ ಫೋನ್‌ಗೆ ಬಂದ ಕೋಡ್ ನಮೂದಿಸಿ. ಇದೇ ಕೋಡ್ ಇನ್ನೂ {time} ವರೆಗೆ ಲಾಗಿನ್ ಮತ್ತು ಸೈನ್ ಅಪ್ ಎರಡಕ್ಕೂ ಬಳಸಬಹುದು.",
   otpTimerExpired: "ಕೋಡ್ ಸಮಯ ಮುಗಿದಿದೆ. ಹೊಸ ಕೋಡ್‌ಗಾಗಿ Send OTP ಒತ್ತಿ.",
+  otpSendLimit: "ನೀವು ತುಂಬಾ ಕೋಡ್‌ಗಳನ್ನು ಕೇಳಿದ್ದೀರಿ. ದಯವಿಟ್ಟು {minutes} ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+  otpTooManyWrongCodes: "ತುಂಬಾ ಬಾರಿ ತಪ್ಪು ಕೋಡ್ ನಮೂದಿಸಲಾಗಿದೆ. ಹೊಸ ಕೋಡ್‌ಗಾಗಿ Send OTP ಒತ್ತಿ.",
   noAccountSignUpNow: "ಈ ಸಂಖ್ಯೆಗೆ ಯಾವುದೇ ಖಾತೆ ಇಲ್ಲ. ಸೈನ್ ಅಪ್ ಮಾಡಲು ಕೆಳಗೆ ನಿಮ್ಮ ವಿವರಗಳನ್ನು ತುಂಬಿ.",
   alreadyRegisteredOpening: "ಈ ಸಂಖ್ಯೆ ಈಗಾಗಲೇ ನೋಂದಾಯಿಸಲಾಗಿದೆ. ನಿಮ್ಮ ಖಾತೆ ತೆರೆಯಲಾಗುತ್ತಿದೆ.",
   signInFailed: "ಲಾಗಿನ್ ಆಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
@@ -496,6 +504,8 @@ const ta: Record<StringKey, string> = {
   otpAlreadySent: "இந்த எண்ணிற்கு ஏற்கனவே குறியீடு அனுப்பப்பட்டது. அதே குறியீட்டைப் பயன்படுத்தவும்.",
   otpReuseTimer: "உங்கள் ஃபோனுக்கு வந்த குறியீட்டை உள்ளிடவும். இதே குறியீட்டை இன்னும் {time} வரை உள்நுழைவு, பதிவு இரண்டிற்கும் பயன்படுத்தலாம்.",
   otpTimerExpired: "குறியீட்டின் நேரம் முடிந்தது. புதிய குறியீட்டிற்கு Send OTP அழுத்தவும்.",
+  otpSendLimit: "நீங்கள் அதிக குறியீடுகளைக் கேட்டுள்ளீர்கள். {minutes} நிமிடங்கள் கழித்து மீண்டும் முயற்சிக்கவும்.",
+  otpTooManyWrongCodes: "பலமுறை தவறான குறியீடு. புதிய குறியீட்டிற்கு Send OTP அழுத்தவும்.",
   noAccountSignUpNow: "இந்த எண்ணிற்கு கணக்கு இல்லை. பதிவு செய்ய கீழே உங்கள் விவரங்களை நிரப்பவும்.",
   alreadyRegisteredOpening: "இந்த எண் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது. உங்கள் கணக்கு திறக்கப்படுகிறது.",
   signInFailed: "உள்நுழைய முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
@@ -606,6 +616,8 @@ const te: Record<StringKey, string> = {
   otpAlreadySent: "ఈ నంబర్‌కు ఇప్పటికే కోడ్ పంపబడింది. దయచేసి అదే కోడ్ వాడండి.",
   otpReuseTimer: "మీ ఫోన్‌కు వచ్చిన కోడ్ నమోదు చేయండి. ఇదే కోడ్‌ను ఇంకా {time} వరకు లాగిన్, సైన్ అప్ రెండింటికీ వాడవచ్చు.",
   otpTimerExpired: "కోడ్ సమయం ముగిసింది. కొత్త కోడ్ కోసం Send OTP నొక్కండి.",
+  otpSendLimit: "మీరు చాలా కోడ్‌లు అడిగారు. దయచేసి {minutes} నిమిషాల తర్వాత మళ్లీ ప్రయత్నించండి.",
+  otpTooManyWrongCodes: "చాలాసార్లు తప్పు కోడ్ నమోదు చేశారు. కొత్త కోడ్ కోసం Send OTP నొక్కండి.",
   noAccountSignUpNow: "ఈ నంబర్‌కు ఖాతా లేదు. సైన్ అప్ కోసం కింద మీ వివరాలు నింపండి.",
   alreadyRegisteredOpening: "ఈ నంబర్ ఇప్పటికే నమోదై ఉంది. మీ ఖాతా తెరుస్తున్నాం.",
   signInFailed: "లాగిన్ కాలేదు. దయచేసి మళ్లీ ప్రయత్నించండి.",
@@ -716,6 +728,8 @@ const ml: Record<StringKey, string> = {
   otpAlreadySent: "ഈ നമ്പറിലേക്ക് ഇതിനകം കോഡ് അയച്ചിട്ടുണ്ട്. ദയവായി അതേ കോഡ് ഉപയോഗിക്കുക.",
   otpReuseTimer: "നിങ്ങളുടെ ഫോണിൽ വന്ന കോഡ് നൽകുക. ഇതേ കോഡ് ഇനി {time} വരെ ലോഗിനും സൈൻ അപ്പിനും ഉപയോഗിക്കാം.",
   otpTimerExpired: "കോഡിന്റെ സമയം കഴിഞ്ഞു. പുതിയ കോഡിനായി Send OTP അമർത്തുക.",
+  otpSendLimit: "നിങ്ങൾ വളരെയധികം കോഡുകൾ ആവശ്യപ്പെട്ടു. ദയവായി {minutes} മിനിറ്റിനു ശേഷം വീണ്ടും ശ്രമിക്കുക.",
+  otpTooManyWrongCodes: "പലതവണ തെറ്റായ കോഡ് നൽകി. പുതിയ കോഡിനായി Send OTP അമർത്തുക.",
   noAccountSignUpNow: "ഈ നമ്പറിന് അക്കൗണ്ട് ഇല്ല. സൈൻ അപ്പ് ചെയ്യാൻ താഴെ നിങ്ങളുടെ വിവരങ്ങൾ നൽകുക.",
   alreadyRegisteredOpening: "ഈ നമ്പർ ഇതിനകം രജിസ്റ്റർ ചെയ്തിട്ടുണ്ട്. നിങ്ങളുടെ അക്കൗണ്ട് തുറക്കുന്നു.",
   signInFailed: "ലോഗിൻ ചെയ്യാനായില്ല. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
