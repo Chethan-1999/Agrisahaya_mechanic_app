@@ -31,7 +31,9 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    match /profileUpdateRequests/{id} {
+    // Profile version history — one doc per change, written in the same transaction as the technician update
+    // (functions/src/lib/profileEdits.ts). Profile edits themselves go through updateOwnProfile / adminUpdateProfile.
+    match /profileEdits/{id} {
       allow read: if isAdmin() || (isSignedIn() && resource.data.technicianId == request.auth.uid);
       allow write: if false;
     }

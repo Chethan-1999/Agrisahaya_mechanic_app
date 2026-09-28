@@ -1,5 +1,5 @@
 import { applicationDefault } from 'firebase-admin/app';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, type DocumentData } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 
 import { requireAdmin, requireUid } from './lib/authz';
@@ -11,11 +11,12 @@ import { applyStatsDelta } from './lib/jobStats';
 import { isHeld, statusStamp } from './lib/jobStatus';
 import * as notify from './lib/notifications';
 import { onCall } from './lib/onCall';
+import { currentProfileVersion, recordProfileEdit } from './lib/profileEdits';
 import { pushToTechnician } from './lib/push';
 import { optionalTrimmed, requireString } from './lib/request';
 import { getSettings } from './lib/settings';
 import { technicianRef } from './lib/technicians';
-import { PROFILE_FIELDS, requireValidProfile, type ProfileInput } from './lib/validation';
+import { parseProfileUpdates, requireValidProfile, type ProfileField, type ProfileInput } from './lib/validation';
 
 /** Admin approves or rejects a pending technician. This is the activation gate. */
 export const reviewSignup = onCall(async (request) => {
@@ -190,61 +191,66 @@ export const revokeOtherSessions = onCall(async (request) => {
   return { status: 'ok' };
 });
 
-/** Admin edits a technician's profile fields directly (phone number and status are not editable here). */
+/**
+ * Writes a profile edit and its version-history entry (lib/profileEdits.ts) in one transaction. `assertCanEdit` runs
+ * against the current record before anything is written. Returns the record's profile version after the call —
+ * unchanged when the edit didn't actually change any value.
+ */
+async function applyProfileEdit(
+  technicianId: string,
+  updates: Partial<Record<ProfileField, string>>,
+  source: 'technician' | 'admin',
+  editedBy: string,
+  assertCanEdit?: (technician: DocumentData) => void,
+) {
+  const settings = await getSettings();
+  const ref = technicianRef(technicianId);
+
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const before = snap.data();
+
+    if (!before) {
+      throw new HttpsError('not-found', 'Mechanic not found.');
+    }
+    assertCanEdit?.(before);
+    requireValidProfile({ ...(before as ProfileInput), ...updates }, settings);
+
+    const now = new Date().toISOString();
+    const version = recordProfileEdit(tx, technicianId, before, updates, source, editedBy, now);
+
+    if (version === null) {
+      return { status: 'unchanged' as const, profileVersion: currentProfileVersion(before) };
+    }
+
+    tx.update(ref, { ...updates, profileVersion: version, editedBy, updatedAt: now });
+
+    return { status: 'ok' as const, profileVersion: version };
+  });
+}
+
+/** Admin edits a technician's profile fields (never phone number, status or paymentVerified — see parseProfileUpdates). */
 export const adminUpdateProfile = onCall(async (request) => {
   const adminUid = await requireAdmin(request);
   const technicianId = requireString(request.data, 'technicianId', 'technicianId and profile are required.');
-  const { profile } = request.data;
+  const updates = parseProfileUpdates(request.data.profile);
 
-  if (!profile || typeof profile !== 'object') {
-    throw new HttpsError('invalid-argument', 'technicianId and profile are required.');
-  }
-
-  const ref = technicianRef(technicianId);
-  const snap = await requireDoc(ref, 'Mechanic not found.');
-
-  const updates: Record<string, string> = {};
-  for (const field of PROFILE_FIELDS) {
-    const value = (profile as Record<string, unknown>)[field];
-    if (value === undefined) continue;
-    if (typeof value !== 'string') {
-      throw new HttpsError('invalid-argument', `"${field}" must be text.`);
-    }
-    updates[field] = value.trim();
-  }
-
-  requireValidProfile({ ...(snap.data() as ProfileInput), ...updates }, await getSettings());
-
-  await ref.update({ ...updates, editedBy: adminUid, updatedAt: new Date().toISOString() });
-
-  return { status: 'ok' };
+  return applyProfileEdit(technicianId, updates, 'admin', adminUid);
 });
 
-/** Technician edits their own profile fields directly (phone number and status are never editable here). */
+/**
+ * Technician edits their own profile fields — the same fields an admin can, nothing more (see parseProfileUpdates).
+ * The target is always the caller's own record: the uid comes from the verified ID token, never from request.data, so
+ * one technician can't write another's profile. Only an active technician can edit; pending/rejected ones change their
+ * details through reapplySignup, and a deactivated one can't at all.
+ */
 export const updateOwnProfile = onCall(async (request) => {
   const uid = requireUid(request);
-  const { profile } = request.data;
+  const updates = parseProfileUpdates(request.data?.profile);
 
-  if (!profile || typeof profile !== 'object') {
-    throw new HttpsError('invalid-argument', 'profile is required.');
-  }
-
-  const ref = technicianRef(uid);
-  const snap = await requireDoc(ref, 'Mechanic profile not found.');
-
-  const updates: Record<string, string> = {};
-  for (const field of PROFILE_FIELDS) {
-    const value = (profile as Record<string, unknown>)[field];
-    if (value === undefined) continue;
-    if (typeof value !== 'string') {
-      throw new HttpsError('invalid-argument', `"${field}" must be text.`);
+  return applyProfileEdit(uid, updates, 'technician', uid, (technician) => {
+    if (technician.status !== 'active') {
+      throw new HttpsError('permission-denied', 'Only an active mechanic can edit their profile.');
     }
-    updates[field] = value.trim();
-  }
-
-  requireValidProfile({ ...(snap.data() as ProfileInput), ...updates }, await getSettings());
-
-  await ref.update({ ...updates, editedBy: uid, updatedAt: new Date().toISOString() });
-
-  return { status: 'ok' };
+  });
 });

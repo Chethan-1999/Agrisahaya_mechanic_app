@@ -54,14 +54,6 @@ export const accountActivated = (): PushPayload => ({
   data: { type: 'account-activated' },
 });
 
-export const profileChangeReviewed = (requestId: string, approved: boolean, adminNote: string | null): PushPayload => ({
-  title: approved ? '✅ Profile updated!' : '📝 Profile update needs changes',
-  body: approved
-    ? 'Your changes are live on your profile. Looking good!'
-    : adminNote ?? 'Your admin needs a change to this request — open the app for details.',
-  data: { type: 'profile-update-reviewed', requestId },
-});
-
 export const announcement = (announcementId: string, title: string, body: string): PushPayload => ({
   title: `📢 ${title}`,
   body: body.slice(0, 120),
@@ -94,10 +86,4 @@ export const signupResent = (technicianId: string, fullName: string): PushPayloa
   title: '🔁 Signup sent again',
   body: `${fullName} updated their rejected signup — tap to review`,
   data: { type: 'admin-signup', technicianId },
-});
-
-export const profileChangeRequested = (requestId: string, technicianName: string, fields: string[]): PushPayload => ({
-  title: '✏️ Profile change request',
-  body: `${technicianName} wants to change: ${fields.join(', ')}`,
-  data: { type: 'admin-profile-request', requestId },
 });
