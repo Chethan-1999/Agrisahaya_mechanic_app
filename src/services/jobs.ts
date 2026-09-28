@@ -104,28 +104,10 @@ export function withJob(jobs: Job[], job: Job): Job[] {
 /** Jobs the admin should still see on the boards (soft-deleted ones are hidden). */
 export const visibleJobs = (jobs: Job[]) => jobs.filter((job) => !job.deleted);
 
-/** Awaiting the admin's attention first (unassigned or declined), then everything else, cancelled last. */
-const statusRank: Record<JobStatus, number> = {
-  open: 0,
-  declined: 0,
-  assigned: 1,
-  reassigned: 1,
-  accepted: 1,
-  completed: 1,
-  cancelled: 2,
-};
-
 /** When the job last moved status (older jobs without the stamp fall back to when they were created). */
 export const lastChangedAt = (job: Job) => job.statusUpdatedAt || job.createdAt;
 
-/**
- * Admin board order: jobs waiting for a mechanic come first, oldest first so nobody is left waiting longest; below
- * them, the most recently changed job is on top, so a job that was just assigned, accepted or completed doesn't sink.
- */
+/** Admin board order: newest job first, whatever its status. */
 export function sortForAdmin(jobs: Job[]): Job[] {
-  return [...jobs].sort((a, b) => {
-    const byRank = statusRank[a.status] - statusRank[b.status];
-    if (byRank) return byRank;
-    return statusRank[a.status] === 0 ? a.createdAt.localeCompare(b.createdAt) : lastChangedAt(b).localeCompare(lastChangedAt(a));
-  });
+  return [...jobs].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
