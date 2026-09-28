@@ -83,7 +83,6 @@ export type StringKey =
   | 'welcomeToAgriSahaya'
   | 'jobsNav'
   | 'profileNav'
-  | 'requestChangeNav'
   | 'announcementsNav'
   | 'communityNav'
   | 'communityTitle'
@@ -122,15 +121,6 @@ export type StringKey =
   | 'age'
   | 'machineExpertise'
   | 'experience'
-  | 'requestChangeTitle'
-  | 'requestChangeHint'
-  | 'reasonForChange'
-  | 'submitRequestButton'
-  | 'requestSubmittedToast'
-  | 'giveReasonError'
-  | 'changeAtLeastOneError'
-  | 'changesUsedLabel'
-  | 'changesCapReachedError'
   | 'languageLabel';
 
 const en: Record<StringKey, string> = {
@@ -196,7 +186,6 @@ const en: Record<StringKey, string> = {
   welcomeToAgriSahaya: 'Welcome to AgriSahay',
   jobsNav: 'Jobs',
   profileNav: 'Profile',
-  requestChangeNav: 'Request profile change',
   announcementsNav: 'Announcements',
   communityNav: 'Community',
   communityTitle: 'Announcements',
@@ -235,15 +224,6 @@ const en: Record<StringKey, string> = {
   age: 'Age',
   machineExpertise: 'Machine expertise',
   experience: 'Years of Experience',
-  requestChangeTitle: 'Request a Profile Change',
-  requestChangeHint: 'Edit the fields you want changed, then explain why. Admin reviews it before it takes effect.',
-  reasonForChange: 'Reason for this change',
-  submitRequestButton: 'Submit Request',
-  requestSubmittedToast: 'Request submitted — you will be notified once it is reviewed.',
-  giveReasonError: 'Tell admin why you are requesting this change.',
-  changeAtLeastOneError: 'Change at least one field first.',
-  changesUsedLabel: 'Changes used',
-  changesCapReachedError: "You've used all your allowed profile-change requests.",
   languageLabel: 'Language',
 };
 
@@ -310,7 +290,6 @@ const hi: Record<StringKey, string> = {
   welcomeToAgriSahaya: 'एग्रीसहाय में आपका स्वागत है',
   jobsNav: 'जॉब्स',
   profileNav: 'प्रोफाइल',
-  requestChangeNav: 'बदलाव का अनुरोध',
   announcementsNav: 'घोषणाएं',
   communityNav: 'समुदाय',
   communityTitle: 'घोषणाएं',
@@ -349,15 +328,6 @@ const hi: Record<StringKey, string> = {
   age: 'उम्र',
   machineExpertise: 'मशीन विशेषज्ञता',
   experience: 'अनुभव (वर्षों में)',
-  requestChangeTitle: 'प्रोफाइल में बदलाव का अनुरोध करें',
-  requestChangeHint: 'जो जानकारी बदलनी है उसे भरें, फिर कारण बताएं। एडमिन के स्वीकृत करने के बाद ही यह लागू होगा।',
-  reasonForChange: 'इस बदलाव का कारण',
-  submitRequestButton: 'अनुरोध भेजें',
-  requestSubmittedToast: 'अनुरोध भेज दिया गया — समीक्षा होने पर आपको सूचना मिलेगी।',
-  giveReasonError: 'एडमिन को बताएं कि आप यह बदलाव क्यों चाहते हैं।',
-  changeAtLeastOneError: 'पहले कम से कम एक जानकारी बदलें।',
-  changesUsedLabel: 'उपयोग किए गए बदलाव',
-  changesCapReachedError: 'आपने अपने सभी स्वीकृत प्रोफाइल-बदलाव अनुरोध उपयोग कर लिए हैं।',
   languageLabel: 'भाषा',
 };
 
@@ -424,7 +394,6 @@ const kn: Record<StringKey, string> = {
   welcomeToAgriSahaya: 'ಅಗ್ರಿಸಹಾಯಕ್ಕೆ ಸ್ವಾಗತ',
   jobsNav: 'ಕೆಲಸಗಳು',
   profileNav: 'ಪ್ರೊಫೈಲ್',
-  requestChangeNav: 'ಬದಲಾವಣೆ ಕೋರಿಕೆ',
   announcementsNav: 'ಪ್ರಕಟಣೆಗಳು',
   communityNav: 'ಸಮುದಾಯ',
   communityTitle: 'ಪ್ರಕಟಣೆಗಳು',
@@ -463,15 +432,6 @@ const kn: Record<StringKey, string> = {
   age: 'ವಯಸ್ಸು',
   machineExpertise: 'ಯಂತ್ರ ಪರಿಣತಿ',
   experience: 'ಅನುಭವ (ವರ್ಷಗಳಲ್ಲಿ)',
-  requestChangeTitle: 'ಪ್ರೊಫೈಲ್ ಬದಲಾವಣೆಗೆ ಕೋರಿಕೆ',
-  requestChangeHint: 'ಬದಲಾಯಿಸಬೇಕಾದ ವಿವರಗಳನ್ನು ತಿದ್ದಿ, ನಂತರ ಕಾರಣ ತಿಳಿಸಿ. ಅಡ್ಮಿನ್ ಪರಿಶೀಲಿಸಿದ ನಂತರವೇ ಇದು ಜಾರಿಗೆ ಬರುತ್ತದೆ.',
-  reasonForChange: 'ಈ ಬದಲಾವಣೆಗೆ ಕಾರಣ',
-  submitRequestButton: 'ಕೋರಿಕೆ ಸಲ್ಲಿಸಿ',
-  requestSubmittedToast: 'ಕೋರಿಕೆ ಸಲ್ಲಿಸಲಾಗಿದೆ — ಪರಿಶೀಲನೆಯಾದ ನಂತರ ನಿಮಗೆ ತಿಳಿಸಲಾಗುವುದು.',
-  giveReasonError: 'ಈ ಬದಲಾವಣೆಯನ್ನು ಏಕೆ ಕೋರುತ್ತಿದ್ದೀರಿ ಎಂದು ಅಡ್ಮಿನ್‌ಗೆ ತಿಳಿಸಿ.',
-  changeAtLeastOneError: 'ಮೊದಲು ಕನಿಷ್ಠ ಒಂದು ವಿವರವನ್ನು ಬದಲಾಯಿಸಿ.',
-  changesUsedLabel: 'ಬಳಸಿದ ಬದಲಾವಣೆಗಳು',
-  changesCapReachedError: 'ನೀವು ಅನುಮತಿಸಲಾದ ಎಲ್ಲಾ ಪ್ರೊಫೈಲ್-ಬದಲಾವಣೆ ಕೋರಿಕೆಗಳನ್ನು ಬಳಸಿದ್ದೀರಿ.',
   languageLabel: 'ಭಾಷೆ',
 };
 
@@ -538,7 +498,6 @@ const ta: Record<StringKey, string> = {
   welcomeToAgriSahaya: 'அக்ரிசஹாயாவிற்கு வரவேற்கிறோம்',
   jobsNav: 'வேலைகள்',
   profileNav: 'சுயவிவரம்',
-  requestChangeNav: 'மாற்றம் கோரிக்கை',
   announcementsNav: 'அறிவிப்புகள்',
   communityNav: 'சமூகம்',
   communityTitle: 'அறிவிப்புகள்',
@@ -577,15 +536,6 @@ const ta: Record<StringKey, string> = {
   age: 'வயது',
   machineExpertise: 'இயந்திர நிபுணத்துவம்',
   experience: 'அனுபவம் (ஆண்டுகளில்)',
-  requestChangeTitle: 'சுயவிவர மாற்றத்திற்கு கோரிக்கை',
-  requestChangeHint: 'மாற்ற வேண்டிய விவரங்களை திருத்தி, பின்னர் காரணத்தை விளக்கவும். நிர்வாகி பரிசீலித்த பின்னரே இது நடைமுறைக்கு வரும்.',
-  reasonForChange: 'இந்த மாற்றத்திற்கான காரணம்',
-  submitRequestButton: 'கோரிக்கையை சமர்ப்பி',
-  requestSubmittedToast: 'கோரிக்கை சமர்ப்பிக்கப்பட்டது — பரிசீலிக்கப்பட்டவுடன் உங்களுக்கு தெரிவிக்கப்படும்.',
-  giveReasonError: 'இந்த மாற்றத்தை ஏன் கோருகிறீர்கள் என்பதை நிர்வாகிக்கு தெரிவிக்கவும்.',
-  changeAtLeastOneError: 'முதலில் குறைந்தது ஒரு விவரத்தையாவது மாற்றவும்.',
-  changesUsedLabel: 'பயன்படுத்திய மாற்றங்கள்',
-  changesCapReachedError: 'அனுமதிக்கப்பட்ட அனைத்து சுயவிவர மாற்ற கோரிக்கைகளையும் நீங்கள் பயன்படுத்திவிட்டீர்கள்.',
   languageLabel: 'மொழி',
 };
 
@@ -652,7 +602,6 @@ const te: Record<StringKey, string> = {
   welcomeToAgriSahaya: 'అగ్రిసహాయకు స్వాగతం',
   jobsNav: 'పనులు',
   profileNav: 'ప్రొఫైల్',
-  requestChangeNav: 'మార్పు అభ్యర్థన',
   announcementsNav: 'ప్రకటనలు',
   communityNav: 'సంఘం',
   communityTitle: 'ప్రకటనలు',
@@ -691,15 +640,6 @@ const te: Record<StringKey, string> = {
   age: 'వయస్సు',
   machineExpertise: 'మెషిన్ నైపుణ్యం',
   experience: 'అనుభవం (సంవత్సరాలలో)',
-  requestChangeTitle: 'ప్రొఫైల్ మార్పు కోసం అభ్యర్థన',
-  requestChangeHint: 'మార్చాల్సిన వివరాలను సవరించి, తర్వాత కారణం చెప్పండి. అడ్మిన్ సమీక్షించిన తర్వాతే ఇది అమలులోకి వస్తుంది.',
-  reasonForChange: 'ఈ మార్పుకు కారణం',
-  submitRequestButton: 'అభ్యర్థన సమర్పించండి',
-  requestSubmittedToast: 'అభ్యర్థన సమర్పించబడింది — సమీక్షించిన తర్వాత మీకు తెలియజేయబడుతుంది.',
-  giveReasonError: 'మీరు ఈ మార్పును ఎందుకు అభ్యర్థిస్తున్నారో అడ్మిన్‌కు తెలియజేయండి.',
-  changeAtLeastOneError: 'ముందుగా కనీసం ఒక వివరాన్ని మార్చండి.',
-  changesUsedLabel: 'ఉపయోగించిన మార్పులు',
-  changesCapReachedError: 'మీరు అనుమతించిన అన్ని ప్రొఫైల్-మార్పు అభ్యర్థనలను ఉపయోగించారు.',
   languageLabel: 'భాష',
 };
 
@@ -766,7 +706,6 @@ const ml: Record<StringKey, string> = {
   welcomeToAgriSahaya: 'അഗ്രിസഹായയിലേക്ക് സ്വാഗതം',
   jobsNav: 'ജോലികൾ',
   profileNav: 'പ്രൊഫൈൽ',
-  requestChangeNav: 'മാറ്റത്തിനുള്ള അഭ്യർത്ഥന',
   announcementsNav: 'അറിയിപ്പുകൾ',
   communityNav: 'കമ്മ്യൂണിറ്റി',
   communityTitle: 'അറിയിപ്പുകൾ',
@@ -805,15 +744,6 @@ const ml: Record<StringKey, string> = {
   age: 'പ്രായം',
   machineExpertise: 'മെഷീൻ വിദഗ്ധത',
   experience: 'പരിചയം (വർഷങ്ങളിൽ)',
-  requestChangeTitle: 'പ്രൊഫൈൽ മാറ്റത്തിനുള്ള അഭ്യർത്ഥന',
-  requestChangeHint: 'മാറ്റേണ്ട വിവരങ്ങൾ തിരുത്തി, കാരണം വിശദീകരിക്കുക. അഡ്മിൻ പരിശോധിച്ച ശേഷം മാത്രമേ ഇത് പ്രാബല്യത്തിൽ വരൂ.',
-  reasonForChange: 'ഈ മാറ്റത്തിനുള്ള കാരണം',
-  submitRequestButton: 'അഭ്യർത്ഥന സമർപ്പിക്കുക',
-  requestSubmittedToast: 'അഭ്യർത്ഥന സമർപ്പിച്ചു — അവലോകനം ചെയ്ത ശേഷം നിങ്ങളെ അറിയിക്കും.',
-  giveReasonError: 'ഈ മാറ്റം എന്തിനാണ് അഭ്യർത്ഥിക്കുന്നതെന്ന് അഡ്മിനെ അറിയിക്കുക.',
-  changeAtLeastOneError: 'ആദ്യം ഒരു വിവരമെങ്കിലും മാറ്റുക.',
-  changesUsedLabel: 'ഉപയോഗിച്ച മാറ്റങ്ങൾ',
-  changesCapReachedError: 'നിങ്ങൾക്ക് അനുവദനീയമായ എല്ലാ പ്രൊഫൈൽ-മാറ്റ അഭ്യർത്ഥനകളും ഉപയോഗിച്ചു കഴിഞ്ഞു.',
   languageLabel: 'ഭാഷ',
 };
 

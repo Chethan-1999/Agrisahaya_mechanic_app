@@ -10,7 +10,7 @@ import { currentPushToken } from './notifications';
 const registerAdminDeviceFn = httpsCallable<{ fcmToken: string }, { status: 'ok' }>(functions, 'registerAdminDevice');
 const unregisterAdminDeviceFn = httpsCallable<{ fcmToken: string }, { status: 'ok' }>(functions, 'unregisterAdminDevice');
 
-/** Registers this device for admin pushes (new signups, job accept/decline/complete, profile-change requests). */
+/** Registers this device for admin pushes (new signups, job accept/decline/complete). */
 export async function registerAdminDevice(fcmToken: string) {
   await registerAdminDeviceFn({ fcmToken });
 }

@@ -22,11 +22,15 @@ export type JobStats = {
   deleted: number;
 };
 
-export type ProfileHistoryEntry = {
-  at: string;
-  by: string;
-  requestId: string;
-  changes: Record<string, { from: string | null; to: string }>;
+/** One version of a technician's profile — a doc in `profileEdits`. See functions/src/lib/profileEdits.ts. */
+export type ProfileEdit = {
+  id: string;
+  technicianId: string;
+  version: number;
+  source: 'signup' | 'reapply' | 'technician' | 'admin';
+  editedBy: string;
+  editedAt: string;
+  changes: Record<string, { from: unknown; to: string | null }>;
 };
 
 export type Mechanic = MechanicForm & {
@@ -35,7 +39,7 @@ export type Mechanic = MechanicForm & {
   paymentVerified: boolean;
   rejectionReason: string | null;
   jobStats: JobStats;
-  profileHistory: ProfileHistoryEntry[];
+  profileVersion: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -89,20 +93,6 @@ export type Job = JobFields & {
   /** Taken back from a deactivated technician and waiting to be assigned again. */
   needsReassignment: boolean;
   history: JobHistoryEntry[];
-};
-
-export type ProfileUpdateStatus = 'pending' | 'approved' | 'rejected';
-
-export type ProfileUpdateRequest = {
-  id: string;
-  technicianId: string;
-  changes: Partial<MechanicForm>;
-  message: string;
-  status: ProfileUpdateStatus;
-  createdAt: string;
-  reviewedBy: string | null;
-  reviewedAt: string | null;
-  adminNote: string | null;
 };
 
 export type Announcement = {
