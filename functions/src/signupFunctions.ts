@@ -6,6 +6,7 @@ import { db } from './lib/firebaseAdmin';
 import { EMPTY_JOB_STATS } from './lib/jobStats';
 import * as notify from './lib/notifications';
 import { onCall } from './lib/onCall';
+import { recordProfileEdit } from './lib/profileEdits';
 import { pushToAdmins } from './lib/push';
 import { getSettings } from './lib/settings';
 import { technicianRef } from './lib/technicians';
@@ -31,25 +32,28 @@ export const completeSignup = onCall(async (request) => {
 
   const profile = parseProfile(request.data?.profile, await getSettings());
   const ref = technicianRef(uid);
-  const existing = await ref.get();
 
-  if (existing.exists) {
-    throw new HttpsError('already-exists', 'A profile already exists for this account.');
-  }
+  await db.runTransaction(async (tx) => {
+    if ((await tx.get(ref)).exists) {
+      throw new HttpsError('already-exists', 'A profile already exists for this account.');
+    }
 
-  const now = new Date().toISOString();
+    const now = new Date().toISOString();
+    // Version 1 of the profile is the signup itself (lib/profileEdits.ts).
+    const profileVersion = recordProfileEdit(tx, uid, undefined, profile, 'signup', uid, now) ?? 1;
 
-  await ref.set({
-    ...profile,
-    phoneNumber: phone,
-    status: 'pending',
-    paymentVerified: false,
-    fcmToken: null,
-    jobStats: EMPTY_JOB_STATS,
-    profileHistory: [],
-    createdAt: now,
-    updatedAt: now,
-    approvedBy: null,
+    tx.create(ref, {
+      ...profile,
+      phoneNumber: phone,
+      status: 'pending',
+      paymentVerified: false,
+      fcmToken: null,
+      jobStats: EMPTY_JOB_STATS,
+      profileVersion,
+      createdAt: now,
+      updatedAt: now,
+      approvedBy: null,
+    });
   });
 
   await pushToAdmins(notify.newSignup(uid, profile));
@@ -77,9 +81,11 @@ export const reapplySignup = onCall(async (request) => {
     }
 
     const now = new Date().toISOString();
+    const profileVersion = recordProfileEdit(tx, uid, snap.data(), profile, 'reapply', uid, now);
 
     tx.update(ref, {
       ...profile,
+      ...(profileVersion !== null && { profileVersion }),
       status: 'pending',
       rejectionReason: null,
       reapplyCount: FieldValue.increment(1),

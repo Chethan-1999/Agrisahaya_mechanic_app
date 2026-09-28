@@ -23,7 +23,8 @@ export function EditMechanic({ mechanic, onBack, onSaved, setToast, withLoading 
     setErrors(nextErrors);
     if (hasErrors(nextErrors)) return;
     await withLoading(async () => {
-      await adminUpdateProfile(mechanic.id, trimMechanicForm(form));
+      const { phoneNumber: _phoneNumber, ...profile } = trimMechanicForm(form);
+      await adminUpdateProfile(mechanic.id, profile);
       setToast({ kind: 'success', text: 'Profile updated successfully' });
       await onSaved();
     });

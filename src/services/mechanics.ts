@@ -1,8 +1,8 @@
-import { collection, doc, getDoc, getDocs, orderBy, query } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 
 import { db, functions } from '../firebase';
-import type { Mechanic, MechanicForm, MechanicStatus, ProfileHistoryEntry } from '../types';
+import type { Mechanic, MechanicForm, MechanicStatus, ProfileEdit } from '../types';
 
 const collectionName = 'technicians';
 
@@ -30,7 +30,7 @@ const toMechanic = (id: string, data: Record<string, unknown>): Mechanic => {
       cancelled: Number(jobStats.cancelled ?? 0),
       deleted: Number(jobStats.deleted ?? 0),
     },
-    profileHistory: (data.profileHistory as ProfileHistoryEntry[] | undefined) ?? [],
+    profileVersion: Number(data.profileVersion ?? 1),
     createdAt: String(data.createdAt ?? ''),
     updatedAt: String(data.updatedAt ?? ''),
   };
@@ -53,22 +53,31 @@ export async function listMechanics() {
   return snapshot.docs.map((mechanicDoc) => toMechanic(mechanicDoc.id, mechanicDoc.data()));
 }
 
-const adminUpdateProfileFn = httpsCallable<
-  { technicianId: string; profile: Partial<MechanicForm> },
-  { status: 'ok' }
->(functions, 'adminUpdateProfile');
+/** Every version of a technician's profile, newest first. */
+export async function listProfileEdits(technicianId: string): Promise<ProfileEdit[]> {
+  const editsQuery = query(collection(db, 'profileEdits'), where('technicianId', '==', technicianId), orderBy('version', 'desc'));
+  const snapshot = await getDocs(editsQuery);
 
-export async function adminUpdateProfile(technicianId: string, profile: Partial<MechanicForm>) {
-  await adminUpdateProfileFn({ technicianId, profile });
+  return snapshot.docs.map((editDoc) => ({ id: editDoc.id, ...editDoc.data() }) as ProfileEdit);
 }
 
-const updateOwnProfileFn = httpsCallable<
-  { profile: Partial<MechanicForm> },
-  { status: 'ok' }
->(functions, 'updateOwnProfile');
+/** Profile fields only — the functions refuse phoneNumber, status, paymentVerified and anything else by name. */
+type ProfileUpdate = Partial<Omit<MechanicForm, 'phoneNumber'>>;
+type ProfileEditResult = { status: 'ok' | 'unchanged'; profileVersion: number };
 
-export async function updateOwnProfile(profile: Partial<MechanicForm>) {
-  await updateOwnProfileFn({ profile });
+const adminUpdateProfileFn = httpsCallable<
+  { technicianId: string; profile: ProfileUpdate },
+  ProfileEditResult
+>(functions, 'adminUpdateProfile');
+
+export async function adminUpdateProfile(technicianId: string, profile: ProfileUpdate) {
+  return (await adminUpdateProfileFn({ technicianId, profile })).data;
+}
+
+const updateOwnProfileFn = httpsCallable<{ profile: ProfileUpdate }, ProfileEditResult>(functions, 'updateOwnProfile');
+
+export async function updateOwnProfile(profile: ProfileUpdate) {
+  return (await updateOwnProfileFn({ profile })).data;
 }
 
 const reviewSignupFn = httpsCallable<

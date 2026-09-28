@@ -22,7 +22,7 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onJobSaved, onRef
     void onRefresh();
   }, []);
 
-  // Unassigned jobs on top (oldest first), then the most recently changed job first, cancelled ones last.
+  // Newest job first, whatever its status.
   const board = useMemo(() => sortForAdmin(visibleJobs(jobs)), [jobs]);
   const activeTechnicians = useMemo(() => mechanics.filter((mechanic) => mechanic.status === 'active'), [mechanics]);
   const technicianName = (id: string | null) => (id ? (mechanics.find((mechanic) => mechanic.id === id)?.fullName ?? 'Unknown') : '');

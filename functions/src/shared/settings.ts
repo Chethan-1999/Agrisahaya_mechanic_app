@@ -37,10 +37,6 @@ export const SETTINGS = {
     kind: 'int', default: 50, min: 0, max: 100,
     description: 'Most years of experience a technician can enter.',
   },
-  profileUpdateLifetimeCap: {
-    kind: 'int', default: 2, min: 0, max: 100,
-    description: 'Profile-change requests a technician may ever submit, whatever their outcome.',
-  },
   supportPhoneNumber: {
     kind: 'text', default: '9646424964', pattern: /^\d{10}$/,
     description: 'Support number shown to technicians (10 digits).',

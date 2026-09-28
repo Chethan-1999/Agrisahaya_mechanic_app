@@ -52,8 +52,8 @@ Signing in on a new phone signs you out of any other phone that was signed in
 
 ### Dashboard
 
-Shows your name and profile details, the support number, and three actions:
-**Jobs**, **Profile**, **Request Change**, plus **Logout**.
+Shows your name and profile details, the support number, and two actions:
+**Jobs**, **Profile**, plus **Logout**.
 
 ### Jobs
 
@@ -78,23 +78,14 @@ later cancelled or reassigned before you act on it, the notification for it is
 cleared automatically. Opening the app also clears your whole notification
 tray.
 
-### Requesting a profile change
+### Editing your profile
 
-Your phone number can't be self-edited (it's tied to your login), but every
-other field can. From the dashboard, choose **Request Change**:
-
-1. Edit whichever fields need updating.
-2. Explain why in the **Reason for this change** box — this is required.
-3. Tap **Submit Request**.
-
-Nothing changes immediately — an admin reviews the request and approves or
-rejects it. You're notified in the app either way (rejections include the
-admin's note, if they left one). You must change at least one field to
-submit.
-
-You can only submit a limited number of change requests in total (2 by
-default) — the screen shows how many you've used. Once you've used them all,
-contact your admin directly for any further changes.
+Your phone number can't be edited (it's tied to your login), but every other
+field can. On the **Profile** tab, tap **Edit profile**, change what you need,
+and tap **Save profile** — the change is live at once, no admin approval
+needed. Every change is kept as a new version of your profile, so an admin can
+see what changed and when. Whether your payment is verified is set only by an
+admin.
 
 ## For admins
 
@@ -152,14 +143,11 @@ status). For each technician you can:
 Post a title and message that every active technician sees in the app's
 Community tab (and receives as a push notification).
 
-### Profile Requests
+### Profile history
 
-Every pending profile-change request from technicians, showing what they want
-changed, their stated reason, and:
-
-- **Approve** — applies the change immediately.
-- **Reject** — leave a note (shown to the technician) explaining why, then
-  reject.
+A mechanic's detail page lists every version of their profile, newest first:
+the signup (v1), then each change — by the mechanic, by an admin, or a re-sent
+signup — with the old and new value of every field that changed.
 
 ## Known caveats
 

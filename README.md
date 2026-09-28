@@ -21,7 +21,7 @@ Design doc: [AgriSahaya Blueprint](https://claude.ai/code/artifact/698b31fa-d794
 - Firebase Authentication — phone OTP for technicians, email/password for admins
 - Cloud Firestore — read-only from the client; every write goes through a Cloud Function
 - Cloud Functions (v2) — owns all business logic (signup approval, job lifecycle,
-  profile-update approval); Firestore rules only gate reads
+  profile edits and their version history); Firestore rules only gate reads
 - Firebase Cloud Messaging — job/notification pushes to the Android app
 - Firebase Emulator Suite — local Auth/Firestore/Functions for development, no
   production data or SMS charges involved
@@ -334,7 +334,7 @@ firebase deploy --only firestore:rules,firestore:indexes,functions
 ### Business settings
 
 Decisions the business owns — OTP reuse time and limits, technician age and
-experience limits, the profile-change cap, the support number — are settings,
+experience limits, the support number — are settings,
 not code. The full list, with defaults and allowed ranges, is
 `functions/src/shared/settings.ts` (shared by the functions and both apps).
 

@@ -5,14 +5,43 @@ import type { Settings } from '../shared/settings';
 
 /**
  * A technician's profile fields — everything except the phone number, which only phone sign-in sets. Mirrors
- * MechanicForm (src/types.ts) minus phoneNumber; the technician's change requests and the admin's edits are both
- * limited to these.
+ * MechanicForm (src/types.ts) minus phoneNumber; the technician's own edits and the admin's edits are both limited to
+ * these. Everything else on the record (status, paymentVerified, phoneNumber, jobStats, ...) is set only by the
+ * function that owns it — never through a profile edit.
  */
 export const PROFILE_FIELDS = ['fullName', 'village', 'district', 'state', 'pincode', 'address', 'landmark', 'machineExpertise', 'experience'] as const;
 
 export type ProfileField = (typeof PROFILE_FIELDS)[number];
 
 export const isProfileField = (field: string): field is ProfileField => (PROFILE_FIELDS as readonly string[]).includes(field);
+
+/**
+ * A profile-edit callable's `profile` argument as `field -> trimmed value`. Any key that isn't a profile field is
+ * refused by name rather than silently dropped, so a client can't mistake an ignored `paymentVerified` for a saved one.
+ */
+export function parseProfileUpdates(raw: unknown): Partial<Record<ProfileField, string>> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new HttpsError('invalid-argument', 'profile is required.');
+  }
+
+  const updates: Partial<Record<ProfileField, string>> = {};
+
+  for (const [field, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (!isProfileField(field)) {
+      throw new HttpsError('permission-denied', `"${field}" can't be edited here.`);
+    }
+    if (typeof value !== 'string') {
+      throw new HttpsError('invalid-argument', `"${field}" must be text.`);
+    }
+    updates[field] = value.trim();
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw new HttpsError('invalid-argument', 'No changes were provided.');
+  }
+
+  return updates;
+}
 
 export type ProfileInput = {
   fullName: string;
