@@ -14,8 +14,9 @@ export function Landing({ onMechanicLogin, onMechanicSignup }: { onMechanicLogin
         <img alt="AgriSahaya logo" className="hero-logo" src={agrisahayaLogo} />
         <p className="eyebrow">{t('villageDistrictNetwork')}</p>
         <h1>{t('mechanicDirectory')}</h1>
-        <p>{t('heroDescription')}</p>
+        <p className="hero-tagline">{t('heroDescription')}</p>
         <div className="hero-actions">
+          <span className="service-partner-label">Service Partner</span>
           <button className="primary large" onClick={onMechanicLogin}>{t('technicianLogin')}</button>
           <button className="secondary large" onClick={onMechanicSignup}>{t('technicianSignup')}</button>
         </div>

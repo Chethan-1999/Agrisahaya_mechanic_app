@@ -10,7 +10,6 @@ const navItems: Array<{ label: string; page: AdminPage }> = [
   { label: 'Add new jobs', page: 'adminAddJobs' },
   { label: 'Assign jobs', page: 'adminAssignJobs' },
   { label: 'Community', page: 'adminCommunity' },
-  { label: 'Profile change request', page: 'adminProfileRequests' },
 ];
 
 export function AdminShell({ activePage, children, onLogout, onNavigate }: { activePage: AdminPage; children: ReactNode; onLogout: () => void; onNavigate: (page: AdminPage) => void }) {

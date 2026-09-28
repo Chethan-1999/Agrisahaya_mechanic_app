@@ -19,7 +19,7 @@ export function MechanicFields({ disabled = false, errors = {}, form, onChange, 
         state: t('state'),
         pincode: t('pincode'),
         address: t('address'),
-        age: t('age'),
+        machineExpertise: t('machineExpertise'),
         experience: t('experience'),
       }
     : {
@@ -29,7 +29,7 @@ export function MechanicFields({ disabled = false, errors = {}, form, onChange, 
         state: 'State',
         pincode: 'Pincode',
         address: 'Address',
-        age: 'Age',
+        machineExpertise: 'Machine expertise',
         experience: 'Years of Experience',
       };
 
@@ -41,7 +41,7 @@ export function MechanicFields({ disabled = false, errors = {}, form, onChange, 
       <Input label={labels.village} error={errors.village} autoComplete="address-level3" name="village" onChange={(value) => onChange('village', value)} value={form.village} />
       <Input label={labels.address} autoComplete="street-address" name="address" onChange={(value) => onChange('address', value)} value={form.address} />
       <Input label={labels.pincode} error={errors.pincode} autoComplete="postal-code" name="pincode" onChange={(value) => onChange('pincode', value)} value={form.pincode} />
-      <Input error={errors.age} label={labels.age} autoComplete="off" name="age" onChange={(value) => onChange('age', value)} value={form.age} />
+      <Input error={errors.machineExpertise} label={labels.machineExpertise} autoComplete="off" name="machineExpertise" onChange={(value) => onChange('machineExpertise', value)} value={form.machineExpertise} />
       <Input label={labels.experience} error={errors.experience} autoComplete="off" name="experience" onChange={(value) => onChange('experience', value)} value={form.experience} />
     </fieldset>
   );

@@ -24,7 +24,6 @@ import { MechanicPending } from './screens/MechanicPending';
 import { MechanicProfile } from './screens/MechanicProfile';
 import { isMechanicTabPage, MechanicShell } from './screens/MechanicShell';
 import { ReapplyForm } from './screens/ReapplyForm';
-import { RequestProfileChange } from './screens/RequestProfileChange';
 import { TechnicianJobs } from './screens/TechnicianJobs';
 
 export type MechanicPage =
@@ -35,7 +34,6 @@ export type MechanicPage =
   | 'mechanicMarketplace'
   | 'mechanicProfile'
   | 'mechanicJobs'
-  | 'mechanicRequestChange'
   | 'mechanicCommunity';
 
 type MechanicSession = { mechanicId: string } | null;
@@ -47,7 +45,6 @@ const backTarget: Partial<Record<MechanicPage, MechanicPage>> = {
   mechanicProfile: 'mechanicJobs',
   mechanicMarketplace: 'mechanicJobs',
   mechanicCommunity: 'mechanicJobs',
-  mechanicRequestChange: 'mechanicProfile',
 };
 
 const announcementsSeenKey = (technicianId: string) => `agrisahaya.announcementsSeenAt.${technicianId}`;
@@ -338,21 +335,13 @@ export default function MechanicApp() {
               mechanic={currentMechanic}
               onLogout={logout}
               onRefresh={() => loadCurrentMechanic(session.mechanicId)}
-              onRequestChange={() => setPage('mechanicRequestChange')}
+              setToast={setToast}
+              withLoading={withLoading}
             />
           )}
         </MechanicShell>
       )}
 
-      {session && currentMechanic && page === 'mechanicRequestChange' && (
-        <RequestProfileChange
-          mechanic={currentMechanic}
-          onBack={() => setPage('mechanicProfile')}
-          onSubmitted={() => setPage('mechanicProfile')}
-          setToast={setToast}
-          withLoading={withLoading}
-        />
-      )}
     </div>
   );
 }

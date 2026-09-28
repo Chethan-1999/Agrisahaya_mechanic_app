@@ -120,6 +120,7 @@ export type StringKey =
   | 'pincode'
   | 'address'
   | 'age'
+  | 'machineExpertise'
   | 'experience'
   | 'requestChangeTitle'
   | 'requestChangeHint'
@@ -133,13 +134,13 @@ export type StringKey =
   | 'languageLabel';
 
 const en: Record<StringKey, string> = {
-  technicianLogin: 'Mechanic Login',
-  technicianSignup: 'Mechanic Sign Up',
-  technicianAccess: 'Mechanic Access',
+  technicianLogin: 'Login',
+  technicianSignup: 'Sign Up',
+  technicianAccess: 'Service Partner',
   adminLogin: 'Admin Login',
   villageDistrictNetwork: 'Village and district service network',
   mechanicDirectory: 'Agrisahay',
-  heroDescription: 'Connecting trusted mechanics with real field work.',
+  heroDescription: 'Every machine of farmer in time.',
   login: 'Login',
   signUp: 'Sign Up',
   back: 'Back',
@@ -192,7 +193,7 @@ const en: Record<StringKey, string> = {
   inactiveBody: 'Your account has been deactivated. Contact support to reactivate it.',
   supportLabel: 'Support',
   welcome: 'Welcome',
-  welcomeToAgriSahaya: 'Welcome to AgriSahaya',
+  welcomeToAgriSahaya: 'Welcome to AgriSahay',
   jobsNav: 'Jobs',
   profileNav: 'Profile',
   requestChangeNav: 'Request profile change',
@@ -232,6 +233,7 @@ const en: Record<StringKey, string> = {
   pincode: 'Pincode',
   address: 'Address',
   age: 'Age',
+  machineExpertise: 'Machine expertise',
   experience: 'Years of Experience',
   requestChangeTitle: 'Request a Profile Change',
   requestChangeHint: 'Edit the fields you want changed, then explain why. Admin reviews it before it takes effect.',
@@ -345,6 +347,7 @@ const hi: Record<StringKey, string> = {
   pincode: 'पिनकोड',
   address: 'पता',
   age: 'उम्र',
+  machineExpertise: 'मशीन विशेषज्ञता',
   experience: 'अनुभव (वर्षों में)',
   requestChangeTitle: 'प्रोफाइल में बदलाव का अनुरोध करें',
   requestChangeHint: 'जो जानकारी बदलनी है उसे भरें, फिर कारण बताएं। एडमिन के स्वीकृत करने के बाद ही यह लागू होगा।',
@@ -458,6 +461,7 @@ const kn: Record<StringKey, string> = {
   pincode: 'ಪಿನ್‌ಕೋಡ್',
   address: 'ವಿಳಾಸ',
   age: 'ವಯಸ್ಸು',
+  machineExpertise: 'ಯಂತ್ರ ಪರಿಣತಿ',
   experience: 'ಅನುಭವ (ವರ್ಷಗಳಲ್ಲಿ)',
   requestChangeTitle: 'ಪ್ರೊಫೈಲ್ ಬದಲಾವಣೆಗೆ ಕೋರಿಕೆ',
   requestChangeHint: 'ಬದಲಾಯಿಸಬೇಕಾದ ವಿವರಗಳನ್ನು ತಿದ್ದಿ, ನಂತರ ಕಾರಣ ತಿಳಿಸಿ. ಅಡ್ಮಿನ್ ಪರಿಶೀಲಿಸಿದ ನಂತರವೇ ಇದು ಜಾರಿಗೆ ಬರುತ್ತದೆ.',
@@ -571,6 +575,7 @@ const ta: Record<StringKey, string> = {
   pincode: 'அஞ்சல் குறியீடு',
   address: 'முகவரி',
   age: 'வயது',
+  machineExpertise: 'இயந்திர நிபுணத்துவம்',
   experience: 'அனுபவம் (ஆண்டுகளில்)',
   requestChangeTitle: 'சுயவிவர மாற்றத்திற்கு கோரிக்கை',
   requestChangeHint: 'மாற்ற வேண்டிய விவரங்களை திருத்தி, பின்னர் காரணத்தை விளக்கவும். நிர்வாகி பரிசீலித்த பின்னரே இது நடைமுறைக்கு வரும்.',
@@ -684,6 +689,7 @@ const te: Record<StringKey, string> = {
   pincode: 'పిన్‌కోడ్',
   address: 'చిరునామా',
   age: 'వయస్సు',
+  machineExpertise: 'మెషిన్ నైపుణ్యం',
   experience: 'అనుభవం (సంవత్సరాలలో)',
   requestChangeTitle: 'ప్రొఫైల్ మార్పు కోసం అభ్యర్థన',
   requestChangeHint: 'మార్చాల్సిన వివరాలను సవరించి, తర్వాత కారణం చెప్పండి. అడ్మిన్ సమీక్షించిన తర్వాతే ఇది అమలులోకి వస్తుంది.',
@@ -797,6 +803,7 @@ const ml: Record<StringKey, string> = {
   pincode: 'പിൻകോഡ്',
   address: 'വിലാസം',
   age: 'പ്രായം',
+  machineExpertise: 'മെഷീൻ വിദഗ്ധത',
   experience: 'പരിചയം (വർഷങ്ങളിൽ)',
   requestChangeTitle: 'പ്രൊഫൈൽ മാറ്റത്തിനുള്ള അഭ്യർത്ഥന',
   requestChangeHint: 'മാറ്റേണ്ട വിവരങ്ങൾ തിരുത്തി, കാരണം വിശദീകരിക്കുക. അഡ്മിൻ പരിശോധിച്ച ശേഷം മാത്രമേ ഇത് പ്രാബല്യത്തിൽ വരൂ.',

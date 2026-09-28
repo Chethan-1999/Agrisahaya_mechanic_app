@@ -39,11 +39,10 @@ export function validateProfileForm(form: Omit<MechanicForm, 'phoneNumber'>): Va
     errors.pincode = 'Pincode must be 6 digits';
   }
 
-  const { technicianMinAge, technicianMaxAge, maxExperienceYears } = getSettings();
+  const { maxExperienceYears } = getSettings();
 
-  const age = Number(form.age);
-  if (!form.age.trim() || Number.isNaN(age) || age < technicianMinAge || age > technicianMaxAge) {
-    errors.age = `Age must be between ${technicianMinAge} and ${technicianMaxAge}`;
+  if (!form.machineExpertise.trim()) {
+    errors.machineExpertise = 'Machine expertise is required';
   }
 
   const experience = Number(form.experience);

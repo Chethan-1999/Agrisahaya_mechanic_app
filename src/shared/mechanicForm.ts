@@ -14,7 +14,7 @@ export function toMechanicForm(mechanic: Mechanic): MechanicForm {
     pincode: mechanic.pincode,
     address: mechanic.address,
     landmark: mechanic.landmark,
-    age: mechanic.age,
+    machineExpertise: mechanic.machineExpertise,
     experience: mechanic.experience,
   };
 }

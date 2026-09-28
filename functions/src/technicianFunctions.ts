@@ -219,3 +219,32 @@ export const adminUpdateProfile = onCall(async (request) => {
 
   return { status: 'ok' };
 });
+
+/** Technician edits their own profile fields directly (phone number and status are never editable here). */
+export const updateOwnProfile = onCall(async (request) => {
+  const uid = requireUid(request);
+  const { profile } = request.data;
+
+  if (!profile || typeof profile !== 'object') {
+    throw new HttpsError('invalid-argument', 'profile is required.');
+  }
+
+  const ref = technicianRef(uid);
+  const snap = await requireDoc(ref, 'Mechanic profile not found.');
+
+  const updates: Record<string, string> = {};
+  for (const field of PROFILE_FIELDS) {
+    const value = (profile as Record<string, unknown>)[field];
+    if (value === undefined) continue;
+    if (typeof value !== 'string') {
+      throw new HttpsError('invalid-argument', `"${field}" must be text.`);
+    }
+    updates[field] = value.trim();
+  }
+
+  requireValidProfile({ ...(snap.data() as ProfileInput), ...updates }, await getSettings());
+
+  await ref.update({ ...updates, editedBy: uid, updatedAt: new Date().toISOString() });
+
+  return { status: 'ok' };
+});

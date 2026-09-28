@@ -12,6 +12,15 @@ const mechanicTabs: Array<{ Icon: typeof BriefcaseBusiness; label: string; page:
   { Icon: UserRound, label: 'Profile', page: 'mechanicProfile' },
 ];
 
+function WhatsAppIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg aria-hidden="true" className="whatsapp-icon" fill="none" height={size} viewBox="0 0 24 24" width={size}>
+      <path d="M4.4 19.5l1-3.7a8 8 0 1 1 2.9 2.8l-3.9.9Z" fill="currentColor" />
+      <path d="M8.7 8.1c.2-.5.4-.5.7-.5h.5c.2 0 .4 0 .5.4l.7 1.7c.1.2.1.4 0 .6l-.4.5c-.1.1-.2.3-.1.5.3.6.8 1.2 1.3 1.7.6.5 1.2.9 1.9 1.1.2.1.4 0 .5-.1l.7-.8c.2-.2.4-.2.6-.1l1.6.8c.2.1.4.2.4.4 0 .6-.3 1.3-.7 1.7-.4.3-.9.5-1.5.5-.4 0-1-.1-1.8-.4-1.6-.6-2.9-1.5-4-2.7-1-1.1-1.7-2.2-2.1-3.3-.3-.8-.3-1.4-.2-1.8.1-.4.4-.8.8-1.2Z" fill="white" />
+    </svg>
+  );
+}
+
 export function isMechanicTabPage(page: MechanicPage) {
   return mechanicTabs.some((tab) => tab.page === page);
 }
@@ -20,6 +29,8 @@ export function MechanicShell({ activePage, children, onNavigate, unreadAnnounce
   const { t } = useI18n();
   const [showSupport, setShowSupport] = useState(false);
   const canShowSupport = activePage === 'mechanicJobs';
+  const supportPhoneNumber = getSettings().supportPhoneNumber;
+  const whatsappNumber = `91${supportPhoneNumber.replace(/\D/g, '')}`;
   const labels: Partial<Record<MechanicPage, string>> = {
     mechanicJobs: t('jobsNav'),
     mechanicCommunity: t('communityNav'),
@@ -43,7 +54,8 @@ export function MechanicShell({ activePage, children, onNavigate, unreadAnnounce
             {showSupport && (
               <div className="mechanic-support-popover">
                 <span>For Support</span>
-                <a href={`tel:${getSettings().supportPhoneNumber}`}><PhoneCall size={18} strokeWidth={2.6} />{getSettings().supportPhoneNumber}</a>
+                <a href={`tel:${supportPhoneNumber}`}><PhoneCall size={18} strokeWidth={2.6} />{supportPhoneNumber}</a>
+                <a href={`https://wa.me/${whatsappNumber}`} rel="noopener noreferrer" target="_blank"><WhatsAppIcon />{supportPhoneNumber}</a>
               </div>
             )}
           </div>

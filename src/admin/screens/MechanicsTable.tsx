@@ -20,7 +20,7 @@ export function MechanicsTable({ mechanics, onApprove, onEdit, onReject, onRefre
       mechanic.pincode,
       mechanic.status,
       mechanic.experience,
-      mechanic.age,
+      mechanic.machineExpertise,
     ].join(' ').toLowerCase();
     return searchText.includes(query);
   }), [mechanics, query]);

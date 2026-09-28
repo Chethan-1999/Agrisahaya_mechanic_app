@@ -19,7 +19,7 @@ const toMechanic = (id: string, data: Record<string, unknown>): Mechanic => {
     pincode: String(data.pincode ?? ''),
     address: String(data.address ?? ''),
     landmark: String(data.landmark ?? ''),
-    age: String(data.age ?? ''),
+    machineExpertise: String(data.machineExpertise ?? data.age ?? ''),
     experience: String(data.experience ?? ''),
     status: (data.status as MechanicStatus) ?? 'pending',
     paymentVerified: Boolean(data.paymentVerified ?? false),
@@ -60,6 +60,15 @@ const adminUpdateProfileFn = httpsCallable<
 
 export async function adminUpdateProfile(technicianId: string, profile: Partial<MechanicForm>) {
   await adminUpdateProfileFn({ technicianId, profile });
+}
+
+const updateOwnProfileFn = httpsCallable<
+  { profile: Partial<MechanicForm> },
+  { status: 'ok' }
+>(functions, 'updateOwnProfile');
+
+export async function updateOwnProfile(profile: Partial<MechanicForm>) {
+  await updateOwnProfileFn({ profile });
 }
 
 const reviewSignupFn = httpsCallable<

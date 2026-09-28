@@ -8,7 +8,7 @@ import type { Settings } from '../shared/settings';
  * MechanicForm (src/types.ts) minus phoneNumber; the technician's change requests and the admin's edits are both
  * limited to these.
  */
-export const PROFILE_FIELDS = ['fullName', 'village', 'district', 'state', 'pincode', 'address', 'landmark', 'age', 'experience'] as const;
+export const PROFILE_FIELDS = ['fullName', 'village', 'district', 'state', 'pincode', 'address', 'landmark', 'machineExpertise', 'experience'] as const;
 
 export type ProfileField = (typeof PROFILE_FIELDS)[number];
 
@@ -22,14 +22,14 @@ export type ProfileInput = {
   pincode?: string;
   address?: string;
   landmark?: string;
-  age: string;
+  machineExpertise: string;
   experience: string;
 };
 
 /** Server-side mirror of the client's form checks — never trust the client alone. Limits come from the business settings. */
 export function assertValidProfile(
   profile: ProfileInput,
-  { technicianMinAge, technicianMaxAge, maxExperienceYears }: Settings,
+  { maxExperienceYears }: Settings,
 ): void {
   if (!profile.fullName?.trim()) {
     throw new Error('Full name is required.');
@@ -53,9 +53,8 @@ export function assertValidProfile(
     throw new Error('Pincode must be 6 digits.');
   }
 
-  const age = Number(profile.age);
-  if (!Number.isFinite(age) || age < technicianMinAge || age > technicianMaxAge) {
-    throw new Error(`Age must be between ${technicianMinAge} and ${technicianMaxAge}.`);
+  if (!profile.machineExpertise?.trim()) {
+    throw new Error('Machine expertise is required.');
   }
 
   const experience = Number(profile.experience);
@@ -90,7 +89,7 @@ export function parseProfile(raw: unknown, settings: Settings) {
     pincode: (profile.pincode ?? '').trim(),
     address: (profile.address ?? '').trim(),
     landmark: (profile.landmark ?? '').trim() || null,
-    age: String(profile.age).trim(),
+    machineExpertise: String(profile.machineExpertise).trim(),
     experience: String(profile.experience).trim(),
   };
 }

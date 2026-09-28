@@ -26,7 +26,7 @@ export function DetailGrid({ compact = false, mechanic }: { compact?: boolean; m
   const rows: Array<[string, ReactNode]> = [
     ['Phone Number', mechanic.phoneNumber], ['Village', mechanic.village], ['District', mechanic.district],
     ['State', mechanic.state], ['Pincode', mechanic.pincode], ['Address', mechanic.address],
-    ['Age', mechanic.age], ['Experience', `${mechanic.experience || '0'} years`], ['Status', mechanic.status],
+    ['Machine expertise', mechanic.machineExpertise], ['Experience', `${mechanic.experience || '0'} years`], ['Status', mechanic.status],
     ['Jobs', <JobStats mechanic={mechanic} />],
     ['Registration Date', formatDate(mechanic.createdAt)],
   ];

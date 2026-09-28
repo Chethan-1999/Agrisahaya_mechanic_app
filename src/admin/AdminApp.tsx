@@ -19,7 +19,6 @@ import { AdminCommunity } from './screens/AdminCommunity';
 import { AdminDashboard } from './screens/AdminDashboard';
 import { AdminLogin } from './screens/AdminLogin';
 import { AdminLoginLayout } from './screens/AdminLoginLayout';
-import { AdminProfileRequests } from './screens/AdminProfileRequests';
 import { AdminShell } from './screens/AdminShell';
 import { DetailPage } from './screens/DetailPage';
 import { EditMechanic } from './screens/EditMechanic';
@@ -32,7 +31,6 @@ export type AdminPage =
   | 'adminAddJobs'
   | 'adminAssignJobs'
   | 'adminCommunity'
-  | 'adminProfileRequests'
   | 'adminDetails'
   | 'adminEdit';
 
@@ -44,7 +42,6 @@ const backTarget: Partial<Record<AdminPage, AdminPage>> = {
   adminAddJobs: 'adminDashboard',
   adminAssignJobs: 'adminDashboard',
   adminCommunity: 'adminDashboard',
-  adminProfileRequests: 'adminDashboard',
   adminDetails: 'adminMechanics',
   adminEdit: 'adminMechanics',
 };
@@ -305,7 +302,6 @@ export default function AdminApp() {
           )}
           {page === 'adminAddJobs' && <AdminAddJobs jobs={jobs} onJobSaved={showSavedJob} onRefresh={loadJobs} setToast={setToast} withLoading={withLoading} />}
           {page === 'adminAssignJobs' && <AdminAssignJobs askConfirm={setConfirmDialog} jobs={jobs} mechanics={mechanics} onJobSaved={showSavedJob} onRefresh={loadJobsAndMechanics} setToast={setToast} withLoading={withLoading} />}
-          {page === 'adminProfileRequests' && <AdminProfileRequests mechanics={mechanics} setToast={setToast} withLoading={withLoading} />}
           {page === 'adminCommunity' && <AdminCommunity setToast={setToast} withLoading={withLoading} />}
           {page === 'adminDetails' && selectedMechanic && (
             <DetailPage editable mechanic={selectedMechanic} onBack={() => setPage('adminMechanics')} onEdit={() => setPage('adminEdit')} title="Mechanic Details" />

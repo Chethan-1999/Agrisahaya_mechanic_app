@@ -9,7 +9,7 @@ export type MechanicForm = {
   pincode: string;
   address: string;
   landmark: string;
-  age: string;
+  machineExpertise: string;
   experience: string;
 };
 
@@ -134,6 +134,6 @@ export const emptyMechanicForm: MechanicForm = {
   pincode: '',
   address: '',
   landmark: '',
-  age: '',
+  machineExpertise: '',
   experience: '',
 };
