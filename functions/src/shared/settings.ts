@@ -41,6 +41,10 @@ export const SETTINGS = {
     kind: 'text', default: '9646424964', pattern: /^\d{10}$/,
     description: 'Support number shown to technicians (10 digits).',
   },
+  subscriptionPlanMonths: {
+    kind: 'int', default: 12, min: 1, max: 60,
+    description: 'How long a farmer subscription (AgriSahaya Annual Service Plan) runs from the day an admin approves it.',
+  },
 } satisfies Record<string, IntSetting | TextSetting>;
 
 export type SettingKey = keyof typeof SETTINGS;

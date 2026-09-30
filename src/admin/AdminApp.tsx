@@ -8,15 +8,17 @@ import { ConfirmModal, type ConfirmDialog } from '../components/ui';
 import { auth, db } from '../firebase';
 import { useLoadingState } from '../hooks/useLoadingState';
 import { logoutAdmin, registerAdminDevice } from '../services/adminAuth';
+import { listAllFarmerSubscriptions, withFarmerSubscription } from '../services/farmerSubscriptions';
 import { listAllJobs, visibleJobs, withJob } from '../services/jobs';
 import { listMechanics, reviewSignup, setTechnicianStatus } from '../services/mechanics';
 import { initNotifications } from '../services/notifications';
-import type { AdminProfile, Job, Mechanic } from '../types';
+import type { AdminProfile, FarmerSubscription, Job, Mechanic } from '../types';
 import { withTimeout } from '../utils/withTimeout';
 import { AdminAddJobs } from './screens/AdminAddJobs';
 import { AdminAssignJobs } from './screens/AdminAssignJobs';
 import { AdminCommunity } from './screens/AdminCommunity';
 import { AdminDashboard } from './screens/AdminDashboard';
+import { AdminFarmerSubscriptions } from './screens/AdminFarmerSubscriptions';
 import { AdminLogin } from './screens/AdminLogin';
 import { AdminLoginLayout } from './screens/AdminLoginLayout';
 import { AdminShell } from './screens/AdminShell';
@@ -30,6 +32,7 @@ export type AdminPage =
   | 'adminMechanics'
   | 'adminAddJobs'
   | 'adminAssignJobs'
+  | 'adminFarmers'
   | 'adminCommunity'
   | 'adminDetails'
   | 'adminEdit';
@@ -41,6 +44,7 @@ const backTarget: Partial<Record<AdminPage, AdminPage>> = {
   adminMechanics: 'adminDashboard',
   adminAddJobs: 'adminDashboard',
   adminAssignJobs: 'adminDashboard',
+  adminFarmers: 'adminDashboard',
   adminCommunity: 'adminDashboard',
   adminDetails: 'adminMechanics',
   adminEdit: 'adminMechanics',
@@ -53,6 +57,7 @@ export default function AdminApp() {
   const [selectedMechanic, setSelectedMechanic] = useState<Mechanic | null>(null);
   const [bootstrapping, setBootstrapping] = useState(true);
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [farmerSubscriptions, setFarmerSubscriptions] = useState<FarmerSubscription[]>([]);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog>(null);
   const { loading, toast, setToast, withLoading } = useLoadingState();
 
@@ -141,6 +146,7 @@ export default function AdminApp() {
     if (session) {
       void loadMechanics();
       void loadJobs();
+      void loadFarmerSubscriptions();
       void initNotifications(registerAdminDevice);
     }
   }, [session]);
@@ -151,6 +157,10 @@ export default function AdminApp() {
 
   async function loadJobs() {
     await withLoading(async () => setJobs(await listAllJobs()));
+  }
+
+  async function loadFarmerSubscriptions() {
+    await withLoading(async () => setFarmerSubscriptions(await listAllFarmerSubscriptions()));
   }
 
   // Assign jobs needs both: a mechanic approved since this session loaded (e.g. on another device) must show up
@@ -196,6 +206,7 @@ export default function AdminApp() {
 
   const activeMechanics = mechanics.filter((mechanic) => mechanic.status === 'active').length;
   const pendingMechanics = mechanics.filter((mechanic) => mechanic.status === 'pending').length;
+  const pendingFarmerRequests = farmerSubscriptions.filter((request) => request.status === 'pending').length;
   const inactiveMechanics = mechanics.filter(
     (mechanic) => mechanic.status === 'inactive' || mechanic.status === 'rejected',
   ).length;
@@ -242,7 +253,7 @@ export default function AdminApp() {
       {session && page.startsWith('admin') && page !== 'adminLogin' && (
         <AdminShell activePage={page} onLogout={logout} onNavigate={setPage}>
           {page === 'adminDashboard' && (
-            <AdminDashboard active={activeMechanics} inactive={inactiveMechanics} jobs={visibleJobs(jobs)} mechanics={mechanics} pending={pendingMechanics} total={mechanics.length} />
+            <AdminDashboard active={activeMechanics} inactive={inactiveMechanics} jobs={visibleJobs(jobs)} mechanics={mechanics} pending={pendingMechanics} pendingFarmerRequests={pendingFarmerRequests} total={mechanics.length} />
           )}
           {page === 'adminMechanics' && (
             <MechanicsTable
@@ -302,6 +313,16 @@ export default function AdminApp() {
           )}
           {page === 'adminAddJobs' && <AdminAddJobs jobs={jobs} onJobSaved={showSavedJob} onRefresh={loadJobs} setToast={setToast} withLoading={withLoading} />}
           {page === 'adminAssignJobs' && <AdminAssignJobs askConfirm={setConfirmDialog} jobs={jobs} mechanics={mechanics} onJobSaved={showSavedJob} onRefresh={loadJobsAndMechanics} setToast={setToast} withLoading={withLoading} />}
+          {page === 'adminFarmers' && (
+            <AdminFarmerSubscriptions
+              askConfirm={setConfirmDialog}
+              onRefresh={loadFarmerSubscriptions}
+              onUpdated={(request) => setFarmerSubscriptions((current) => withFarmerSubscription(current, request))}
+              requests={farmerSubscriptions}
+              setToast={setToast}
+              withLoading={withLoading}
+            />
+          )}
           {page === 'adminCommunity' && <AdminCommunity setToast={setToast} withLoading={withLoading} />}
           {page === 'adminDetails' && selectedMechanic && (
             <DetailPage editable mechanic={selectedMechanic} onBack={() => setPage('adminMechanics')} onEdit={() => setPage('adminEdit')} title="Mechanic Details" />

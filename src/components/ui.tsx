@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 
 import { LANGUAGES, strings, type LanguageCode, type StringKey } from '../i18n/strings';
 import { dataErrorKey } from '../services/dataErrors';
-import type { JobStatus } from '../types';
+import type { FarmerSubscriptionStatus, JobStatus } from '../types';
 
 export type Toast = { kind: 'success' | 'error'; text: string } | null;
 
@@ -50,6 +50,19 @@ export function jobStatusMeta(status: JobStatus, t?: (key: StringKey) => string)
       return { pillClass: 'pending', label: label('statusPending', 'Reassigned') };
     default:
       return { pillClass: 'inactive', label: label('statusOpen', 'Open') };
+  }
+}
+
+/** A farmer subscription request's status as a .pill — translated with `t` on the mechanic's screens, English in admin. */
+export function farmerStatusMeta(status: FarmerSubscriptionStatus, t?: (key: StringKey) => string): { pillClass: string; label: string } {
+  const label = (key: StringKey, fallback: string) => (t ? t(key) : fallback);
+  switch (status) {
+    case 'approved':
+      return { pillClass: 'active', label: label('farmerStatusApproved', 'Subscribed') };
+    case 'rejected':
+      return { pillClass: 'rejected', label: label('farmerStatusRejected', 'Rejected') };
+    default:
+      return { pillClass: 'pending', label: label('farmerStatusPending', 'Pending review') };
   }
 }
 

@@ -121,7 +121,41 @@ export type StringKey =
   | 'age'
   | 'machineExpertise'
   | 'experience'
-  | 'languageLabel';
+  | 'languageLabel'
+  | 'farmersNav'
+  | 'farmersTitle'
+  | 'farmersHint'
+  | 'addFarmer'
+  | 'noFarmersYet'
+  | 'farmerFormTitle'
+  | 'farmerFormHint'
+  | 'farmerName'
+  | 'farmerPhone'
+  | 'villageLocation'
+  | 'mandalDistrict'
+  | 'machineryOwned'
+  | 'machineryOtherLabel'
+  | 'machPowerTiller'
+  | 'machDripSystem'
+  | 'machWeeder'
+  | 'machRotovator'
+  | 'machBaler'
+  | 'machSprayers'
+  | 'machOther'
+  | 'submitFarmer'
+  | 'farmerSubmittedToast'
+  | 'farmerStatusPending'
+  | 'farmerStatusApproved'
+  | 'farmerStatusRejected'
+  | 'planActiveLabel'
+  | 'farmerErrorName'
+  | 'farmerErrorPhone'
+  | 'farmerErrorVillage'
+  | 'farmerErrorMandal'
+  | 'farmerErrorPincode'
+  | 'farmerErrorState'
+  | 'farmerErrorMachinery'
+  | 'farmerErrorMachineryOther';
 
 const en: Record<StringKey, string> = {
   technicianLogin: 'Login',
@@ -225,6 +259,40 @@ const en: Record<StringKey, string> = {
   machineExpertise: 'Machine expertise',
   experience: 'Years of Experience',
   languageLabel: 'Language',
+  farmersNav: 'Farmers',
+  farmersTitle: 'Farmers you referred',
+  farmersHint: 'Sign farmers up for the AgriSahaya Annual Service Plan. The admin checks each request before it starts.',
+  addFarmer: 'Add farmer',
+  noFarmersYet: 'No farmers yet. Tap "Add farmer" to refer your first one.',
+  farmerFormTitle: 'Farmer subscription form',
+  farmerFormHint: "Fill in the farmer's details. The admin will call to verify before the plan starts.",
+  farmerName: 'Farmer full name',
+  farmerPhone: 'Farmer mobile number',
+  villageLocation: 'Village / location',
+  mandalDistrict: 'Mandal / district',
+  machineryOwned: 'Machinery owned',
+  machineryOtherLabel: 'Other machinery (name it)',
+  machPowerTiller: 'Power tiller',
+  machDripSystem: 'Drip system',
+  machWeeder: 'Weeder',
+  machRotovator: 'Rotovator',
+  machBaler: 'Baler',
+  machSprayers: 'Sprayers',
+  machOther: 'Other',
+  submitFarmer: 'Submit',
+  farmerSubmittedToast: 'Request sent! The admin will review it soon.',
+  farmerStatusPending: 'Waiting for approval',
+  farmerStatusApproved: 'Subscribed',
+  farmerStatusRejected: 'Not approved',
+  planActiveLabel: 'Plan active',
+  farmerErrorName: "Enter the farmer's name",
+  farmerErrorPhone: 'Enter a valid 10-digit mobile number',
+  farmerErrorVillage: 'Enter the village or location',
+  farmerErrorMandal: 'Enter the mandal or district',
+  farmerErrorPincode: 'Pincode must be 6 digits',
+  farmerErrorState: 'Select a valid Indian state',
+  farmerErrorMachinery: 'Select at least one machine',
+  farmerErrorMachineryOther: 'Name the other machinery',
 };
 
 const hi: Record<StringKey, string> = {
@@ -329,6 +397,40 @@ const hi: Record<StringKey, string> = {
   machineExpertise: 'मशीन विशेषज्ञता',
   experience: 'अनुभव (वर्षों में)',
   languageLabel: 'भाषा',
+  farmersNav: 'किसान',
+  farmersTitle: 'आपके द्वारा जोड़े गए किसान',
+  farmersHint: 'किसानों को एग्रीसहाय वार्षिक सेवा योजना से जोड़ें। योजना शुरू होने से पहले एडमिन हर अनुरोध की जाँच करते हैं।',
+  addFarmer: 'किसान जोड़ें',
+  noFarmersYet: 'अभी कोई किसान नहीं। पहला किसान जोड़ने के लिए "किसान जोड़ें" दबाएँ।',
+  farmerFormTitle: 'किसान सदस्यता फ़ॉर्म',
+  farmerFormHint: 'किसान का विवरण भरें। योजना शुरू होने से पहले एडमिन पुष्टि के लिए कॉल करेंगे।',
+  farmerName: 'किसान का पूरा नाम',
+  farmerPhone: 'किसान का मोबाइल नंबर',
+  villageLocation: 'गाँव / स्थान',
+  mandalDistrict: 'मंडल / ज़िला',
+  machineryOwned: 'मौजूद मशीनें',
+  machineryOtherLabel: 'अन्य मशीन (नाम लिखें)',
+  machPowerTiller: 'पावर टिलर',
+  machDripSystem: 'ड्रिप सिस्टम',
+  machWeeder: 'वीडर',
+  machRotovator: 'रोटावेटर',
+  machBaler: 'बेलर',
+  machSprayers: 'स्प्रेयर',
+  machOther: 'अन्य',
+  submitFarmer: 'जमा करें',
+  farmerSubmittedToast: 'अनुरोध भेज दिया गया! एडमिन जल्द ही इसकी जाँच करेंगे।',
+  farmerStatusPending: 'मंज़ूरी का इंतज़ार',
+  farmerStatusApproved: 'सदस्यता सक्रिय',
+  farmerStatusRejected: 'मंज़ूर नहीं हुआ',
+  planActiveLabel: 'योजना सक्रिय',
+  farmerErrorName: 'किसान का नाम लिखें',
+  farmerErrorPhone: 'सही 10 अंकों का मोबाइल नंबर लिखें',
+  farmerErrorVillage: 'गाँव या स्थान लिखें',
+  farmerErrorMandal: 'मंडल या ज़िला लिखें',
+  farmerErrorPincode: 'पिनकोड 6 अंकों का होना चाहिए',
+  farmerErrorState: 'सही भारतीय राज्य चुनें',
+  farmerErrorMachinery: 'कम से कम एक मशीन चुनें',
+  farmerErrorMachineryOther: 'अन्य मशीन का नाम लिखें',
 };
 
 const kn: Record<StringKey, string> = {
@@ -433,6 +535,40 @@ const kn: Record<StringKey, string> = {
   machineExpertise: 'ಯಂತ್ರ ಪರಿಣತಿ',
   experience: 'ಅನುಭವ (ವರ್ಷಗಳಲ್ಲಿ)',
   languageLabel: 'ಭಾಷೆ',
+  farmersNav: 'ರೈತರು',
+  farmersTitle: 'ನೀವು ಸೇರಿಸಿದ ರೈತರು',
+  farmersHint: 'ರೈತರನ್ನು ಅಗ್ರಿಸಹಾಯ ವಾರ್ಷಿಕ ಸೇವಾ ಯೋಜನೆಗೆ ಸೇರಿಸಿ. ಯೋಜನೆ ಆರಂಭವಾಗುವ ಮೊದಲು ಅಡ್ಮಿನ್ ಪ್ರತಿ ವಿನಂತಿಯನ್ನು ಪರಿಶೀಲಿಸುತ್ತಾರೆ.',
+  addFarmer: 'ರೈತರನ್ನು ಸೇರಿಸಿ',
+  noFarmersYet: 'ಇನ್ನೂ ಯಾವುದೇ ರೈತರಿಲ್ಲ. ಮೊದಲ ರೈತರನ್ನು ಸೇರಿಸಲು "ರೈತರನ್ನು ಸೇರಿಸಿ" ಒತ್ತಿ.',
+  farmerFormTitle: 'ರೈತರ ಚಂದಾದಾರಿಕೆ ಫಾರ್ಮ್',
+  farmerFormHint: 'ರೈತರ ವಿವರಗಳನ್ನು ತುಂಬಿ. ಯೋಜನೆ ಆರಂಭವಾಗುವ ಮೊದಲು ಅಡ್ಮಿನ್ ದೃಢೀಕರಣಕ್ಕಾಗಿ ಕರೆ ಮಾಡುತ್ತಾರೆ.',
+  farmerName: 'ರೈತರ ಪೂರ್ಣ ಹೆಸರು',
+  farmerPhone: 'ರೈತರ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ',
+  villageLocation: 'ಗ್ರಾಮ / ಸ್ಥಳ',
+  mandalDistrict: 'ಮಂಡಲ / ಜಿಲ್ಲೆ',
+  machineryOwned: 'ಇರುವ ಯಂತ್ರಗಳು',
+  machineryOtherLabel: 'ಇತರ ಯಂತ್ರ (ಹೆಸರು ಬರೆಯಿರಿ)',
+  machPowerTiller: 'ಪವರ್ ಟಿಲ್ಲರ್',
+  machDripSystem: 'ಡ್ರಿಪ್ ವ್ಯವಸ್ಥೆ',
+  machWeeder: 'ವೀಡರ್',
+  machRotovator: 'ರೋಟವೇಟರ್',
+  machBaler: 'ಬೇಲರ್',
+  machSprayers: 'ಸ್ಪ್ರೇಯರ್',
+  machOther: 'ಇತರೆ',
+  submitFarmer: 'ಸಲ್ಲಿಸಿ',
+  farmerSubmittedToast: 'ವಿನಂತಿ ಕಳುಹಿಸಲಾಗಿದೆ! ಅಡ್ಮಿನ್ ಶೀಘ್ರದಲ್ಲೇ ಪರಿಶೀಲಿಸುತ್ತಾರೆ.',
+  farmerStatusPending: 'ಅನುಮೋದನೆಗಾಗಿ ಕಾಯುತ್ತಿದೆ',
+  farmerStatusApproved: 'ಚಂದಾದಾರರಾಗಿದ್ದಾರೆ',
+  farmerStatusRejected: 'ಅನುಮೋದನೆಯಾಗಿಲ್ಲ',
+  planActiveLabel: 'ಯೋಜನೆ ಸಕ್ರಿಯ',
+  farmerErrorName: 'ರೈತರ ಹೆಸರು ನಮೂದಿಸಿ',
+  farmerErrorPhone: 'ಸರಿಯಾದ 10 ಅಂಕಿಯ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ',
+  farmerErrorVillage: 'ಗ್ರಾಮ ಅಥವಾ ಸ್ಥಳ ನಮೂದಿಸಿ',
+  farmerErrorMandal: 'ಮಂಡಲ ಅಥವಾ ಜಿಲ್ಲೆ ನಮೂದಿಸಿ',
+  farmerErrorPincode: 'ಪಿನ್‌ಕೋಡ್ 6 ಅಂಕಿಗಳಿರಬೇಕು',
+  farmerErrorState: 'ಸರಿಯಾದ ಭಾರತೀಯ ರಾಜ್ಯ ಆಯ್ಕೆಮಾಡಿ',
+  farmerErrorMachinery: 'ಕನಿಷ್ಠ ಒಂದು ಯಂತ್ರ ಆಯ್ಕೆಮಾಡಿ',
+  farmerErrorMachineryOther: 'ಇತರ ಯಂತ್ರದ ಹೆಸರು ಬರೆಯಿರಿ',
 };
 
 const ta: Record<StringKey, string> = {
@@ -537,6 +673,40 @@ const ta: Record<StringKey, string> = {
   machineExpertise: 'இயந்திர நிபுணத்துவம்',
   experience: 'அனுபவம் (ஆண்டுகளில்)',
   languageLabel: 'மொழி',
+  farmersNav: 'விவசாயிகள்',
+  farmersTitle: 'நீங்கள் பரிந்துரைத்த விவசாயிகள்',
+  farmersHint: 'விவசாயிகளை அக்ரிசஹாய ஆண்டு சேவைத் திட்டத்தில் சேர்க்கவும். திட்டம் தொடங்கும் முன் நிர்வாகி ஒவ்வொரு கோரிக்கையையும் சரிபார்ப்பார்.',
+  addFarmer: 'விவசாயியைச் சேர்',
+  noFarmersYet: 'இன்னும் விவசாயிகள் இல்லை. முதல் விவசாயியைச் சேர்க்க "விவசாயியைச் சேர்" அழுத்தவும்.',
+  farmerFormTitle: 'விவசாயி சந்தா படிவம்',
+  farmerFormHint: 'விவசாயியின் விவரங்களை நிரப்பவும். திட்டம் தொடங்கும் முன் நிர்வாகி உறுதிப்படுத்த அழைப்பார்.',
+  farmerName: 'விவசாயியின் முழுப் பெயர்',
+  farmerPhone: 'விவசாயியின் மொபைல் எண்',
+  villageLocation: 'கிராமம் / இடம்',
+  mandalDistrict: 'மண்டலம் / மாவட்டம்',
+  machineryOwned: 'உள்ள இயந்திரங்கள்',
+  machineryOtherLabel: 'பிற இயந்திரம் (பெயரைக் குறிப்பிடவும்)',
+  machPowerTiller: 'பவர் டில்லர்',
+  machDripSystem: 'சொட்டு நீர் அமைப்பு',
+  machWeeder: 'களையெடுப்பான்',
+  machRotovator: 'ரோட்டவேட்டர்',
+  machBaler: 'பேலர்',
+  machSprayers: 'தெளிப்பான்கள்',
+  machOther: 'பிற',
+  submitFarmer: 'சமர்ப்பி',
+  farmerSubmittedToast: 'கோரிக்கை அனுப்பப்பட்டது! நிர்வாகி விரைவில் பார்ப்பார்.',
+  farmerStatusPending: 'ஒப்புதலுக்காகக் காத்திருக்கிறது',
+  farmerStatusApproved: 'சந்தா செயலில்',
+  farmerStatusRejected: 'ஒப்புதல் இல்லை',
+  planActiveLabel: 'திட்டம் செயலில்',
+  farmerErrorName: 'விவசாயியின் பெயரை உள்ளிடவும்',
+  farmerErrorPhone: 'சரியான 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்',
+  farmerErrorVillage: 'கிராமம் அல்லது இடத்தை உள்ளிடவும்',
+  farmerErrorMandal: 'மண்டலம் அல்லது மாவட்டத்தை உள்ளிடவும்',
+  farmerErrorPincode: 'பின்கோடு 6 இலக்கங்களாக இருக்க வேண்டும்',
+  farmerErrorState: 'சரியான இந்திய மாநிலத்தைத் தேர்ந்தெடுக்கவும்',
+  farmerErrorMachinery: 'குறைந்தது ஒரு இயந்திரத்தைத் தேர்ந்தெடுக்கவும்',
+  farmerErrorMachineryOther: 'பிற இயந்திரத்தின் பெயரைக் குறிப்பிடவும்',
 };
 
 const te: Record<StringKey, string> = {
@@ -641,6 +811,40 @@ const te: Record<StringKey, string> = {
   machineExpertise: 'మెషిన్ నైపుణ్యం',
   experience: 'అనుభవం (సంవత్సరాలలో)',
   languageLabel: 'భాష',
+  farmersNav: 'రైతులు',
+  farmersTitle: 'మీరు సూచించిన రైతులు',
+  farmersHint: 'రైతులను అగ్రిసహాయ వార్షిక సేవా ప్లాన్‌లో చేర్చండి. ప్లాన్ ప్రారంభమయ్యే ముందు అడ్మిన్ ప్రతి అభ్యర్థనను తనిఖీ చేస్తారు.',
+  addFarmer: 'రైతును జోడించండి',
+  noFarmersYet: 'ఇంకా రైతులు లేరు. మొదటి రైతును చేర్చడానికి "రైతును జోడించండి" నొక్కండి.',
+  farmerFormTitle: 'రైతు సభ్యత్వ ఫారం',
+  farmerFormHint: 'రైతు వివరాలు నింపండి. ప్లాన్ ప్రారంభమయ్యే ముందు అడ్మిన్ నిర్ధారణ కోసం కాల్ చేస్తారు.',
+  farmerName: 'రైతు పూర్తి పేరు',
+  farmerPhone: 'రైతు మొబైల్ నంబర్',
+  villageLocation: 'గ్రామం / ప్రదేశం',
+  mandalDistrict: 'మండలం / జిల్లా',
+  machineryOwned: 'ఉన్న యంత్రాలు',
+  machineryOtherLabel: 'ఇతర యంత్రం (పేరు రాయండి)',
+  machPowerTiller: 'పవర్ టిల్లర్',
+  machDripSystem: 'డ్రిప్ సిస్టమ్',
+  machWeeder: 'వీడర్',
+  machRotovator: 'రోటవేటర్',
+  machBaler: 'బేలర్',
+  machSprayers: 'స్ప్రేయర్లు',
+  machOther: 'ఇతరం',
+  submitFarmer: 'సమర్పించండి',
+  farmerSubmittedToast: 'అభ్యర్థన పంపబడింది! అడ్మిన్ త్వరలో పరిశీలిస్తారు.',
+  farmerStatusPending: 'ఆమోదం కోసం వేచి ఉంది',
+  farmerStatusApproved: 'సభ్యత్వం యాక్టివ్',
+  farmerStatusRejected: 'ఆమోదించబడలేదు',
+  planActiveLabel: 'ప్లాన్ యాక్టివ్',
+  farmerErrorName: 'రైతు పేరు నమోదు చేయండి',
+  farmerErrorPhone: 'సరైన 10 అంకెల మొబైల్ నంబర్ నమోదు చేయండి',
+  farmerErrorVillage: 'గ్రామం లేదా ప్రదేశం నమోదు చేయండి',
+  farmerErrorMandal: 'మండలం లేదా జిల్లా నమోదు చేయండి',
+  farmerErrorPincode: 'పిన్‌కోడ్ 6 అంకెలు ఉండాలి',
+  farmerErrorState: 'సరైన భారతీయ రాష్ట్రాన్ని ఎంచుకోండి',
+  farmerErrorMachinery: 'కనీసం ఒక యంత్రాన్ని ఎంచుకోండి',
+  farmerErrorMachineryOther: 'ఇతర యంత్రం పేరు రాయండి',
 };
 
 const ml: Record<StringKey, string> = {
@@ -745,6 +949,40 @@ const ml: Record<StringKey, string> = {
   machineExpertise: 'മെഷീൻ വിദഗ്ധത',
   experience: 'പരിചയം (വർഷങ്ങളിൽ)',
   languageLabel: 'ഭാഷ',
+  farmersNav: 'കർഷകർ',
+  farmersTitle: 'നിങ്ങൾ ശുപാർശ ചെയ്ത കർഷകർ',
+  farmersHint: 'കർഷകരെ അഗ്രിസഹായ വാർഷിക സേവന പ്ലാനിൽ ചേർക്കൂ. പ്ലാൻ ആരംഭിക്കുന്നതിന് മുമ്പ് അഡ്മിൻ ഓരോ അപേക്ഷയും പരിശോധിക്കും.',
+  addFarmer: 'കർഷകനെ ചേർക്കുക',
+  noFarmersYet: 'ഇതുവരെ കർഷകരില്ല. ആദ്യ കർഷകനെ ചേർക്കാൻ "കർഷകനെ ചേർക്കുക" അമർത്തുക.',
+  farmerFormTitle: 'കർഷക സബ്സ്ക്രിപ്ഷൻ ഫോം',
+  farmerFormHint: 'കർഷകന്റെ വിവരങ്ങൾ പൂരിപ്പിക്കുക. പ്ലാൻ ആരംഭിക്കുന്നതിന് മുമ്പ് അഡ്മിൻ സ്ഥിരീകരണത്തിനായി വിളിക്കും.',
+  farmerName: 'കർഷകന്റെ മുഴുവൻ പേര്',
+  farmerPhone: 'കർഷകന്റെ മൊബൈൽ നമ്പർ',
+  villageLocation: 'ഗ്രാമം / സ്ഥലം',
+  mandalDistrict: 'മണ്ഡലം / ജില്ല',
+  machineryOwned: 'ഉള്ള യന്ത്രങ്ങൾ',
+  machineryOtherLabel: 'മറ്റ് യന്ത്രം (പേര് എഴുതുക)',
+  machPowerTiller: 'പവർ ടില്ലർ',
+  machDripSystem: 'ഡ്രിപ്പ് സിസ്റ്റം',
+  machWeeder: 'വീഡർ',
+  machRotovator: 'റോട്ടവേറ്റർ',
+  machBaler: 'ബേലർ',
+  machSprayers: 'സ്പ്രേയറുകൾ',
+  machOther: 'മറ്റുള്ളവ',
+  submitFarmer: 'സമർപ്പിക്കുക',
+  farmerSubmittedToast: 'അപേക്ഷ അയച്ചു! അഡ്മിൻ ഉടൻ പരിശോധിക്കും.',
+  farmerStatusPending: 'അംഗീകാരത്തിനായി കാത്തിരിക്കുന്നു',
+  farmerStatusApproved: 'സബ്സ്ക്രൈബ് ചെയ്തു',
+  farmerStatusRejected: 'അംഗീകരിച്ചില്ല',
+  planActiveLabel: 'പ്ലാൻ സജീവം',
+  farmerErrorName: 'കർഷകന്റെ പേര് നൽകുക',
+  farmerErrorPhone: 'ശരിയായ 10 അക്ക മൊബൈൽ നമ്പർ നൽകുക',
+  farmerErrorVillage: 'ഗ്രാമം അല്ലെങ്കിൽ സ്ഥലം നൽകുക',
+  farmerErrorMandal: 'മണ്ഡലം അല്ലെങ്കിൽ ജില്ല നൽകുക',
+  farmerErrorPincode: 'പിൻകോഡ് 6 അക്കം ആയിരിക്കണം',
+  farmerErrorState: 'ശരിയായ ഇന്ത്യൻ സംസ്ഥാനം തിരഞ്ഞെടുക്കുക',
+  farmerErrorMachinery: 'കുറഞ്ഞത് ഒരു യന്ത്രം തിരഞ്ഞെടുക്കുക',
+  farmerErrorMachineryOther: 'മറ്റ് യന്ത്രത്തിന്റെ പേര് എഴുതുക',
 };
 
 export const strings: Record<LanguageCode, Record<StringKey, string>> = { en, hi, kn, ta, te, ml };

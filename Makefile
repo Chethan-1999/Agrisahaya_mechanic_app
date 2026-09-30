@@ -1,6 +1,6 @@
-.PHONY: web sync icons icons-admin apk local-phone prod-apks deploy-prod admin admin-prod emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean \
+.PHONY: web sync icons icons-admin apk local-phone local-apks prod-apks deploy-prod admin admin-prod emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean \
 	sync-admin apk-admin install-admin launch-admin run-admin logs-admin clean-admin local-phone-admin local-admin \
-	settings-show settings-set settings-seed call \
+	settings-show settings-set settings-seed settings-pull call \
 	backend-up backend-down backend-restart backend-reset logs-functions logs-functions-prod
 
 # Override any of these on the command line, e.g. `make run AVD_NAME=Pixel_7`
@@ -177,6 +177,16 @@ local-phone:
 local-phone-admin:
 	npm run dev:local -- --app admin --phone-apk mechanic
 
+## LOCAL, production-like: pull the PRODUCTION business settings into .env.pulled (settings-pull), then build two
+## phone APKs — mechanic (dist/agrisahaya-local-*.apk) and admin (dist/agrisahaya-admin-local-*.apk) — against the
+## Docker backend on THIS laptop, which it (re)starts with those settings and follows the logs of. Test new features
+## here without touching production data. Phone must share the laptop's network; rebuild if its IP changes.
+## Change a value later: edit .env.pulled (or re-pull), then `make backend-restart` — no APK rebuild needed.
+## SKIP_PULL=1 keeps the existing .env.pulled (e.g. offline, or no service account key).
+local-apks:
+	@if [ -n "$(SKIP_PULL)" ]; then echo "SKIP_PULL set — keeping the current .env.pulled"; else $(MAKE) settings-pull; fi
+	npm run dev:local -- --apk --phone-apk admin
+
 ## PRODUCTION: build two phone APKs — mechanic (dist/agrisahaya-prod-*.apk) and admin
 ## (dist/agrisahaya-admin-prod-*.apk) — against the Firebase project in .env. Nothing runs in the
 ## AVD and no emulators start; the APKs work on any network. Does NOT deploy — see deploy-prod.
@@ -239,6 +249,12 @@ settings-set:
 ## Writes every setting that isn't set yet with its default (never overwrites one that is).
 settings-seed:
 	cd functions && $(SETTINGS_ENV) npm run --silent settings -- seed
+
+## Copy the PRODUCTION settings into .env.pulled (repo root), which the local Docker backend loads after .env.
+## Re-running refreshes the generated block and keeps any lines you added below it. Apply: make backend-restart.
+## Go back to plain .env settings locally: delete .env.pulled, then make backend-restart.
+settings-pull:
+	cd functions && $(SETTINGS_ENV) npm run --silent settings -- pull
 
 ## Launch the installed app (mechanic app)
 launch:

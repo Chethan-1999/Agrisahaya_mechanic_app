@@ -17,6 +17,8 @@ import type { Mechanic } from '../types';
 import { withTimeout } from '../utils/withTimeout';
 import { AuthLayout } from './screens/AuthLayout';
 import { Community } from './screens/Community';
+import { FarmerReferrals } from './screens/FarmerReferrals';
+import { FarmerSubscriptionForm } from './screens/FarmerSubscriptionForm';
 import { Landing } from './screens/Landing';
 import { MarketplaceComingSoon } from './screens/MarketplaceComingSoon';
 import { MechanicAuth } from './screens/MechanicAuth';
@@ -34,7 +36,9 @@ export type MechanicPage =
   | 'mechanicMarketplace'
   | 'mechanicProfile'
   | 'mechanicJobs'
-  | 'mechanicCommunity';
+  | 'mechanicCommunity'
+  | 'mechanicFarmers'
+  | 'mechanicFarmerForm';
 
 type MechanicSession = { mechanicId: string } | null;
 
@@ -45,6 +49,8 @@ const backTarget: Partial<Record<MechanicPage, MechanicPage>> = {
   mechanicProfile: 'mechanicJobs',
   mechanicMarketplace: 'mechanicJobs',
   mechanicCommunity: 'mechanicJobs',
+  mechanicFarmers: 'mechanicJobs',
+  mechanicFarmerForm: 'mechanicFarmers',
 };
 
 const announcementsSeenKey = (technicianId: string) => `agrisahaya.announcementsSeenAt.${technicianId}`;
@@ -319,6 +325,17 @@ export default function MechanicApp() {
         />
       )}
 
+      {session && currentMechanic && page === 'mechanicFarmerForm' && (
+        <FarmerSubscriptionForm
+          onBack={() => setPage('mechanicFarmers')}
+          onSubmitted={() => {
+            setToast({ kind: 'success', text: t('farmerSubmittedToast') });
+            setPage('mechanicFarmers');
+          }}
+          withLoading={withLoading}
+        />
+      )}
+
       {session && currentMechanic && isMechanicTabPage(page) && (
         <MechanicShell activePage={page} onNavigate={setPage} unreadAnnouncements={unreadAnnouncements}>
           {page === 'mechanicJobs' && (
@@ -327,6 +344,9 @@ export default function MechanicApp() {
               technicianId={currentMechanic.id}
               withLoading={withLoading}
             />
+          )}
+          {page === 'mechanicFarmers' && (
+            <FarmerReferrals onAddFarmer={() => setPage('mechanicFarmerForm')} technicianId={currentMechanic.id} withLoading={withLoading} />
           )}
           {page === 'mechanicCommunity' && <Community withLoading={withLoading} />}
           {page === 'mechanicMarketplace' && <MarketplaceComingSoon />}

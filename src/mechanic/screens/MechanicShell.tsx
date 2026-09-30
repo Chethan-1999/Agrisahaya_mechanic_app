@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, Headphones, PhoneCall, Store, UserRound, UsersRound } from 'lucide-react';
+import { BriefcaseBusiness, Headphones, PhoneCall, Sprout, Store, UserRound, UsersRound } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 
 import { getSettings } from '../../config/settings';
@@ -7,6 +7,7 @@ import type { MechanicPage } from '../MechanicApp';
 
 const mechanicTabs: Array<{ Icon: typeof BriefcaseBusiness; label: string; page: MechanicPage }> = [
   { Icon: BriefcaseBusiness, label: 'Jobs', page: 'mechanicJobs' },
+  { Icon: Sprout, label: 'Farmers', page: 'mechanicFarmers' },
   { Icon: UsersRound, label: 'Community', page: 'mechanicCommunity' },
   { Icon: Store, label: 'Marketplace', page: 'mechanicMarketplace' },
   { Icon: UserRound, label: 'Profile', page: 'mechanicProfile' },
@@ -33,6 +34,7 @@ export function MechanicShell({ activePage, children, onNavigate, unreadAnnounce
   const whatsappNumber = `91${supportPhoneNumber.replace(/\D/g, '')}`;
   const labels: Partial<Record<MechanicPage, string>> = {
     mechanicJobs: t('jobsNav'),
+    mechanicFarmers: t('farmersNav'),
     mechanicCommunity: t('communityNav'),
     mechanicProfile: t('profileNav'),
   };

@@ -127,3 +127,53 @@ export const emptyMechanicForm: MechanicForm = {
   machineExpertise: '',
   experience: '',
 };
+
+/** The subscription form a mechanic fills in for a farmer they refer. Mirrors functions/src/lib/farmerValidation.ts. */
+export type FarmerSubscriptionForm = {
+  fullName: string;
+  /** 10 digits in the form; stored normalized as +91XXXXXXXXXX. */
+  phoneNumber: string;
+  village: string;
+  mandalDistrict: string;
+  pincode: string;
+  state: string;
+  /** Codes from functions/src/shared/farmerMachinery.ts. */
+  machinery: string[];
+  machineryOther: string;
+};
+
+export const emptyFarmerSubscriptionForm: FarmerSubscriptionForm = {
+  fullName: '',
+  phoneNumber: '',
+  village: '',
+  mandalDistrict: '',
+  pincode: '',
+  state: '',
+  machinery: [],
+  machineryOther: '',
+};
+
+/** pending → approved (plan starts, confirmation SMS) | rejected. See functions/src/farmerSubscriptionFunctions.ts. */
+export type FarmerSubscriptionStatus = 'pending' | 'approved' | 'rejected';
+
+/** How the farmer's confirmation SMS went — `not-configured` until an SMS provider is plugged in (functions/src/lib/sms.ts). */
+export type FarmerSmsStatus = 'not-configured' | 'sent' | 'failed';
+
+/** A doc in `farmerSubscriptions`. */
+export type FarmerSubscription = FarmerSubscriptionForm & {
+  id: string;
+  technicianId: string;
+  technicianName: string;
+  technicianPhone: string;
+  status: FarmerSubscriptionStatus;
+  createdAt: string;
+  reviewedAt: string | null;
+  rejectionReason: string | null;
+  planName: string | null;
+  planStartDate: string | null;
+  planEndDate: string | null;
+  smsMessage: string | null;
+  smsStatus: FarmerSmsStatus | null;
+  smsSentAt: string | null;
+  smsError: string | null;
+};

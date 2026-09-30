@@ -9,6 +9,7 @@ const navItems: Array<{ label: string; page: AdminPage }> = [
   { label: 'Mechanics', page: 'adminMechanics' },
   { label: 'Add new jobs', page: 'adminAddJobs' },
   { label: 'Assign jobs', page: 'adminAssignJobs' },
+  { label: 'Farmer subscriptions', page: 'adminFarmers' },
   { label: 'Community', page: 'adminCommunity' },
 ];
 

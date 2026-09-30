@@ -4,10 +4,15 @@ services:
     build: .
     container_name: agrisahaya-backend
     init: true
-    # SETTING_* business settings (functions/src/shared/settings.ts) come from the same .env the apps use.
+    # SETTING_* business settings (functions/src/shared/settings.ts): .env first, then .env.pulled — the production
+    # values copied down by `make settings-pull` / `make local-apks` — which wins where both set one. The functions
+    # read them from this environment and docker/seed-settings.cjs copies them into the local config/app for the apps.
+    # A changed file applies on the next `make backend-restart` (compose recreates the container when it differs).
     # functions/.env.local (the local auth header) is loaded by the emulator itself.
     env_file:
       - path: .env
+        required: false
+      - path: .env.pulled
         required: false
     ports:
       - "4000:4000" # Emulator UI
@@ -25,8 +30,9 @@ services:
     stop_signal: SIGINT
     stop_grace_period: 60s
     healthcheck:
-      # Healthy once Firestore, Auth and Functions all answer — not just the hub, which starts first.
-      test: ["CMD-SHELL", "curl -fs http://127.0.0.1:8080 && curl -fs http://127.0.0.1:9099 && curl -s -o /dev/null http://127.0.0.1:5001"]
+      # Healthy once Firestore, Auth and Functions all answer — not just the hub, which starts first — and the
+      # settings are in the local config/app (docker/backend.sh), so an app launched right after reads the right ones.
+      test: ["CMD-SHELL", "curl -fs http://127.0.0.1:8080 && curl -fs http://127.0.0.1:9099 && curl -s -o /dev/null http://127.0.0.1:5001 && test -f /tmp/settings-seeded"]
       interval: 5s
       timeout: 3s
       retries: 60

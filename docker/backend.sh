@@ -23,6 +23,13 @@ else
   echo "No saved emulator data yet — starting empty. Create the admin once: make admin ADMIN_EMAIL=... ADMIN_PASSWORD=..."
 fi
 
+# Once every emulator answers, copy the SETTING_* environment into the local config/app (docker/seed-settings.cjs).
+# The healthcheck (docker-compose.yml) waits for the marker, so `make backend-up` returns only after this.
+SEEDED=/tmp/settings-seeded
+rm -f "$SEEDED"
+( until curl -fs http://127.0.0.1:8080 >/dev/null 2>&1 && curl -s -o /dev/null http://127.0.0.1:5001; do sleep 1; done
+  until node docker/seed-settings.cjs "$PROJECT" "$SEEDED"; do sleep 2; done ) &
+
 # Besides the export on a clean stop, save every 30s so a crash or a killed Docker loses at most 30 seconds.
 ( while sleep 30; do
     curl -fs http://127.0.0.1:8080 >/dev/null 2>&1 || continue # Firestore not up yet
