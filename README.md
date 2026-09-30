@@ -340,7 +340,17 @@ not code. The full list, with defaults and allowed ranges, is
 
 - **Local testing:** set `SETTING_<NAME>` in `.env` (e.g.
   `SETTING_OTP_REUSE_SECONDS=60`; see `.env.example`), then restart the backend
-  (`make backend-restart`) and rebuild/reload the app.
+  (`make backend-restart`). The Docker backend writes its `SETTING_*` values into
+  the local emulator's `config/app`, and the apps read that document when they
+  open, just as they do in production, so an installed APK picks up the change
+  when it next opens. No rebuild is needed.
+- **Local, with production's values:** `make settings-pull` copies production's
+  `config/app` into `.env.pulled` (gitignored). The backend loads that file after
+  `.env`, so its values win. Re-running it regenerates only the marked block;
+  lines you add below the block are kept and override it. `make local-apks` pulls
+  first, then builds mechanic + admin phone APKs against the local backend and
+  starts it (`SKIP_PULL=1` keeps the current file). Delete `.env.pulled` and run
+  `make backend-restart` to go back to plain `.env` values.
 - **Production:** the Firestore document `config/app`. Change it from the
   command line (needs `functions/.env.scripts`), not from the admin app:
 
@@ -389,6 +399,12 @@ approval, jobs, notifications, profile changes — see [USER_GUIDE.md](USER_GUID
   (`revokeOtherSessions` in `functions/src/technicianFunctions.ts`): an old
   device's already-issued session can keep working for up to ~1hr after a new
   sign-in, since revocation doesn't invalidate an already-issued ID token.
+- Farmer subscriptions: no SMS provider is connected yet. `sendSms` in
+  `functions/src/lib/sms.ts` logs the message and reports `not-configured`
+  (select a provider with the `SMS_PROVIDER` env var once one is added there),
+  so admins send the confirmation with the card's **Send SMS from this phone**
+  link. Subscription payment is collected by hand after verification — the app
+  doesn't record it.
 - Kannada/Tamil/Telugu/Malayalam strings in `src/i18n/strings.ts` are a first
   pass, not yet reviewed by a native speaker (Hindi has been checked carefully).
 

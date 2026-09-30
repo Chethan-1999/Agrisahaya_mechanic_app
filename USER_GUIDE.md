@@ -87,6 +87,21 @@ needed. Every change is kept as a new version of your profile, so an admin can
 see what changed and when. Whether your payment is verified is set only by an
 admin.
 
+### Referring farmers
+
+Sign farmers up for the **AgriSahaya Annual Service Plan** from the **Farmers**
+tab. Tap **Add farmer** and fill in the farmer's name, mobile number, village,
+mandal/district, pincode, state, and the machinery they own (tick **Other** to
+type in a machine that isn't listed). Tap **Submit** and the request goes to
+the admin.
+
+The Farmers tab lists everyone you've referred with its status:
+**Waiting for approval**, **Subscribed** (with the plan's start and end dates),
+or **Not approved** (with the admin's reason). A farmer can have only one open
+or active request, so a number that's already waiting or subscribed can't be
+sent again. Payment is arranged with the farmer separately, after the admin has
+verified the request — it isn't collected in the app.
+
 ## For admins
 
 Log in from **Admin Login** on the landing screen with the email/password an
@@ -138,6 +153,24 @@ status). For each technician you can:
   admins can cancel a job** — technicians can accept, decline, or complete,
   but never cancel.
 
+### Farmer subscriptions
+
+Subscription requests that mechanics sent for the farmers they referred, one
+card per farmer, newest first. Filter by **Pending** (the default),
+**Approved**, **Rejected**, or **All**; tap **More** for the phone number (tap
+to call and verify), pincode, state, machinery, and the referring mechanic's
+number.
+
+- **Approve Subscription** confirms the request is genuine. The farmer's plan
+  starts that day (India time) and runs 12 months (the `subscriptionPlanMonths`
+  setting). A welcome SMS with the plan dates and what it covers is prepared,
+  and the mechanic gets a push saying the farmer is subscribed.
+- **Reject** asks for an optional reason, which the mechanic sees.
+- The SMS provider isn't connected yet, so an approved card says so and offers
+  **Send SMS from this phone**: it opens your phone's messaging app with the
+  farmer's number and the message already filled in. Once a provider is
+  connected, **Resend SMS** sends it from the server.
+
 ### Community
 
 Post a title and message that every active technician sees in the app's
@@ -159,3 +192,6 @@ signup — with the old and new value of every field that changed.
   haven't been checked by a native speaker yet — if something reads oddly in
   one of those languages, switch to English or Hindi (both verified) and let
   the team know which screen/string looked wrong.
+- The farmer confirmation SMS isn't sent automatically yet — no SMS provider is
+  connected. Admins send it with **Send SMS from this phone** on the approved
+  card.
