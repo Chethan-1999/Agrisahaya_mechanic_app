@@ -15,6 +15,7 @@ import { currentProfileVersion, recordProfileEdit } from './lib/profileEdits';
 import { pushToTechnician } from './lib/push';
 import { optionalTrimmed, requireString } from './lib/request';
 import { getSettings } from './lib/settings';
+import { SMS_SECRETS, sendSms } from './lib/sms';
 import { technicianRef } from './lib/technicians';
 import { parseProfileUpdates, requireValidProfile, type ProfileField, type ProfileInput } from './lib/validation';
 
@@ -51,10 +52,15 @@ export const reviewSignup = onCall(async (request) => {
     updatedAt: now,
   });
 
-  if (approved) await pushToTechnician(technicianId, notify.accountActivated());
+  if (approved) {
+    await pushToTechnician(technicianId, notify.accountActivated());
+    // Best-effort like the push: a failed SMS is logged by sendSms and never undoes the approval.
+    const { supportPhoneNumber } = await getSettings();
+    await sendSms(String(snap.data()?.phoneNumber), notify.accountActivatedSms(String(snap.data()?.fullName ?? ''), supportPhoneNumber));
+  }
 
   return { status: 'ok' };
-});
+}, { secrets: SMS_SECRETS });
 
 /** Admin toggles an already-reviewed technician between active and inactive. */
 export const setTechnicianStatus = onCall(async (request) => {

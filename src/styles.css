@@ -128,14 +128,6 @@ h2 { margin: 0 0 18px; font-size: 26px; }
 .mechanic-tab-card { width: 100%; border-radius: 22px; }
 .mechanic-tab-card .detail-grid { grid-template-columns: 1fr; }
 .blank-tab-card { min-height: 620px; display: grid; place-items: center; }
-.marketplace-soon-page { min-height: 620px; display: grid; place-items: center; padding-bottom: 110px; }
-.marketplace-soon-card { width: 100%; padding: 28px 20px; border: 1px solid rgba(22, 128, 71, 0.18); border-radius: 24px; background: linear-gradient(145deg, #ffffff 0%, #f0fbf4 52%, #fff8e8 100%); box-shadow: var(--shadow); text-align: center; overflow: hidden; }
-.marketplace-emoji-row { display: flex; justify-content: center; gap: 14px; margin-bottom: 18px; }
-.marketplace-emoji-row span { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 20px; background: rgba(255, 255, 255, 0.82); box-shadow: 0 14px 28px rgba(22, 128, 71, 0.12); font-size: 28px; }
-.marketplace-soon-card h1 { margin: 6px 0 10px; font-size: 30px; line-height: 1.08; }
-.marketplace-soon-card p:not(.eyebrow) { max-width: 320px; margin: 0 auto; color: var(--muted); font-weight: 850; line-height: 1.45; }
-.marketplace-preview-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 22px; }
-.marketplace-preview-chips span { padding: 10px 12px; border-radius: 999px; background: var(--surface); color: var(--primary-dark); font-size: 12px; font-weight: 900; box-shadow: 0 8px 18px rgba(22, 128, 71, 0.1); }
 .mechanic-community-screen { display: grid; gap: 14px; padding-bottom: 110px; }
 .community-hero > span { position: relative; width: 58px; height: 58px; display: grid; place-items: center; border-radius: 20px; background: var(--primary); color: white; font-size: 26px; font-weight: 950; box-shadow: 0 14px 28px rgba(22, 128, 71, 0.22); }
 .community-post-list { display: grid; gap: 12px; }
@@ -439,10 +431,6 @@ th { color: var(--muted); font-size: 12px; font-weight: 950; text-transform: upp
   .community-post-meta { align-items: flex-start; flex-direction: column; gap: 4px; }
   .community-post-meta time { text-align: left; }
   .community-post-card p { font-size: 15px; }
-  .marketplace-soon-page { min-height: calc(100dvh - 124px - env(safe-area-inset-bottom)); padding-bottom: 0; }
-  .marketplace-soon-card { padding: 24px 16px; border-radius: 22px; }
-  .marketplace-emoji-row span { width: 50px; height: 50px; border-radius: 18px; font-size: 24px; }
-  .marketplace-soon-card h1 { font-size: 26px; }
   .mechanic-profile-hero { padding: 24px 16px 18px; border-radius: 22px; }
   .profile-avatar { width: 72px; height: 72px; margin-bottom: 12px; border-radius: 24px; font-size: 28px; }
   .mechanic-profile-hero h1 { margin-bottom: 12px; font-size: 26px; }
@@ -473,10 +461,7 @@ th { color: var(--muted); font-size: 12px; font-weight: 950; text-transform: upp
   .jobs-hero > span, .community-hero > span { width: 44px; height: 44px; border-radius: 16px; font-size: 20px; }
   .mechanic-job-card { padding-top: 36px; }
   .jobs-empty-state, .community-empty-state { min-height: calc(100dvh - 190px - env(safe-area-inset-bottom)); }
-  .marketplace-soon-page { min-height: calc(100dvh - 108px - env(safe-area-inset-bottom)); }
-  .marketplace-emoji-row { gap: 10px; margin-bottom: 14px; }
-  .marketplace-emoji-row span { width: 44px; height: 44px; border-radius: 16px; font-size: 22px; }
-  .marketplace-soon-card h1, .mechanic-profile-hero h1 { font-size: 23px; }
+  .mechanic-profile-hero h1 { font-size: 23px; }
   .profile-avatar { width: 64px; height: 64px; border-radius: 22px; font-size: 25px; }
   .mechanic-bottom-nav button { min-height: 54px; }
   .mechanic-form-page { padding-top: max(10px, env(safe-area-inset-top)); padding-bottom: max(10px, env(safe-area-inset-bottom)); }

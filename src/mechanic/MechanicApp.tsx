@@ -20,7 +20,6 @@ import { Community } from './screens/Community';
 import { FarmerReferrals } from './screens/FarmerReferrals';
 import { FarmerSubscriptionForm } from './screens/FarmerSubscriptionForm';
 import { Landing } from './screens/Landing';
-import { MarketplaceComingSoon } from './screens/MarketplaceComingSoon';
 import { MechanicAuth } from './screens/MechanicAuth';
 import { MechanicPending } from './screens/MechanicPending';
 import { MechanicProfile } from './screens/MechanicProfile';
@@ -33,7 +32,6 @@ export type MechanicPage =
   | 'mechanicAuth'
   | 'mechanicPending'
   | 'mechanicReapply'
-  | 'mechanicMarketplace'
   | 'mechanicProfile'
   | 'mechanicJobs'
   | 'mechanicCommunity'
@@ -47,7 +45,6 @@ const backTarget: Partial<Record<MechanicPage, MechanicPage>> = {
   mechanicReapply: 'mechanicPending',
   mechanicAuth: 'landing',
   mechanicProfile: 'mechanicJobs',
-  mechanicMarketplace: 'mechanicJobs',
   mechanicCommunity: 'mechanicJobs',
   mechanicFarmers: 'mechanicJobs',
   mechanicFarmerForm: 'mechanicFarmers',
@@ -349,7 +346,6 @@ export default function MechanicApp() {
             <FarmerReferrals onAddFarmer={() => setPage('mechanicFarmerForm')} technicianId={currentMechanic.id} withLoading={withLoading} />
           )}
           {page === 'mechanicCommunity' && <Community withLoading={withLoading} />}
-          {page === 'mechanicMarketplace' && <MarketplaceComingSoon />}
           {page === 'mechanicProfile' && (
             <MechanicProfile
               mechanic={currentMechanic}

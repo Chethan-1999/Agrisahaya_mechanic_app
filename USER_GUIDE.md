@@ -119,7 +119,8 @@ Totals for active, inactive, and pending technicians.
 A searchable, filterable list of every technician (by district, village,
 status). For each technician you can:
 
-- **Approve** a pending signup
+- **Approve** a pending signup. The technician gets a push notification and
+  an SMS saying their account is approved.
 - **Activate / deactivate** an existing technician
 - **View** full details, including their running job stats (completed,
   cancelled, pending)
@@ -166,10 +167,11 @@ number.
   setting). A welcome SMS with the plan dates and what it covers is prepared,
   and the mechanic gets a push saying the farmer is subscribed.
 - **Reject** asks for an optional reason, which the mechanic sees.
-- The SMS provider isn't connected yet, so an approved card says so and offers
-  **Send SMS from this phone**: it opens your phone's messaging app with the
-  farmer's number and the message already filled in. Once a provider is
-  connected, **Resend SMS** sends it from the server.
+- The welcome SMS is sent automatically from the server when you approve. If
+  it fails (for example, the SMS gateway phone is offline), the card says so.
+  Use **Resend SMS** to try again from the server, or **Send SMS from this
+  phone**, which opens your phone's messaging app with the farmer's number and
+  the message already filled in.
 
 ### Community
 
@@ -192,6 +194,7 @@ signup — with the old and new value of every field that changed.
   haven't been checked by a native speaker yet — if something reads oddly in
   one of those languages, switch to English or Hindi (both verified) and let
   the team know which screen/string looked wrong.
-- The farmer confirmation SMS isn't sent automatically yet — no SMS provider is
-  connected. Admins send it with **Send SMS from this phone** on the approved
-  card.
+- SMS (a technician's approval, a farmer's welcome message) goes out from one
+  Android phone running the SMS gateway app. If that phone is switched off,
+  offline, or out of SMS balance, messages don't go out. Keep it charged and
+  online.

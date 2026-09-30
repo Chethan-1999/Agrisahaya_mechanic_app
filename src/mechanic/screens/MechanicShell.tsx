@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, Headphones, PhoneCall, Sprout, Store, UserRound, UsersRound } from 'lucide-react';
+import { BriefcaseBusiness, Headphones, PhoneCall, Sprout, UserRound, UsersRound } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 
 import { getSettings } from '../../config/settings';
@@ -9,7 +9,6 @@ const mechanicTabs: Array<{ Icon: typeof BriefcaseBusiness; label: string; page:
   { Icon: BriefcaseBusiness, label: 'Jobs', page: 'mechanicJobs' },
   { Icon: Sprout, label: 'Farmers', page: 'mechanicFarmers' },
   { Icon: UsersRound, label: 'Community', page: 'mechanicCommunity' },
-  { Icon: Store, label: 'Marketplace', page: 'mechanicMarketplace' },
   { Icon: UserRound, label: 'Profile', page: 'mechanicProfile' },
 ];
 

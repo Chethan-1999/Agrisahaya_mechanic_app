@@ -40,6 +40,8 @@ CLAUDE.md
 functions/.env
 functions/.env.*
 !functions/.env.*.example
+# Secret Manager values for the emulator (see functions/.secret.local.example)
+functions/.secret.local
 push-github-api.ps1
 
 # typescript
