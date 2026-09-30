@@ -1,5 +1,5 @@
 import type { DecodedIdToken } from 'firebase-admin/auth';
-import { onCall as onCallV2, type CallableRequest } from 'firebase-functions/v2/https';
+import { onCall as onCallV2, type CallableOptions, type CallableRequest } from 'firebase-functions/v2/https';
 
 /**
  * Where every callable runs. asia-south1 (Mumbai) sits next to the Firestore database and the users — in us-central1
@@ -35,7 +35,10 @@ function withLocalAuth(request: CallableRequest): CallableRequest {
   return { ...request, auth: { uid, token: claims } };
 }
 
-/** `onCall` from firebase-functions/v2/https, deployed to REGIONS. Use this for every callable. */
-export function onCall<Return>(handler: (request: CallableRequest) => Return) {
-  return onCallV2({ region: REGIONS }, (request) => handler(withLocalAuth(request)));
+/**
+ * `onCall` from firebase-functions/v2/https, deployed to REGIONS. Use this for every callable. `options.secrets` lists
+ * the Secret Manager secrets the handler reads (e.g. lib/sms.ts's SMS_SECRETS).
+ */
+export function onCall<Return>(handler: (request: CallableRequest) => Return, options: Pick<CallableOptions, 'secrets'> = {}) {
+  return onCallV2({ ...options, region: REGIONS }, (request) => handler(withLocalAuth(request)));
 }

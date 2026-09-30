@@ -11,7 +11,7 @@ import { onCall } from './lib/onCall';
 import { pushToAdmins, pushToTechnician } from './lib/push';
 import { optionalTrimmed, requireString } from './lib/request';
 import { getSettings } from './lib/settings';
-import { sendSms } from './lib/sms';
+import { SMS_SECRETS, sendSms } from './lib/sms';
 import { assertActiveTechnician, technicianName, technicianRef } from './lib/technicians';
 
 /**
@@ -177,9 +177,9 @@ export const reviewFarmerSubscription = onCall(async (request) => {
   );
 
   return subscriptionResult(ref);
-});
+}, { secrets: SMS_SECRETS });
 
-/** Admin re-sends an approved farmer's confirmation SMS through the provider — e.g. once SMS is live, or after a failure. */
+/** Admin re-sends an approved farmer's confirmation SMS through the provider — e.g. after a failure or a gateway phone that was offline. */
 export const resendFarmerSubscriptionSms = onCall(async (request) => {
   await requireAdmin(request);
   const requestId = requireString(request.data, 'requestId');
@@ -193,4 +193,4 @@ export const resendFarmerSubscriptionSms = onCall(async (request) => {
   await sendConfirmationSms(ref, String(data.phoneNumber), String(data.smsMessage));
 
   return subscriptionResult(ref);
-});
+}, { secrets: SMS_SECRETS });

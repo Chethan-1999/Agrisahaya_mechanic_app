@@ -54,6 +54,14 @@ export const accountActivated = (): PushPayload => ({
   data: { type: 'account-activated' },
 });
 
+/**
+ * The SMS twin of accountActivated (sent through lib/sms.ts), for a technician who isn't watching the app. Plain GSM
+ * text with the first name only, so it stays one 160-character SMS part.
+ */
+export const accountActivatedSms = (fullName: string, supportPhoneNumber: string) =>
+  `AgriSahaya: Hi ${fullName.trim().split(/\s+/)[0] || 'there'}, your technician account is approved. ` +
+  `Open the AgriSahaya app to start receiving jobs. Help: ${supportPhoneNumber}`;
+
 export const announcement = (announcementId: string, title: string, body: string): PushPayload => ({
   title: `📢 ${title}`,
   body: body.slice(0, 120),

@@ -363,6 +363,65 @@ not code. The full list, with defaults and allowed ranges, is
   The apps read it when they open; functions pick up a change within a minute.
   A missing or invalid value falls back to its default.
 
+### SMS gateway
+
+Server SMS (a technician's account approval, a farmer's subscription
+confirmation) goes through `sendSms` in `functions/src/lib/sms.ts`, which picks
+a provider with the `SMS_PROVIDER` env var:
+
+- `none` (the default): nothing is sent. The send is logged, and the admin app
+  offers **Send SMS from this phone** for farmer confirmations.
+- `sms-gate`: [SMS Gateway for Android](https://github.com/capcom6/android-sms-gateway).
+  An Android phone (the admin's) runs the gateway app. A function calls the
+  app's cloud relay (`api.sms-gate.app`), and the phone sends the SMS from its
+  own SIM. There's no DLT registration and no per-message fee beyond the SIM
+  plan.
+
+Set up the gateway phone:
+
+1. Install the app's `app-release.apk` from
+   [GitHub releases](https://github.com/capcom6/android-sms-gateway/releases).
+   It isn't on the Play Store, and in India Play Protect blocks it when it's
+   installed from a browser because it asks for SMS permissions. Install it
+   over USB instead:
+   `$ANDROID_HOME/platform-tools/adb install app-release.apk`.
+   If the SMS permission is greyed out, go to **Settings → Apps → SMS Gateway
+   → ⋮ → Allow restricted settings**.
+2. Grant the SMS permission. Set battery optimisation to **Unrestricted** and
+   turn on **Start on boot**.
+3. Switch on **Cloud server** and tap **Offline** so it changes to **Online**.
+   The app then shows a **Username** and **Password**. The **Local server** isn't
+   needed, so leave it off.
+
+Point the functions at it:
+
+- **Local:** put `SMS_PROVIDER=sms-gate` in `functions/.env.local`, and the
+  credentials in `functions/.secret.local` (see
+  `functions/.secret.local.example`; it's gitignored). Then run
+  `make backend-restart`. `make sms-test PHONE=+91XXXXXXXXXX` sends one SMS
+  straight through the relay, which checks the phone without involving the
+  functions.
+- **Production:** put `SMS_PROVIDER=sms-gate` in
+  `functions/.env.<project-id>`, store the credentials in Secret Manager, then
+  deploy:
+
+  ```bash
+  firebase functions:secrets:set SMS_GATE_USERNAME
+  firebase functions:secrets:set SMS_GATE_PASSWORD
+  make deploy-prod
+  ```
+
+  Every function that can send an SMS declares these secrets. Set them before
+  you deploy, even while `SMS_PROVIDER=none`.
+
+SMS is best-effort, like push notifications. A failed send is logged and never
+fails the approval. A failed farmer confirmation also shows on its card with
+**Resend SMS**. The gateway phone has to stay on, online and running the app,
+and the SIM plan's SMS allowance limits how many can go out (many Indian
+prepaid plans allow about 100 a day). Message text passes through the public
+relay. To keep it off that relay, the app can self-host the relay; point
+`SMS_GATE_URL` at it.
+
 ### Bootstrap the first admin
 
 There's no in-app path to create an admin — `firestore.rules` denies every
@@ -399,12 +458,12 @@ approval, jobs, notifications, profile changes — see [USER_GUIDE.md](USER_GUID
   (`revokeOtherSessions` in `functions/src/technicianFunctions.ts`): an old
   device's already-issued session can keep working for up to ~1hr after a new
   sign-in, since revocation doesn't invalidate an already-issued ID token.
-- Farmer subscriptions: no SMS provider is connected yet. `sendSms` in
-  `functions/src/lib/sms.ts` logs the message and reports `not-configured`
-  (select a provider with the `SMS_PROVIDER` env var once one is added there),
-  so admins send the confirmation with the card's **Send SMS from this phone**
-  link. Subscription payment is collected by hand after verification — the app
-  doesn't record it.
+- Server SMS depends on one Android phone running SMS Gateway for Android (see
+  "SMS gateway"). If that phone is off, offline or out of SMS allowance, sends
+  fail. The failure is logged, and farmer confirmations can be resent. A 'sent'
+  status means the relay queued the SMS for the phone, not that it was
+  delivered. Subscription payment is collected by hand after verification — the
+  app doesn't record it.
 - Kannada/Tamil/Telugu/Malayalam strings in `src/i18n/strings.ts` are a first
   pass, not yet reviewed by a native speaker (Hindi has been checked carefully).
 

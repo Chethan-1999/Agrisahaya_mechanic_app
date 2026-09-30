@@ -1,6 +1,6 @@
 .PHONY: web sync icons icons-admin apk local-phone local-apks prod-apks deploy-prod admin admin-prod emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean \
 	sync-admin apk-admin install-admin launch-admin run-admin logs-admin clean-admin local-phone-admin local-admin \
-	settings-show settings-set settings-seed settings-pull call \
+	settings-show settings-set settings-seed settings-pull call sms-test \
 	backend-up backend-down backend-restart backend-reset logs-functions logs-functions-prod
 
 # Override any of these on the command line, e.g. `make run AVD_NAME=Pixel_7`
@@ -234,6 +234,18 @@ call:
 	data="$$DATA"; [ -n "$$data" ] || data='{}'; \
 	printf '{"data": %s}' "$$data" | curl -sS -X POST "http://localhost:5001/$(FIREBASE_PROJECT)/asia-south1/$(FN)" \
 		-H 'Content-Type: application/json' "$$@" --data-binary @-; echo
+
+## Send one test SMS through the SMS Gateway for Android phone, straight to its cloud relay (no functions involved),
+## with the credentials in functions/.secret.local. Checks the gateway phone is online and sending.
+## Usage: make sms-test PHONE=+91XXXXXXXXXX [TEXT='...']
+sms-test:
+	@test -n "$(PHONE)" || { echo "Usage: make sms-test PHONE=+91XXXXXXXXXX [TEXT='...']"; exit 1; }
+	@user=$$(sed -n 's/^SMS_GATE_USERNAME=//p' functions/.secret.local 2>/dev/null); \
+	pass=$$(sed -n 's/^SMS_GATE_PASSWORD=//p' functions/.secret.local 2>/dev/null); \
+	test -n "$$user" -a -n "$$pass" || { echo "Set SMS_GATE_USERNAME/SMS_GATE_PASSWORD in functions/.secret.local (see functions/.secret.local.example)"; exit 1; }; \
+	text="$${TEXT:-AgriSahaya SMS test}"; \
+	node -e 'console.log(JSON.stringify({ textMessage: { text: process.argv[1] }, phoneNumbers: [process.argv[2]] }))' "$$text" "$(PHONE)" \
+		| curl -sS -X POST -u "$$user:$$pass" -H 'Content-Type: application/json' --data-binary @- https://api.sms-gate.app/3rdparty/v1/messages; echo
 
 ## PRODUCTION business settings (Firestore config/app; keys and defaults in functions/src/shared/settings.ts).
 ## Local testing uses SETTING_* in .env instead. Needs the service account key in functions/.env.scripts.
