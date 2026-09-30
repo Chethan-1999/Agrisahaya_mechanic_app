@@ -513,3 +513,30 @@ tr.needs-reassign td { background: #fff5f5; border-top: 2px solid #f3b7b7; borde
 tr.needs-reassign td:first-child { border-left: 2px solid #f3b7b7; }
 tr.needs-reassign td:last-child { border-right: 2px solid #f3b7b7; }
 .needs-reassign-note { display: block; margin-top: 4px; color: #b42318; font-weight: 700; }
+
+/* Farmer subscriptions — mechanic referral form/list and the admin review tab. */
+.job-card-topline .pill { color: white; }
+.farmer-referrals-hint { margin: 0 0 12px; font-size: 14px; font-weight: 800; line-height: 1.4; }
+.farmer-add-button { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 14px; }
+.mechanic-job-card p.error-text span { color: var(--danger); }
+.mechanic-job-card > p + p, .mechanic-job-card > h2 + p { margin-top: 8px; }
+.machinery-field { border: 0; margin: 0; padding: 0; min-width: 0; }
+.machinery-field legend { padding: 0; margin-bottom: 7px; }
+.machinery-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.machinery-option { min-height: 42px; display: inline-flex; align-items: center; gap: 8px; padding: 0 14px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); color: var(--text); font-size: 14px; font-weight: 850; cursor: pointer; }
+.machinery-option.checked { border-color: var(--primary); background: var(--surface-alt); color: var(--primary-dark); }
+.field .machinery-option input { width: 18px; height: 18px; min-height: 0; padding: 0; accent-color: var(--primary); }
+.farmer-filter-chips { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 2px; }
+.farmer-filter-chips button { flex: 0 0 auto; min-height: 38px; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text); font-size: 13px; font-weight: 900; }
+.farmer-filter-chips button b { min-width: 22px; padding: 2px 6px; border-radius: 999px; background: var(--surface-alt); color: var(--primary-dark); font-size: 11px; }
+.farmer-filter-chips button.active { border-color: var(--primary); background: var(--primary); color: white; }
+.farmer-filter-chips button.active b { background: rgba(255, 255, 255, 0.22); color: white; }
+.farmer-card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0 4px; }
+.farmer-card-actions .primary, .farmer-card-actions .danger, .farmer-card-actions .secondary { min-height: 40px; padding: 8px 10px; border-radius: 12px; font-size: 13px; text-align: center; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+.farmer-sms-panel { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.farmer-sms-status { margin: 0; font-size: 12px; font-weight: 900; color: var(--warning); }
+.farmer-sms-status.sent { color: var(--primary); }
+.farmer-sms-status.failed { color: var(--danger); }
+@media (max-width: 360px) {
+  .farmer-card-actions { grid-template-columns: 1fr; }
+}

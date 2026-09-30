@@ -1,6 +1,7 @@
 import { isIndianState } from '../../functions/src/shared/indianStates';
 import { getSettings } from '../config/settings';
-import type { MechanicForm } from '../types';
+import type { StringKey } from '../i18n/strings';
+import type { FarmerSubscriptionForm, MechanicForm } from '../types';
 
 export type ValidationErrors = Partial<Record<keyof MechanicForm, string>>;
 
@@ -53,6 +54,25 @@ export function validateProfileForm(form: Omit<MechanicForm, 'phoneNumber'>): Va
   return errors;
 }
 
-export function hasErrors(errors: ValidationErrors) {
+export function hasErrors(errors: object) {
   return Object.keys(errors).length > 0;
+}
+
+/** Errors as i18n keys — this form is technician-facing, so the screen translates them. */
+export type FarmerFormErrors = Partial<Record<keyof FarmerSubscriptionForm, StringKey>>;
+
+/** Mirrors functions/src/lib/farmerValidation.ts — the server re-checks all of this too. */
+export function validateFarmerForm(form: FarmerSubscriptionForm): FarmerFormErrors {
+  const errors: FarmerFormErrors = {};
+
+  if (!form.fullName.trim()) errors.fullName = 'farmerErrorName';
+  if (!isValidPhone(form.phoneNumber)) errors.phoneNumber = 'farmerErrorPhone';
+  if (!form.village.trim()) errors.village = 'farmerErrorVillage';
+  if (!form.mandalDistrict.trim()) errors.mandalDistrict = 'farmerErrorMandal';
+  if (!/^\d{6}$/.test(form.pincode.trim())) errors.pincode = 'farmerErrorPincode';
+  if (!isIndianState(form.state)) errors.state = 'farmerErrorState';
+  if (form.machinery.length === 0) errors.machinery = 'farmerErrorMachinery';
+  else if (form.machinery.includes('other') && !form.machineryOther.trim()) errors.machineryOther = 'farmerErrorMachineryOther';
+
+  return errors;
 }
