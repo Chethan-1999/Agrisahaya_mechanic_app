@@ -277,6 +277,11 @@ function startBackend() {
   if (spawnSync('docker', ['info'], { stdio: 'ignore' }).status !== 0) {
     fail('Docker is not running. Start Docker Desktop, then run this again — the local backend runs in a container.');
   }
+  log(
+    existsSync(path.join(repoRoot, '.env.pulled'))
+      ? 'Backend settings: .env, overridden by .env.pulled (production values from `make settings-pull`).'
+      : 'Backend settings: SETTING_* in .env (no .env.pulled — `make settings-pull` copies production\'s).',
+  );
   log('Starting the local backend in Docker (first run builds the image and takes a few minutes)...');
   const up = spawnSync('docker', ['compose', 'up', '--detach', '--build', '--wait', 'backend'], { cwd: repoRoot, stdio: 'inherit' });
   if (up.status !== 0) fail('The local backend did not start — see the output above, or run `make logs-functions`.');
