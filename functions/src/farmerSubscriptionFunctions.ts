@@ -148,7 +148,6 @@ export const reviewFarmerSubscription = onCall(async (request) => {
     const endDate = planEndDate(startDate, settings.subscriptionPlanMonths);
     const smsMessage = subscriptionConfirmed({
       farmerName: String(data.fullName),
-      months: settings.subscriptionPlanMonths,
       startDate,
       endDate,
       supportPhoneNumber: settings.supportPhoneNumber,
@@ -179,18 +178,31 @@ export const reviewFarmerSubscription = onCall(async (request) => {
   return subscriptionResult(ref);
 }, { secrets: SMS_SECRETS });
 
-/** Admin re-sends an approved farmer's confirmation SMS through the provider — e.g. after a failure or a gateway phone that was offline. */
+/**
+ * Admin re-sends an approved farmer's confirmation SMS through the provider — e.g. after a failure or a gateway phone
+ * that was offline. The text is rebuilt from the current template (lib/farmerMessages.ts) and the plan's stored dates,
+ * so a request approved before a wording change goes out with the new wording.
+ */
 export const resendFarmerSubscriptionSms = onCall(async (request) => {
   await requireAdmin(request);
   const requestId = requireString(request.data, 'requestId');
   const ref = farmerSubscriptionRef(requestId);
   const data = (await requireDoc(ref, 'Subscription request not found.')).data() ?? {};
 
-  if (data.status !== 'approved' || !data.smsMessage) {
+  if (data.status !== 'approved' || !data.planStartDate || !data.planEndDate) {
     throw new HttpsError('failed-precondition', 'Only an approved subscription has a confirmation SMS to send.');
   }
 
-  await sendConfirmationSms(ref, String(data.phoneNumber), String(data.smsMessage));
+  const { supportPhoneNumber } = await getSettings();
+  const smsMessage = subscriptionConfirmed({
+    farmerName: String(data.fullName),
+    startDate: String(data.planStartDate),
+    endDate: String(data.planEndDate),
+    supportPhoneNumber,
+  });
+
+  await ref.update({ smsMessage });
+  await sendConfirmationSms(ref, String(data.phoneNumber), smsMessage);
 
   return subscriptionResult(ref);
 }, { secrets: SMS_SECRETS });
