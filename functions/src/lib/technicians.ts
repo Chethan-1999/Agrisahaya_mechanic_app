@@ -5,10 +5,13 @@ import { db } from './firebaseAdmin';
 
 export const technicianRef = (id: string) => db.collection('technicians').doc(id);
 
-/** Throws unless `technician` exists and is active — the one condition a job can be assigned into. */
-export function assertActiveTechnician(technician: DocumentSnapshot | null): void {
+/** Throws unless `technician` exists and is active — the one condition a job can be assigned into (or a farmer referred by). */
+export function assertActiveTechnician(
+  technician: DocumentSnapshot | null,
+  message = 'Only an active mechanic can be assigned a job.',
+): void {
   if (!technician?.exists || technician.data()?.status !== 'active') {
-    throw new HttpsError('failed-precondition', 'Only an active mechanic can be assigned a job.');
+    throw new HttpsError('failed-precondition', message);
   }
 }
 

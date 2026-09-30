@@ -60,6 +60,14 @@ export const announcement = (announcementId: string, title: string, body: string
   data: { type: 'announcement', announcementId },
 });
 
+export const farmerRequestReviewed = (requestId: string, farmerName: string, approved: boolean): PushPayload => ({
+  title: approved ? '🌾 Farmer subscribed!' : 'Farmer request not approved',
+  body: approved
+    ? `${farmerName}'s AgriSahaya subscription is now active. Thanks for the referral!`
+    : `${farmerName}'s subscription request was not approved — tap to see why.`,
+  data: { type: 'farmer-request', requestId },
+});
+
 // ── To the admins ───────────────────────────────────────────────────────────
 
 const TECHNICIAN_JOB_ACTION_TITLES = {
@@ -86,4 +94,10 @@ export const signupResent = (technicianId: string, fullName: string): PushPayloa
   title: '🔁 Signup sent again',
   body: `${fullName} updated their rejected signup — tap to review`,
   data: { type: 'admin-signup', technicianId },
+});
+
+export const newFarmerRequest = (requestId: string, farmer: { fullName: string; village: string }, technicianName: string): PushPayload => ({
+  title: '🌾 New farmer subscription request',
+  body: `${farmer.fullName} · ${farmer.village} — referred by ${technicianName}. Tap to review`,
+  data: { type: 'admin-farmer-request', requestId },
 });

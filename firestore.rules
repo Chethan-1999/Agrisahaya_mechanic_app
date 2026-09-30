@@ -43,6 +43,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Farmer subscription requests: the referring mechanic sees their own, admins see all. Written only by
+    // farmerSubscriptionFunctions.ts.
+    match /farmerSubscriptions/{id} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.technicianId == request.auth.uid);
+      allow write: if false;
+    }
+
     match /admins/{id} {
       allow read: if isAdmin() || isOwner(id);
       allow write: if false; // provisioned by scripts/create-admin.ts, not the client
