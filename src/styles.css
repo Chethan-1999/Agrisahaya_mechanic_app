@@ -203,6 +203,7 @@ h2 { margin: 0 0 18px; font-size: 26px; }
 .mechanic-welcome strong { overflow: hidden; color: var(--primary-dark); font-size: 18px; font-weight: 950; line-height: 1.08; text-overflow: ellipsis; white-space: nowrap; }
 .mechanic-support-area { position: relative; flex: 0 0 auto; margin-left: auto; }
 .mechanic-welcome-title { min-width: 0; display: grid; gap: 1px; margin: 0; text-align: left; line-height: 1.12; }
+.mechanic-help-area .mechanic-welcome-title { margin-left: 4px; }
 .mechanic-welcome-title span { color: #111; font-size: 16px; font-weight: 750; }
 .mechanic-welcome-title strong { color: var(--primary-dark); font-size: 18px; font-weight: 950; }
 .mechanic-bottom-nav button { text-wrap: balance; }
@@ -522,7 +523,7 @@ th { color: var(--muted); font-size: 12px; font-weight: 950; text-transform: upp
 .farm-landing .hero-panel > * { flex-shrink: 0; min-width: 0; }
 .farm-landing .landing-card-actions { position: relative; align-self: flex-end; justify-content: flex-end; gap: 6px; width: auto; min-height: 46px; margin: 16px 20px 0; padding: 0; border: 0; background: transparent; }
 .farm-landing .landing-brand { width: min(680px, 100%); margin: 0 auto; padding: 0 24px 20px; text-align: center; animation: rise 500ms ease-out; }
-.farm-landing .hero-logo { width: 136px; height: 136px; object-fit: contain; margin: 0 auto 14px; padding: 0; border: 0; border-radius: 50%; background: transparent; box-shadow: none; filter: none; }
+.farm-landing .hero-logo { width: 144px; height: 144px; object-fit: contain; margin: 0 auto 14px; padding: 0; border: 0; border-radius: 50%; background: transparent; box-shadow: none; filter: none; }
 .farm-landing .landing-brand .eyebrow { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 0 auto 10px; color: #315b45; font-size: 11px; font-weight: 800; line-height: 1.6; }
 .farm-landing .eyebrow::before, .farm-landing .eyebrow::after { content: ''; flex: 0 0 26px; height: 1px; background: #67986f; }
 .farm-landing h1 { margin: 0; color: #168047; font-size: 80px; line-height: 1.12; text-shadow: none; overflow-wrap: anywhere; }
@@ -543,15 +544,15 @@ th { color: var(--muted); font-size: 12px; font-weight: 950; text-transform: upp
   grid-template-columns: minmax(0, 1fr);
   justify-content: center;
   gap: 13px;
-  width: min(460px, 100%);
+  width: min(420px, calc(100% - 24px));
   margin: -14px auto 0;
-  padding: 15px 20px 20px;
+  padding: 15px 14px 18px;
   border: 1px solid #fff;
   border-radius: 36px;
-  background: rgba(252, 255, 248, 0.97);
+  background: rgba(232, 244, 224, 0.97);
   box-shadow: 0 12px 24px rgba(22, 81, 35, 0.14);
 }
-.farm-landing .service-partner-label { min-width: 0; overflow-wrap: anywhere; margin: 0; color: var(--landing-ink); font-family: "Baloo 2", "Plus Jakarta Sans", sans-serif; font-size: 34px; font-weight: 700; line-height: 1.25; text-transform: none; text-shadow: none; }
+.farm-landing .service-partner-label { min-width: 0; overflow-wrap: anywhere; margin: 0; color: var(--landing-ink); font-family: "Baloo 2", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif; font-size: 33px; font-weight: 800; line-height: 1.25; text-transform: none; text-shadow: none; }
 .farm-landing .hero-actions .large { display: grid; grid-template-columns: 24px minmax(0, 1fr) 24px; align-items: center; justify-self: center; gap: 14px; width: min(260px, 100%); min-height: 60px; padding: 14px 24px; border-radius: 32px; font-size: 18px; line-height: 1.4; }
 .farm-landing .hero-actions .large svg { width: 24px; height: 24px; }
 .farm-landing .hero-actions .large span { overflow-wrap: anywhere; }
@@ -567,7 +568,7 @@ th { color: var(--muted); font-size: 12px; font-weight: 950; text-transform: upp
   .farm-landing .hero-panel { min-height: 100svh; }
   .farm-landing .landing-card-actions { margin: 12px 16px 0; padding: 0; }
   .farm-landing .landing-brand { padding: 0 14px 20px; }
-  .farm-landing .hero-logo { width: 104px; height: 104px; margin: 0 auto 10px; }
+  .farm-landing .hero-logo { width: 112px; height: 112px; margin: 0 auto 10px; }
   .farm-landing h1 { font-size: 58px; }
   .farm-landing:not(:lang(en)) h1 { font-size: 38px; }
   .farm-landing .landing-brand .hero-tagline { font-size: 15px; }
@@ -585,7 +586,7 @@ th { color: var(--muted); font-size: 12px; font-weight: 950; text-transform: upp
 }
 @media (max-height: 740px) and (max-width: 560px) {
   .farm-landing .landing-card-actions { margin-top: 8px; padding: 0; }
-  .farm-landing .hero-logo { width: 76px; height: 76px; margin-bottom: 6px; }
+  .farm-landing .hero-logo { width: 84px; height: 84px; margin-bottom: 6px; }
   .farm-landing .landing-brand .eyebrow { margin-bottom: 4px; font-size: 9px; }
   .farm-landing h1 { font-size: 46px; }
   .farm-landing:not(:lang(en)) h1 { font-size: 30px; }
@@ -634,6 +635,8 @@ tr.needs-reassign td:last-child { border-right: 2px solid #f3b7b7; }
 
 /* Farmer subscriptions — mechanic referral form/list and the admin review tab. */
 .job-card-topline .pill { color: white; }
+.farmer-subscription-card { padding-top: 14px; }
+.farmer-subscription-card .job-card-topline { position: relative; inset: auto; width: 100%; margin: 0 0 12px; }
 .farmer-referrals-hint { margin: 0 0 12px; font-size: 14px; font-weight: 800; line-height: 1.4; }
 .farmer-add-button { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 14px; }
 .mechanic-job-card p.error-text span { color: var(--danger); }

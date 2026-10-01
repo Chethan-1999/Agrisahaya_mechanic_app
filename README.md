@@ -476,3 +476,9 @@ dependency or native-config change made toward this must follow the process in
 [docs/dependency_decison.md](docs/dependency_decison.md). See that evaluation's
 findings for the current gap list before adding a release-signing, in-app-update,
 or Play-Console-integration dependency.
+
+For the mechanic app, upload `assets/agrisahay_playstore_icon_512x512_rgba.png`
+as the 512 x 512 Play Console store-listing icon. The icon shown on an installed
+phone is separate: `make icons` generates Android launcher resources from
+`assets/icon-only.png`, `assets/icon-foreground.png`, and `assets/icon-background.png`.
+The startup splash uses `assets/splash.png` with the landing-page Agrisahay logo.

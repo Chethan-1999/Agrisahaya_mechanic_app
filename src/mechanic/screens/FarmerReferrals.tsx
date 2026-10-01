@@ -41,7 +41,7 @@ export function FarmerReferrals({ onAddFarmer, technicianId, withLoading }: {
           {requests.map((request) => {
             const meta = farmerStatusMeta(request.status, t);
             return (
-              <article className="mechanic-job-card" key={request.id}>
+              <article className="mechanic-job-card farmer-subscription-card" key={request.id}>
                 <div className="job-card-topline"><span className={`pill ${meta.pillClass}`}>{meta.label}</span><time>{formatDate(request.createdAt)}</time></div>
                 <h2><span>{t('farmerName')}</span>{request.fullName}</h2>
                 <p><span>{t('villageLocation')}</span>{request.village}, {request.mandalDistrict}</p>
