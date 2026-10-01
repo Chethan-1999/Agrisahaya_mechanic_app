@@ -65,7 +65,6 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onJobSaved, onRef
     <PullToRefresh onRefresh={onRefresh}>
     <section>
       <div className="section-heading jobs-heading">
-        <h1>Assign jobs</h1>
         <p className="muted">Select a mechanic for each job and save the assignment.</p>
       </div>
       <div className="table-wrap assign-table-wrap">

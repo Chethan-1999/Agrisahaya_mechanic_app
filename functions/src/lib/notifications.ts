@@ -49,7 +49,7 @@ export const jobsReleased = (count: number): PushPayload => ({
 });
 
 export const accountActivated = (): PushPayload => ({
-  title: '🎉 Welcome to AgriSahaya!',
+  title: '🎉 Welcome to Agrisahay!',
   body: "You're verified and ready to go. New jobs will land right here — keep the app handy!",
   data: { type: 'account-activated' },
 });
@@ -59,8 +59,8 @@ export const accountActivated = (): PushPayload => ({
  * text with the first name only, so it stays one 160-character SMS part.
  */
 export const accountActivatedSms = (fullName: string, supportPhoneNumber: string) =>
-  `AgriSahaya: Hi ${fullName.trim().split(/\s+/)[0] || 'there'}, your technician account is approved. ` +
-  `Open the AgriSahaya app to start receiving jobs. Help: ${supportPhoneNumber}`;
+  `Agrisahay: Hi ${fullName.trim().split(/\s+/)[0] || 'there'}, your technician account is approved. ` +
+  `Open the Agrisahay app to start receiving jobs. Help: ${supportPhoneNumber}`;
 
 export const announcement = (announcementId: string, title: string, body: string): PushPayload => ({
   title: `📢 ${title}`,
@@ -71,7 +71,7 @@ export const announcement = (announcementId: string, title: string, body: string
 export const farmerRequestReviewed = (requestId: string, farmerName: string, approved: boolean): PushPayload => ({
   title: approved ? '🌾 Farmer subscribed!' : 'Farmer request not approved',
   body: approved
-    ? `${farmerName}'s AgriSahaya subscription is now active. Thanks for the referral!`
+    ? `${farmerName}'s Agrisahay subscription is now active. Thanks for the referral!`
     : `${farmerName}'s subscription request was not approved — tap to see why.`,
   data: { type: 'farmer-request', requestId },
 });

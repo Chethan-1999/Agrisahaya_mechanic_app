@@ -71,7 +71,7 @@ export function MechanicProfile({ mechanic, onLogout, onRefresh, setToast, withL
           {editing ? (
             <form className="form-grid" onSubmit={(event) => void saveProfile(event)}>
               <MechanicFields errors={errors} form={form} onChange={updateField} translated />
-              <div className="button-row">
+              <div className="button-row profile-edit-actions">
                 <button className="primary" type="submit">Save profile</button>
                 <button className="secondary" onClick={cancelEdit} type="button">Cancel</button>
               </div>

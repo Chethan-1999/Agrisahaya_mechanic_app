@@ -28,7 +28,7 @@ export function machineryText(farmer: Pick<FarmerForm, 'machinery' | 'machineryO
     .join(', ');
 }
 
-/** A mechanic fills in the AgriSahaya subscription form for a farmer they refer; an admin verifies it before the plan starts. */
+/** A mechanic fills in the Agrisahay subscription form for a farmer they refer; an admin verifies it before the plan starts. */
 export function FarmerSubscriptionForm({ onBack, onSubmitted, withLoading }: {
   onBack: () => void;
   onSubmitted: () => void;
@@ -73,7 +73,7 @@ export function FarmerSubscriptionForm({ onBack, onSubmitted, withLoading }: {
     <main className="detail-page mechanic-form-page">
       <form className="card form-grid edit-card" onSubmit={(event) => void submit(event)}>
         <button className="text-button back-button" onClick={onBack} type="button"><ArrowLeft size={18} aria-hidden="true" />{t('back')}</button>
-        <h1>{t('farmerFormTitle')}</h1>
+        <h1 className="subscription-form-title">{t('farmerFormTitle')}</h1>
         <p className="muted">{t('farmerFormHint')}</p>
         <fieldset className="form-grid fields-grid">
           <Input autoComplete="off" error={error('fullName')} label={t('farmerName')} name="farmerName" onChange={(value) => update('fullName', value)} value={form.fullName} />

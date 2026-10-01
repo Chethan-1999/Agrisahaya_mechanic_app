@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, Headphones, PhoneCall, Sprout, UserRound, UsersRound } from 'lucide-react';
+import { BriefcaseBusiness, ClipboardList, Headphones, Megaphone, PhoneCall, UserRound } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 
 import { getSettings } from '../../config/settings';
@@ -7,8 +7,8 @@ import type { MechanicPage } from '../MechanicApp';
 
 const mechanicTabs: Array<{ Icon: typeof BriefcaseBusiness; label: string; page: MechanicPage }> = [
   { Icon: BriefcaseBusiness, label: 'Jobs', page: 'mechanicJobs' },
-  { Icon: Sprout, label: 'Farmers', page: 'mechanicFarmers' },
-  { Icon: UsersRound, label: 'Community', page: 'mechanicCommunity' },
+  { Icon: ClipboardList, label: 'Farmers', page: 'mechanicFarmers' },
+  { Icon: Megaphone, label: 'Community', page: 'mechanicCommunity' },
   { Icon: UserRound, label: 'Profile', page: 'mechanicProfile' },
 ];
 
@@ -46,7 +46,7 @@ export function MechanicShell({ activePage, children, onNavigate, unreadAnnounce
     <main className="mechanic-app-page">
       <div className="mechanic-app-content">
         {canShowSupport && <div className="mechanic-help-area">
-          <p className="mechanic-welcome-title">{t('welcomeToAgriSahaya')}</p>
+          <p className="mechanic-welcome-title"><span>Welcome to</span><strong>Agrisahay</strong></p>
           <div className="mechanic-support-area">
             <button aria-expanded={showSupport} aria-label={t('supportLabel')} className="mechanic-help-button" onClick={() => setShowSupport((isVisible) => !isVisible)} type="button">
               <Headphones size={20} strokeWidth={2.5} />

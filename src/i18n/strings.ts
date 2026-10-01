@@ -28,6 +28,12 @@ export type StringKey =
   | 'villageDistrictNetwork'
   | 'mechanicDirectory'
   | 'heroDescription'
+  | 'landingNearby'
+  | 'landingQuick'
+  | 'landingTrusted'
+  | 'landingVillages'
+  | 'landingTogether'
+  | 'landingPartner'
   | 'login'
   | 'signUp'
   | 'back'
@@ -158,6 +164,12 @@ export type StringKey =
   | 'farmerErrorMachineryOther';
 
 const en: Record<StringKey, string> = {
+  landingNearby: 'Find Nearby\nMechanics',
+  landingQuick: 'Quick\nService',
+  landingTrusted: 'Trusted &\nVerified',
+  landingVillages: 'Across\nVillages',
+  landingTogether: 'Together for a stronger tomorrow',
+  landingPartner: 'Service Partner',
   technicianLogin: 'Login',
   technicianSignup: 'Sign Up',
   technicianAccess: 'Service Partner',
@@ -259,9 +271,9 @@ const en: Record<StringKey, string> = {
   machineExpertise: 'Machine expertise',
   experience: 'Years of Experience',
   languageLabel: 'Language',
-  farmersNav: 'Farmers',
+  farmersNav: 'Subscription form',
   farmersTitle: 'Farmers you referred',
-  farmersHint: 'Sign farmers up for the AgriSahaya Annual Service Plan. The admin checks each request before it starts.',
+  farmersHint: 'Sign farmers up for the Agrisahay Annual Service Plan. The admin checks each request before it starts.',
   addFarmer: 'Add farmer',
   noFarmersYet: 'No farmers yet. Tap "Add farmer" to refer your first one.',
   farmerFormTitle: 'Farmer subscription form',
@@ -296,6 +308,12 @@ const en: Record<StringKey, string> = {
 };
 
 const hi: Record<StringKey, string> = {
+  landingNearby: 'नज़दीकी मैकेनिक\nखोजें',
+  landingQuick: 'त्वरित\nसेवा',
+  landingTrusted: 'विश्वसनीय और\nसत्यापित',
+  landingVillages: 'गाँव-गाँव\nतक',
+  landingTogether: 'बेहतर कल के लिए साथ मिलकर',
+  landingPartner: 'सेवा साझेदार',
   technicianLogin: 'मैकेनिक लॉगिन',
   technicianSignup: 'मैकेनिक साइन अप',
   technicianAccess: 'मैकेनिक एक्सेस',
@@ -397,7 +415,7 @@ const hi: Record<StringKey, string> = {
   machineExpertise: 'मशीन विशेषज्ञता',
   experience: 'अनुभव (वर्षों में)',
   languageLabel: 'भाषा',
-  farmersNav: 'किसान',
+  farmersNav: 'सदस्यता फ़ॉर्म',
   farmersTitle: 'आपके द्वारा जोड़े गए किसान',
   farmersHint: 'किसानों को एग्रीसहाय वार्षिक सेवा योजना से जोड़ें। योजना शुरू होने से पहले एडमिन हर अनुरोध की जाँच करते हैं।',
   addFarmer: 'किसान जोड़ें',
@@ -434,6 +452,12 @@ const hi: Record<StringKey, string> = {
 };
 
 const kn: Record<StringKey, string> = {
+  landingNearby: 'ಹತ್ತಿರದ ಮೆಕ್ಯಾನಿಕ್\nಹುಡುಕಿ',
+  landingQuick: 'ತ್ವರಿತ\nಸೇವೆ',
+  landingTrusted: 'ವಿಶ್ವಾಸಾರ್ಹ ಮತ್ತು\nಪರಿಶೀಲಿತ',
+  landingVillages: 'ಹಳ್ಳಿಗಳ\nಉದ್ದಕ್ಕೂ',
+  landingTogether: 'ಉತ್ತಮ ನಾಳೆಗಾಗಿ ಒಟ್ಟಾಗಿ',
+  landingPartner: 'ಸೇವಾ ಪಾಲುದಾರ',
   technicianLogin: 'ಮೆಕ್ಯಾನಿಕ್ ಲಾಗಿನ್',
   technicianSignup: 'ಮೆಕ್ಯಾನಿಕ್ ಸೈನ್ ಅಪ್',
   technicianAccess: 'ಮೆಕ್ಯಾನಿಕ್ ಪ್ರವೇಶ',
@@ -535,7 +559,7 @@ const kn: Record<StringKey, string> = {
   machineExpertise: 'ಯಂತ್ರ ಪರಿಣತಿ',
   experience: 'ಅನುಭವ (ವರ್ಷಗಳಲ್ಲಿ)',
   languageLabel: 'ಭಾಷೆ',
-  farmersNav: 'ರೈತರು',
+  farmersNav: 'ಚಂದಾದಾರಿಕೆ ಫಾರ್ಮ್',
   farmersTitle: 'ನೀವು ಸೇರಿಸಿದ ರೈತರು',
   farmersHint: 'ರೈತರನ್ನು ಅಗ್ರಿಸಹಾಯ ವಾರ್ಷಿಕ ಸೇವಾ ಯೋಜನೆಗೆ ಸೇರಿಸಿ. ಯೋಜನೆ ಆರಂಭವಾಗುವ ಮೊದಲು ಅಡ್ಮಿನ್ ಪ್ರತಿ ವಿನಂತಿಯನ್ನು ಪರಿಶೀಲಿಸುತ್ತಾರೆ.',
   addFarmer: 'ರೈತರನ್ನು ಸೇರಿಸಿ',
@@ -572,6 +596,12 @@ const kn: Record<StringKey, string> = {
 };
 
 const ta: Record<StringKey, string> = {
+  landingNearby: 'அருகிலுள்ள\nமெக்கானிக்குகள்',
+  landingQuick: 'விரைவான\nசேவை',
+  landingTrusted: 'நம்பகமான\nசரிபார்க்கப்பட்ட',
+  landingVillages: 'கிராமங்கள்\nமுழுவதும்',
+  landingTogether: 'சிறந்த நாளைக்காக ஒன்றிணைவோம்',
+  landingPartner: 'சேவை பங்குதாரர்',
   technicianLogin: 'மெக்கானிக் லாகின்',
   technicianSignup: 'மெக்கானிக் பதிவு',
   technicianAccess: 'மெக்கானிக் அணுகல்',
@@ -673,7 +703,7 @@ const ta: Record<StringKey, string> = {
   machineExpertise: 'இயந்திர நிபுணத்துவம்',
   experience: 'அனுபவம் (ஆண்டுகளில்)',
   languageLabel: 'மொழி',
-  farmersNav: 'விவசாயிகள்',
+  farmersNav: 'சந்தா படிவம்',
   farmersTitle: 'நீங்கள் பரிந்துரைத்த விவசாயிகள்',
   farmersHint: 'விவசாயிகளை அக்ரிசஹாய ஆண்டு சேவைத் திட்டத்தில் சேர்க்கவும். திட்டம் தொடங்கும் முன் நிர்வாகி ஒவ்வொரு கோரிக்கையையும் சரிபார்ப்பார்.',
   addFarmer: 'விவசாயியைச் சேர்',
@@ -710,6 +740,12 @@ const ta: Record<StringKey, string> = {
 };
 
 const te: Record<StringKey, string> = {
+  landingNearby: 'సమీపంలోని\nమెకానిక్‌లు',
+  landingQuick: 'త్వరిత\nసేవ',
+  landingTrusted: 'నమ్మకమైన మరియు\nధృవీకరించిన',
+  landingVillages: 'గ్రామాల\nవ్యాప్తంగా',
+  landingTogether: 'మెరుగైన రేపటి కోసం కలిసి',
+  landingPartner: 'సేవా భాగస్వామి',
   technicianLogin: 'మెకానిక్ లాగిన్',
   technicianSignup: 'మెకానిక్ సైన్ అప్',
   technicianAccess: 'మెకానిక్ యాక్సెస్',
@@ -811,7 +847,7 @@ const te: Record<StringKey, string> = {
   machineExpertise: 'మెషిన్ నైపుణ్యం',
   experience: 'అనుభవం (సంవత్సరాలలో)',
   languageLabel: 'భాష',
-  farmersNav: 'రైతులు',
+  farmersNav: 'సబ్‌స్క్రిప్షన్ ఫారం',
   farmersTitle: 'మీరు సూచించిన రైతులు',
   farmersHint: 'రైతులను అగ్రిసహాయ వార్షిక సేవా ప్లాన్‌లో చేర్చండి. ప్లాన్ ప్రారంభమయ్యే ముందు అడ్మిన్ ప్రతి అభ్యర్థనను తనిఖీ చేస్తారు.',
   addFarmer: 'రైతును జోడించండి',
@@ -848,6 +884,12 @@ const te: Record<StringKey, string> = {
 };
 
 const ml: Record<StringKey, string> = {
+  landingNearby: 'അടുത്തുള്ള\nമെക്കാനിക്കുകൾ',
+  landingQuick: 'വേഗത്തിലുള്ള\nസേവനം',
+  landingTrusted: 'വിശ്വസനീയവും\nപരിശോധിച്ചതും',
+  landingVillages: 'ഗ്രാമങ്ങൾ\nമുഴുവൻ',
+  landingTogether: 'മികച്ച നാളേക്കായി ഒരുമിച്ച്',
+  landingPartner: 'സേവന പങ്കാളി',
   technicianLogin: 'മെക്കാനിക് ലോഗിൻ',
   technicianSignup: 'മെക്കാനിക് സൈൻ അപ്പ്',
   technicianAccess: 'മെക്കാനിക് ആക്സസ്',
@@ -949,7 +991,7 @@ const ml: Record<StringKey, string> = {
   machineExpertise: 'മെഷീൻ വിദഗ്ധത',
   experience: 'പരിചയം (വർഷങ്ങളിൽ)',
   languageLabel: 'ഭാഷ',
-  farmersNav: 'കർഷകർ',
+  farmersNav: 'സബ്സ്ക്രിപ്ഷൻ ഫോം',
   farmersTitle: 'നിങ്ങൾ ശുപാർശ ചെയ്ത കർഷകർ',
   farmersHint: 'കർഷകരെ അഗ്രിസഹായ വാർഷിക സേവന പ്ലാനിൽ ചേർക്കൂ. പ്ലാൻ ആരംഭിക്കുന്നതിന് മുമ്പ് അഡ്മിൻ ഓരോ അപേക്ഷയും പരിശോധിക്കും.',
   addFarmer: 'കർഷകനെ ചേർക്കുക',

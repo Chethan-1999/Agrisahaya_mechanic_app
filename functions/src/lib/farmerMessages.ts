@@ -3,7 +3,7 @@
  * non-GSM characters so each message costs as few SMS parts as possible.
  */
 
-export const PLAN_NAME = 'AgriSahaya Annual Service Plan';
+export const PLAN_NAME = 'Agrisahay Annual Service Plan';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -26,7 +26,7 @@ export const subscriptionConfirmed = (plan: {
   endDate: string;
   supportPhoneNumber: string;
 }) => [
-  `AgriSahaya: Namaste ${firstName(plan.farmerName)}! Welcome to the AgriSahaya family - we are excited to serve you.`,
+  `Agrisahay: Namaste ${firstName(plan.farmerName)}! Welcome to the Agrisahay family - we are excited to serve you.`,
   `Your ${PLAN_NAME} is now ACTIVE from ${formatPlanDate(plan.startDate)} to ${formatPlanDate(plan.endDate)}.`,
   'You get: on-call support for your farm machines, technician visits at your farm (repair costs paid by you), ' +
     'genuine spare parts and regular maintenance reminders.',

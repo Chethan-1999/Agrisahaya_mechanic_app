@@ -119,7 +119,7 @@ async function handleForegroundPush(notification: PushNotificationSchema): Promi
     notifications: [
       {
         id: notificationIdFor(jobId ?? String(notification.id ?? Date.now())),
-        title: notification.title ?? 'AgriSahaya',
+        title: notification.title ?? 'Agrisahay',
         body: notification.body ?? '',
         channelId: JOB_CHANNEL_ID,
         extra: { jobId },

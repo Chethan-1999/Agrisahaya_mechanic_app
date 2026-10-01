@@ -34,19 +34,21 @@ button:disabled, fieldset:disabled { cursor: not-allowed; opacity: 0.45; }
 .hero-logo { display: block; width: min(132px, 48vw); height: auto; margin: 0 auto 16px; padding: 6px; border: 1px solid rgba(22, 128, 71, 0.18); border-radius: 999px; background: linear-gradient(180deg, #ffffff, #eefbf2); box-shadow: 0 16px 34px rgba(13, 92, 49, 0.13), inset 0 0 0 7px rgba(255, 255, 255, 0.66); filter: drop-shadow(0 12px 26px rgba(22, 128, 71, 0.16)); }
 .eyebrow { color: var(--primary); font-size: 13px; font-weight: 900; letter-spacing: 0; text-transform: uppercase; }
 h1 { margin: 0 0 18px; font-size: clamp(30px, 5vw, 54px); line-height: 1.02; letter-spacing: 0; }
+.mechanic-form-page h1.subscription-form-title { margin-bottom: 8px; font-size: 24px; line-height: 1.15; }
 h2 { margin: 0 0 18px; font-size: 26px; }
 .landing-page h1, .auth-page h2 { font-weight: 950; letter-spacing: 0; }
-.landing-page h1 { font-family: "Baloo 2", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif; font-size: clamp(30px, 5vw, 54px); font-weight: 800; color: #0b6f32; text-shadow: 0 2px 0 #e1f5d4, 0 14px 24px rgba(13, 92, 49, 0.16); }
+.landing-page h1 { margin-bottom: 4px; font-family: "Baloo 2", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif; font-size: clamp(30px, 5vw, 54px); font-weight: 800; color: #0b6f32; text-shadow: 0 2px 0 #e1f5d4, 0 14px 24px rgba(13, 92, 49, 0.16); }
 .landing-page .eyebrow { font-size: 11px; }
 .hero-panel p { color: var(--muted); font-size: 18px; line-height: 1.6; }
-.hero-panel .hero-tagline { color: #496655; font-family: "Plus Jakarta Sans", Manrope, ui-sans-serif, system-ui, sans-serif; font-size: 19px; font-style: italic; font-weight: 500; line-height: 1.35; }
+.hero-panel .hero-tagline { color: #496655; font-family: "Plus Jakarta Sans", Manrope, ui-sans-serif, system-ui, sans-serif; font-size: 19px; font-style: normal; font-weight: 500; line-height: 1.35; }
 .hero-actions, .button-row, .otp-row, .section-heading { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 .otp-row { align-items: flex-start; }
 .otp-row .field { flex: 1 1 260px; }
 .otp-row button { flex: 0 0 auto; margin-top: 31px; }
 .hero-actions { justify-content: center; margin: 30px 0 18px; }
 .landing-page .hero-actions { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 26px 0 18px; }
-.service-partner-label { color: var(--primary-dark); font-family: "Baloo 2", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif; font-size: 30px; font-weight: 800; line-height: 1.02; text-align: center; text-transform: uppercase; text-shadow: 0 2px 0 #e3f6db, 0 10px 18px rgba(13, 92, 49, 0.14); }
+.service-partner-label { color: var(--primary-dark); font-family: Outfit, "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif; font-size: 30px; font-weight: 800; line-height: 1.02; text-align: center; text-transform: uppercase; text-shadow: 0 2px 0 #e3f6db, 0 10px 18px rgba(13, 92, 49, 0.14); }
+.landing-page :where(.eyebrow, .hero-tagline, button, .language-select, select) { font-family: "Plus Jakarta Sans", Manrope, ui-sans-serif, system-ui, sans-serif; }
 .landing-page .hero-actions .large { justify-self: center; width: min(250px, 100%); min-width: 0; }
 .landing-page .hero-actions .large { position: relative; overflow: hidden; }
 .landing-page .hero-actions .primary.large { background: linear-gradient(135deg, #0f7f42 0%, #1b9554 58%, #0d6b38 100%); box-shadow: 0 16px 28px rgba(22, 128, 71, 0.24); }
@@ -170,8 +172,8 @@ h2 { margin: 0 0 18px; font-size: 26px; }
 .jobs-empty-state h1 { margin: 0; font-size: 25px; }
 .jobs-empty-state p { margin: 0; color: var(--muted); font-weight: 850; }
 .mechanic-profile-screen { display: grid; gap: 16px; padding-bottom: 110px; }
-.mechanic-profile-hero { display: grid; justify-items: center; padding: 30px 20px 22px; border: 1px solid rgba(22, 128, 71, 0.16); border-radius: 28px; background: linear-gradient(145deg, #ffffff 0%, #edf9f2 55%, #fff3cf 100%); box-shadow: var(--shadow); text-align: center; }
-.profile-avatar { width: 88px; height: 88px; display: grid; place-items: center; margin-bottom: 16px; border-radius: 30px; background: var(--primary); color: white; font-size: 34px; font-weight: 950; box-shadow: 0 18px 34px rgba(22, 128, 71, 0.24); }
+.mechanic-profile-hero { display: grid; justify-items: center; padding: 22px 18px 16px; border: 1px solid rgba(22, 128, 71, 0.16); border-radius: 24px; background: linear-gradient(145deg, #ffffff 0%, #edf9f2 55%, #fff3cf 100%); box-shadow: var(--shadow); text-align: center; }
+.profile-avatar { width: 68px; height: 68px; display: grid; place-items: center; margin-bottom: 10px; border-radius: 23px; background: var(--primary); color: white; font-size: 28px; font-weight: 950; box-shadow: 0 12px 24px rgba(22, 128, 71, 0.2); }
 .mechanic-profile-hero h1 { margin: 6px 0 14px; font-size: 30px; line-height: 1.08; }
 .profile-chip-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 18px; }
 .profile-chip-row span { padding: 9px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.76); color: var(--primary-dark); font-size: 12px; font-weight: 900; box-shadow: 0 8px 18px rgba(22, 128, 71, 0.1); }
@@ -186,6 +188,8 @@ h2 { margin: 0 0 18px; font-size: 26px; }
 .profile-details-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
 .profile-details-heading h2 { margin: 0; }
 .compact-profile-button { min-height: 36px; padding: 8px 12px; border-radius: 12px; font-size: 13px; }
+.profile-edit-actions { gap: 8px; }
+.profile-edit-actions button { min-height: 36px; padding: 8px 12px; border-radius: 11px; font-size: 13px; }
 .profile-logout-button { width: 100%; min-height: 48px; border-color: #f4b7b7; background: #fff1f1; color: #b42323; font-weight: 950; box-shadow: 0 10px 22px rgba(180, 35, 35, 0.1); }
 .mechanic-bottom-nav { position: fixed; left: 50%; bottom: 18px; z-index: 15; width: min(430px, calc(100vw - 28px)); display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 8px; border: 1px solid var(--border); border-radius: 22px; background: rgba(255, 255, 255, 0.92); box-shadow: var(--shadow); backdrop-filter: blur(12px); transform: translateX(-50%); }
 .mechanic-bottom-nav button { min-height: 64px; display: grid; place-items: center; gap: 4px; border-radius: 16px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 900; }
@@ -193,12 +197,15 @@ h2 { margin: 0 0 18px; font-size: 26px; }
 .mechanic-bottom-nav button b { position: absolute; right: -8px; top: -8px; min-width: 20px; height: 20px; display: grid; place-items: center; padding: 0 5px; border: 2px solid white; border-radius: 999px; background: var(--danger); color: white; font-size: 10px; font-weight: 950; line-height: 1; }
 .mechanic-bottom-nav button.active { background: var(--primary); color: white; }
 .mechanic-bottom-nav button.active span { background: rgba(255, 255, 255, 0.2); color: white; }
-.mechanic-help-area { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.mechanic-help-area { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .mechanic-welcome { min-width: 0; display: grid; gap: 2px; }
 .mechanic-welcome span { color: var(--muted); font-size: 11px; font-weight: 900; text-transform: uppercase; }
 .mechanic-welcome strong { overflow: hidden; color: var(--primary-dark); font-size: 18px; font-weight: 950; line-height: 1.08; text-overflow: ellipsis; white-space: nowrap; }
 .mechanic-support-area { position: relative; flex: 0 0 auto; margin-left: auto; }
-.mechanic-welcome-title { min-width: 0; margin: 0; color: var(--primary-dark); font-size: 17px; font-weight: 950; line-height: 1.18; }
+.mechanic-welcome-title { min-width: 0; display: grid; gap: 1px; margin: 0; text-align: left; line-height: 1.12; }
+.mechanic-welcome-title span { color: #111; font-size: 16px; font-weight: 750; }
+.mechanic-welcome-title strong { color: var(--primary-dark); font-size: 18px; font-weight: 950; }
+.mechanic-bottom-nav button { text-wrap: balance; }
 .mechanic-help-button { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 0 13px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); color: var(--primary); box-shadow: 0 10px 24px rgba(22, 128, 71, 0.12); font-weight: 950; }
 .mechanic-help-button span { color: var(--primary-dark); font-size: 12px; }
 .mechanic-support-popover { position: absolute; right: 0; top: calc(100% + 8px); z-index: 18; min-width: 210px; display: grid; gap: 5px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); }
@@ -288,9 +295,18 @@ dd { margin: 4px 0 0; font-weight: 850; }
 .admin-community-composer button:disabled { opacity: 0.55; cursor: not-allowed; }
 .admin-feed-list { max-height: 620px; overflow: auto; padding-right: 4px; }
 .filters { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 14px; margin-bottom: 14px; }
+.mechanics-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.mechanics-search { min-width: 0; }
+.mechanics-search input { min-height: 40px; border-radius: 12px; padding-left: 38px; font-size: 14px; }
+.mechanics-search svg { left: 12px; right: auto; width: 16px; height: 16px; }
+.mechanics-refresh-button { flex: 0 0 auto; min-height: 38px; display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 11px; font-size: 12px; white-space: nowrap; }
 .table-wrap { width: 100%; max-width: 100%; min-width: 0; overflow: auto; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); -webkit-overflow-scrolling: touch; }
 table { width: 100%; border-collapse: collapse; min-width: 900px; }
 th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+.mechanics-table .mechanics-status-column { width: 120px; text-align: center; vertical-align: middle; }
+.mechanics-table .mechanics-actions-column { width: 270px; text-align: center; vertical-align: middle; }
+.mechanics-table-actions { display: grid; grid-template-columns: 54px 48px 76px 54px; align-items: center; justify-content: center; gap: 2px; min-height: 38px; }
+.mechanics-table-actions button { width: auto; white-space: nowrap; }
 th { color: var(--muted); font-size: 12px; font-weight: 950; text-transform: uppercase; }
 .jobs-table { min-width: 1180px; }
 .jobs-table th:last-child, .jobs-table td:last-child { width: 160px; }
@@ -317,10 +333,12 @@ th { color: var(--muted); font-size: 12px; font-weight: 950; text-transform: upp
 .admin-job-search svg { position: absolute; right: 13px; top: 50%; color: var(--muted); pointer-events: none; transform: translateY(-50%); }
 .admin-job-search input { min-height: 46px; width: 100%; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text); padding: 0 42px 0 14px; outline: none; font-weight: 850; box-shadow: 0 10px 22px rgba(22, 128, 71, 0.08); }
 .admin-job-search input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(22, 128, 71, 0.12); }
+.admin-job-search.mechanics-search input { min-height: 40px; border-radius: 12px; padding: 0 12px 0 36px; font-size: 14px; }
+.admin-job-search.mechanics-search svg { left: 12px; right: auto; width: 16px; height: 16px; }
 .add-job-button { min-height: 46px; display: inline-flex; align-items: center; gap: 10px; padding: 0 16px; border-radius: 14px; background: var(--primary); color: white; font-weight: 900; box-shadow: 0 12px 24px rgba(22, 128, 71, 0.22); }
 .add-job-button span { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 999px; background: rgba(255, 255, 255, 0.2); font-size: 22px; line-height: 1; }
 .admin-job-card-list { display: grid; gap: 8px; }
-.admin-job-card { position: relative; padding: 34px 11px 7px; border: 1px solid rgba(22, 128, 71, 0.14); border-radius: 16px; background: linear-gradient(145deg, #ffffff 0%, #f8fdf9 100%); box-shadow: 0 10px 20px rgba(18, 63, 39, 0.08); }
+.admin-job-card { position: relative; padding: 42px 11px 10px; border: 1px solid rgba(22, 128, 71, 0.14); border-radius: 16px; background: linear-gradient(145deg, #ffffff 0%, #f8fdf9 100%); box-shadow: 0 10px 20px rgba(18, 63, 39, 0.08); }
 .admin-job-card h2 { display: grid; gap: 3px; margin-bottom: 7px; overflow-wrap: anywhere; font-size: 16px; line-height: 1.18; }
 .admin-job-card h2 span, .admin-job-card p span { display: block; color: var(--muted); font-size: 11px; font-weight: 900; text-transform: uppercase; }
 .admin-job-card p { display: grid; gap: 3px; margin: 0; color: var(--text); font-size: 14px; font-weight: 850; line-height: 1.32; overflow-wrap: anywhere; }
@@ -390,7 +408,7 @@ th { color: var(--muted); font-size: 12px; font-weight: 950; text-transform: upp
   .landing-card-actions .language-select select { flex: 0 0 auto; }
   .hero-logo { width: min(118px, 42vw); margin: 22px auto 12px; }
   .landing-page .eyebrow { font-size: 12px; }
-  .landing-page h1 { margin-bottom: 10px; font-size: 36px; }
+  .landing-page h1 { margin-bottom: 4px; font-size: 36px; }
   .hero-panel p { margin: 0; font-size: 16px; line-height: 1.42; }
   .landing-page .hero-actions { gap: 11px; margin: 26px 0 0; }
   .landing-page .hero-actions .large { min-height: 56px; font-size: 17px; }
@@ -431,13 +449,14 @@ th { color: var(--muted); font-size: 12px; font-weight: 950; text-transform: upp
   .community-post-meta { align-items: flex-start; flex-direction: column; gap: 4px; }
   .community-post-meta time { text-align: left; }
   .community-post-card p { font-size: 15px; }
-  .mechanic-profile-hero { padding: 24px 16px 18px; border-radius: 22px; }
-  .profile-avatar { width: 72px; height: 72px; margin-bottom: 12px; border-radius: 24px; font-size: 28px; }
+  .mechanic-profile-hero { padding: 18px 14px 12px; border-radius: 20px; }
+  .profile-avatar { width: 58px; height: 58px; margin-bottom: 8px; border-radius: 20px; font-size: 24px; }
   .mechanic-profile-hero h1 { margin-bottom: 12px; font-size: 26px; }
   .profile-details-card { padding: 16px; border-radius: 20px; }
   .mechanic-tab-card, .mechanic-page .profile-card, .mechanic-form-page .edit-card { padding: 18px; border-radius: 20px; }
   .mechanic-form-page { min-height: 100dvh; align-items: start; padding: max(14px, env(safe-area-inset-top)) 12px max(18px, env(safe-area-inset-bottom)); background: radial-gradient(circle at 18% 12%, rgba(125, 211, 252, 0.32), transparent 18rem), linear-gradient(180deg, #edfaff 0%, #f6fff8 100%); }
   .mechanic-form-page h1 { margin-bottom: 10px; font-size: 27px; }
+  .mechanic-form-page h1.subscription-form-title { font-size: 22px; line-height: 1.15; }
   .mechanic-form-page .field input, .mechanic-form-page .field select, .mechanic-form-page .field textarea { min-height: 50px; font-size: 16px; }
   .mechanic-bottom-nav { bottom: max(10px, env(safe-area-inset-bottom)); width: min(430px, calc(100vw - 20px)); gap: 6px; padding: 7px; border-radius: 20px; }
   .mechanic-bottom-nav button { min-height: 58px; border-radius: 14px; font-size: 10px; }
@@ -450,8 +469,8 @@ th { color: var(--muted); font-size: 12px; font-weight: 950; text-transform: upp
   .landing-page .landing-card-actions { margin-bottom: 12px; }
   .landing-page .hero-logo { width: min(96px, 34vw); margin: 14px auto 8px; }
   .landing-page .eyebrow { font-size: 11px; }
-  .landing-page h1 { margin-bottom: 8px; font-size: 32px; }
-  .landing-page .hero-panel p:not(.eyebrow) { font-size: 14px; line-height: 1.32; }
+  .landing-page h1 { margin-bottom: 4px; font-size: 32px; }
+  .landing-page:not(.farm-landing) .hero-panel p:not(.eyebrow) { font-size: 14px; line-height: 1.32; }
   .landing-page .hero-actions { gap: 8px; margin: 18px 0 0; }
   .landing-page .hero-actions .large { min-height: 50px; font-size: 16px; }
   .landing-page .status-dot { padding: 6px 9px; font-size: 11px; }
@@ -462,7 +481,7 @@ th { color: var(--muted); font-size: 12px; font-weight: 950; text-transform: upp
   .mechanic-job-card { padding-top: 36px; }
   .jobs-empty-state, .community-empty-state { min-height: calc(100dvh - 190px - env(safe-area-inset-bottom)); }
   .mechanic-profile-hero h1 { font-size: 23px; }
-  .profile-avatar { width: 64px; height: 64px; border-radius: 22px; font-size: 25px; }
+  .profile-avatar { width: 54px; height: 54px; border-radius: 18px; font-size: 22px; }
   .mechanic-bottom-nav button { min-height: 54px; }
   .mechanic-form-page { padding-top: max(10px, env(safe-area-inset-top)); padding-bottom: max(10px, env(safe-area-inset-bottom)); }
   .mechanic-form-page h1 { font-size: 24px; }
@@ -472,7 +491,121 @@ th { color: var(--muted); font-size: 12px; font-weight: 950; text-transform: upp
 .language-select { display: flex; align-items: center; gap: 8px; color: var(--muted); font-weight: 800; font-size: 13px; }
 .language-select select { min-height: 36px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 0 10px; }
 .landing-page .landing-card-actions .language-select { position: fixed; top: max(12px, env(safe-area-inset-top)); right: 12px; left: auto; z-index: 60; width: auto; justify-content: flex-end; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
-.landing-page .hero-panel { margin-top: 48px; }
+.farm-landing.landing-page {
+  --landing-ink: #075331;
+  --landing-safe-top: env(safe-area-inset-top, 0px);
+  --landing-safe-right: env(safe-area-inset-right, 0px);
+  --landing-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --landing-safe-left: env(safe-area-inset-left, 0px);
+  display: block;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 0;
+  background: #e9f4f4 url('../assets/landing-farm.jpg') center 62% / cover no-repeat;
+}
+.farm-landing .hero-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100svh;
+  margin: 0;
+  padding: var(--landing-safe-top) var(--landing-safe-right) var(--landing-safe-bottom) var(--landing-safe-left);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  background: linear-gradient(180deg, rgba(232, 246, 246, 0.97), rgba(252, 253, 239, 0.94) 40%, rgba(246, 251, 231, 0.08) 68%, transparent 78%);
+  animation: none;
+}
+.farm-landing .hero-panel::before, .farm-landing .hero-panel::after { content: none; }
+.farm-landing .hero-panel > * { flex-shrink: 0; min-width: 0; }
+.farm-landing .landing-card-actions { position: relative; align-self: flex-end; justify-content: flex-end; gap: 6px; width: auto; min-height: 46px; margin: 16px 20px 0; padding: 0; border: 0; background: transparent; }
+.farm-landing .landing-brand { width: min(680px, 100%); margin: 0 auto; padding: 0 24px 20px; text-align: center; animation: rise 500ms ease-out; }
+.farm-landing .hero-logo { width: 136px; height: 136px; object-fit: contain; margin: 0 auto 14px; padding: 0; border: 0; border-radius: 50%; background: transparent; box-shadow: none; filter: none; }
+.farm-landing .landing-brand .eyebrow { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 0 auto 10px; color: #315b45; font-size: 11px; font-weight: 800; line-height: 1.6; }
+.farm-landing .eyebrow::before, .farm-landing .eyebrow::after { content: ''; flex: 0 0 26px; height: 1px; background: #67986f; }
+.farm-landing h1 { margin: 0; color: #168047; font-size: 80px; line-height: 1.12; text-shadow: none; overflow-wrap: anywhere; }
+.farm-landing .landing-brand .hero-tagline { margin: 0; color: #255b42; font-size: 20px; line-height: 1.5; text-wrap: balance; }
+.farm-landing .hero-tagline::after { content: ''; display: block; width: 64px; height: 9px; margin: 12px auto 0; border-top: 3px solid #21804a; border-radius: 50%; transform: rotate(-5deg); }
+.farm-landing .landing-benefits { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: min(360px, 100%); margin: 14px auto 0; padding: 0; list-style: none; }
+.farm-landing .landing-benefits li { position: relative; display: grid; justify-items: center; align-content: start; gap: 7px; padding: 0 8px; }
+.farm-landing .landing-benefits li + li::before { content: ''; position: absolute; left: 0; top: 12px; bottom: 8px; width: 1px; background: #c1d7bc; }
+.farm-landing .landing-benefits li > span { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: #e0f1d9; color: var(--landing-ink); }
+.farm-landing .landing-benefits svg { width: 29px; height: 29px; stroke-width: 1.8; }
+.farm-landing .landing-benefits p { max-width: 100%; margin: 0; color: #204d36; font-family: Outfit, sans-serif; font-size: 13px; font-weight: 500; line-height: 1.3; white-space: pre-line; overflow-wrap: anywhere; }
+.farm-landing .landing-access { position: relative; isolation: isolate; width: 100%; margin-top: auto; padding: 28px 24px 26px; background: #f4faef; border-radius: 48% 30% 0 0 / 32px 25px 0 0; }
+.farm-landing .landing-access::before { content: ''; position: absolute; z-index: -1; inset: -14px -5% 0; background: rgba(232, 246, 221, 0.86); border-top: 1px solid #fff; border-radius: 35% 70% 0 0 / 42px 62px 0 0; transform: rotate(2deg); }
+.farm-landing .landing-access::after { content: ''; position: absolute; z-index: -1; bottom: -58px; right: -8%; width: 52%; height: 95px; background: #17683c; border-top: 12px solid #8db94a; border-radius: 80% 0 0 0; transform: rotate(-12deg); }
+.farm-landing .hero-actions {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: center;
+  gap: 13px;
+  width: min(460px, 100%);
+  margin: -14px auto 0;
+  padding: 15px 20px 20px;
+  border: 1px solid #fff;
+  border-radius: 36px;
+  background: rgba(252, 255, 248, 0.97);
+  box-shadow: 0 12px 24px rgba(22, 81, 35, 0.14);
+}
+.farm-landing .service-partner-label { min-width: 0; overflow-wrap: anywhere; margin: 0; color: var(--landing-ink); font-family: "Baloo 2", "Plus Jakarta Sans", sans-serif; font-size: 34px; font-weight: 700; line-height: 1.25; text-transform: none; text-shadow: none; }
+.farm-landing .hero-actions .large { display: grid; grid-template-columns: 24px minmax(0, 1fr) 24px; align-items: center; justify-self: center; gap: 14px; width: min(260px, 100%); min-height: 60px; padding: 14px 24px; border-radius: 32px; font-size: 18px; line-height: 1.4; }
+.farm-landing .hero-actions .large svg { width: 24px; height: 24px; }
+.farm-landing .hero-actions .large span { overflow-wrap: anywhere; }
+.farm-landing .hero-actions .primary.large { background: linear-gradient(125deg, #208b43, #00633b); border: 1px solid #14743c; box-shadow: 0 4px 0 #b7cf60, 0 10px 22px rgba(22, 96, 48, 0.15); }
+.farm-landing .hero-actions .primary.large::after { content: none; }
+.farm-landing .hero-actions .secondary.large { background: #fbfefa; border: 1px solid #28805a; color: var(--landing-ink); box-shadow: none; }
+.farm-landing .landing-signoff { display: grid; justify-items: center; gap: 0; margin-top: 16px; color: #196a42; }
+.farm-landing .landing-signoff > svg { width: 28px; height: 24px; fill: #326f3c; }
+.farm-landing .landing-signoff p { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0; color: #497363; font-size: 11px; line-height: 1.4; }
+.farm-landing .landing-signoff p::before, .farm-landing .landing-signoff p::after { content: ''; width: 24px; height: 1px; background: #88a899; }
+.farm-landing button:focus-visible { outline: 3px solid #c88a16; outline-offset: 4px; }
+@media (max-width: 560px) {
+  .farm-landing .hero-panel { min-height: 100svh; }
+  .farm-landing .landing-card-actions { margin: 12px 16px 0; padding: 0; }
+  .farm-landing .landing-brand { padding: 0 14px 20px; }
+  .farm-landing .hero-logo { width: 104px; height: 104px; margin: 0 auto 10px; }
+  .farm-landing h1 { font-size: 58px; }
+  .farm-landing:not(:lang(en)) h1 { font-size: 38px; }
+  .farm-landing .landing-brand .hero-tagline { font-size: 15px; }
+  .farm-landing .landing-brand .eyebrow { gap: 8px; font-size: 10px; }
+  .farm-landing .eyebrow::before, .farm-landing .eyebrow::after { flex-basis: 16px; }
+  .farm-landing .hero-actions { padding: 18px 14px 16px; }
+  .farm-landing .hero-actions .large { min-height: 54px; }
+  .farm-landing .landing-access { padding: 68px 26px 24px; }
+}
+@media (max-width: 360px) {
+  .farm-landing h1 { font-size: 50px; }
+  .farm-landing .landing-access { padding-right: 18px; padding-left: 18px; }
+  .farm-landing .landing-benefits p { font-size: 11px; }
+  .farm-landing .landing-signoff p { font-size: 10px; gap: 6px; }
+}
+@media (max-height: 740px) and (max-width: 560px) {
+  .farm-landing .landing-card-actions { margin-top: 8px; padding: 0; }
+  .farm-landing .hero-logo { width: 76px; height: 76px; margin-bottom: 6px; }
+  .farm-landing .landing-brand .eyebrow { margin-bottom: 4px; font-size: 9px; }
+  .farm-landing h1 { font-size: 46px; }
+  .farm-landing:not(:lang(en)) h1 { font-size: 30px; }
+  .farm-landing .landing-brand .hero-tagline { font-size: 13px; }
+  .farm-landing .hero-tagline::after { margin-top: 6px; }
+  .farm-landing .landing-benefits { margin-top: 6px; }
+  .farm-landing .landing-benefits li { gap: 4px; }
+  .farm-landing .landing-benefits li > span { width: 34px; height: 34px; }
+  .farm-landing .landing-benefits svg { width: 23px; height: 23px; }
+  .farm-landing .landing-benefits p { font-size: 11px; }
+  .farm-landing .landing-brand { padding-bottom: 16px; }
+  .farm-landing .landing-access { padding-top: 34px; padding-bottom: 14px; }
+  .farm-landing .hero-actions { gap: 8px; padding: 14px 12px 14px; }
+  .farm-landing .hero-actions .large { min-height: 46px; padding: 10px 18px; font-size: 16px; }
+  .farm-landing .landing-signoff { margin-top: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .farm-landing .landing-brand { animation: none; }
+  .farm-landing .hero-actions button { transition: none; }
+}
 .field textarea { width: 100%; border: 1px solid var(--border); border-radius: 14px; background: var(--bg); color: var(--text); padding: 12px 14px; outline: none; font: inherit; resize: vertical; }
 
 .job-list { display: grid; gap: 10px; margin: 18px 0; }
@@ -511,13 +644,14 @@ tr.needs-reassign td:last-child { border-right: 2px solid #f3b7b7; }
 .machinery-option { min-height: 42px; display: inline-flex; align-items: center; gap: 8px; padding: 0 14px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); color: var(--text); font-size: 14px; font-weight: 850; cursor: pointer; }
 .machinery-option.checked { border-color: var(--primary); background: var(--surface-alt); color: var(--primary-dark); }
 .field .machinery-option input { width: 18px; height: 18px; min-height: 0; padding: 0; accent-color: var(--primary); }
-.farmer-filter-chips { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 2px; }
-.farmer-filter-chips button { flex: 0 0 auto; min-height: 38px; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text); font-size: 13px; font-weight: 900; }
-.farmer-filter-chips button b { min-width: 22px; padding: 2px 6px; border-radius: 999px; background: var(--surface-alt); color: var(--primary-dark); font-size: 11px; }
+.farmer-filter-chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 12px; }
+.farmer-filter-chips button { min-width: 0; min-height: 58px; display: grid; place-items: center; align-content: center; gap: 3px; padding: 5px 3px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text); font-size: 13px; font-weight: 900; line-height: 1.1; white-space: nowrap; }
+.farmer-filter-chips button b { min-width: 20px; padding: 2px 6px; border-radius: 999px; background: var(--surface-alt); color: var(--primary-dark); font-size: 11px; line-height: 1.1; }
 .farmer-filter-chips button.active { border-color: var(--primary); background: var(--primary); color: white; }
 .farmer-filter-chips button.active b { background: rgba(255, 255, 255, 0.22); color: white; }
 .farmer-card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0 4px; }
 .farmer-card-actions .primary, .farmer-card-actions .danger, .farmer-card-actions .secondary { min-height: 40px; padding: 8px 10px; border-radius: 12px; font-size: 13px; text-align: center; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+.farmer-card-actions .resend-sms-button { border-color: #acd8b9; background: #e8f6ec; color: #17683a; box-shadow: 0 8px 18px rgba(22, 128, 71, 0.12); }
 .farmer-sms-panel { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
 .farmer-sms-status { margin: 0; font-size: 12px; font-weight: 900; color: var(--warning); }
 .farmer-sms-status.sent { color: var(--primary); }

@@ -17,18 +17,15 @@ const filters: Array<{ value: Filter; label: string }> = [
 ];
 
 const smsStatusText: Record<FarmerSmsStatus, string> = {
-  'not-configured': 'SMS service not connected yet — send it from this phone',
+  'not-configured': 'SMS service not connected yet',
   sent: 'Confirmation SMS sent',
-  failed: 'SMS failed — resend, or send it from this phone',
+  failed: 'SMS failed — try resending',
 };
 
 const machineryText = (request: FarmerSubscription) =>
   request.machinery
     .map((code) => (code === 'other' && request.machineryOther ? `Other: ${request.machineryOther}` : farmerMachineryLabel(code)))
     .join(', ') || '-';
-
-/** Opens the phone's SMS app to the farmer with the confirmation text filled in — the stopgap until an SMS provider is live. */
-const smsLink = (request: FarmerSubscription) => `sms:${request.phoneNumber}?body=${encodeURIComponent(request.smsMessage ?? '')}`;
 
 /** Farmer subscription requests from mechanics' referrals: the admin checks each one is genuine, then approves or rejects it. */
 export function AdminFarmerSubscriptions({ askConfirm, onRefresh, onUpdated, requests, setToast, withLoading }: {
@@ -61,7 +58,7 @@ export function AdminFarmerSubscriptions({ askConfirm, onRefresh, onUpdated, req
   function approve(request: FarmerSubscription) {
     askConfirm({
       title: 'Approve subscription?',
-      message: `You confirm ${request.fullName}'s request is genuine. Their AgriSahaya Annual Service Plan starts today and a confirmation SMS goes to ${request.phoneNumber}.`,
+      message: `You confirm ${request.fullName}'s request is genuine. Their Agrisahay Annual Service Plan starts today and a confirmation SMS goes to ${request.phoneNumber}.`,
       confirmLabel: 'Approve Subscription',
       kind: 'primary',
       onConfirm: () => {
@@ -71,7 +68,7 @@ export function AdminFarmerSubscriptions({ askConfirm, onRefresh, onUpdated, req
           setExpandedIds((current) => (current.includes(updated.id) ? current : [...current, updated.id]));
           setToast({
             kind: 'success',
-            text: updated.smsStatus === 'sent' ? `${request.fullName} subscribed. SMS sent.` : `${request.fullName} subscribed. Send the SMS from this phone.`,
+            text: updated.smsStatus === 'sent' ? `${request.fullName} subscribed. SMS sent.` : `${request.fullName} subscribed. SMS could not be sent; try Resend SMS.`,
           });
         });
       },
@@ -95,12 +92,20 @@ export function AdminFarmerSubscriptions({ askConfirm, onRefresh, onUpdated, req
   }
 
   function resendSms(request: FarmerSubscription) {
-    void withLoading(async () => {
-      const updated = await resendFarmerSubscriptionSms(request.id);
-      onUpdated(updated);
-      setToast(updated.smsStatus === 'sent'
-        ? { kind: 'success', text: 'SMS sent.' }
-        : { kind: 'error', text: updated.smsStatus === 'failed' ? `SMS failed: ${updated.smsError ?? 'unknown error'}` : 'SMS service not connected yet.' });
+    askConfirm({
+      title: 'Resend confirmation SMS?',
+      message: `Resend the subscription confirmation SMS to ${request.fullName} at ${request.phoneNumber}?`,
+      confirmLabel: 'Resend SMS',
+      kind: 'primary',
+      onConfirm: () => {
+        void withLoading(async () => {
+          const updated = await resendFarmerSubscriptionSms(request.id);
+          onUpdated(updated);
+          setToast(updated.smsStatus === 'sent'
+            ? { kind: 'success', text: 'SMS sent.' }
+            : { kind: 'error', text: updated.smsStatus === 'failed' ? `SMS failed: ${updated.smsError ?? 'unknown error'}` : 'SMS service not connected yet.' });
+        });
+      },
     });
   }
 
@@ -160,8 +165,7 @@ export function AdminFarmerSubscriptions({ askConfirm, onRefresh, onUpdated, req
                   <div className="farmer-sms-panel">
                     <p className={`farmer-sms-status ${request.smsStatus ?? 'not-configured'}`}>{smsStatusText[request.smsStatus ?? 'not-configured']}</p>
                     <div className="button-row farmer-card-actions">
-                      <a className="primary" href={smsLink(request)}>Send SMS from this phone</a>
-                      <button className="secondary" onClick={() => resendSms(request)} type="button">Resend SMS</button>
+                      <button className="secondary resend-sms-button" onClick={() => resendSms(request)} type="button">Resend SMS</button>
                     </div>
                   </div>
                 )}

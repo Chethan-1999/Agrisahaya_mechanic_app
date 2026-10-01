@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, CircleCheck, CircleDot, Clock3, Sprout, Users, UserX } from 'lucide-react';
+import { BriefcaseBusiness, CircleCheck, CircleDot, Clock3, Sprout, Users } from 'lucide-react';
 
 import { Metric, jobStatusMeta } from '../../components/ui';
 import { lastChangedAt } from '../../services/jobs';
@@ -10,7 +10,7 @@ function isAssignedJob(job: Job) {
   return job.status === 'assigned' || job.status === 'reassigned' || job.status === 'accepted' || job.status === 'completed';
 }
 
-export function AdminDashboard({ active, inactive, jobs, mechanics, pending, pendingFarmerRequests, total }: { active: number; inactive: number; jobs: Job[]; mechanics: Mechanic[]; pending: number; pendingFarmerRequests: number; total: number }) {
+export function AdminDashboard({ approvedFarmerSubscriptions, jobs, mechanics, pending, pendingFarmerRequests, total }: { approvedFarmerSubscriptions: number; jobs: Job[]; mechanics: Mechanic[]; pending: number; pendingFarmerRequests: number; total: number }) {
   const assignedJobs = jobs.filter(isAssignedJob).length;
   const openJobs = jobs.filter((job) => job.status === 'open').length;
   const assignmentRate = jobs.length ? Math.round((assignedJobs / jobs.length) * 100) : 0;
@@ -38,8 +38,7 @@ export function AdminDashboard({ active, inactive, jobs, mechanics, pending, pen
       <section className="dashboard-metrics-grid">
         <Metric icon={<Users size={20} strokeWidth={2.5} />} label="Total Mechanics" value={total} />
         <Metric icon={<Clock3 size={20} strokeWidth={2.5} />} label="Pending Approval" value={pending} />
-        <Metric icon={<CircleCheck size={20} strokeWidth={2.5} />} label="Active" value={active} />
-        <Metric icon={<UserX size={20} strokeWidth={2.5} />} label="Inactive / Rejected" value={inactive} />
+        <Metric icon={<CircleCheck size={20} strokeWidth={2.5} />} label="Farmers subscribed" value={approvedFarmerSubscriptions} />
         <Metric icon={<BriefcaseBusiness size={20} strokeWidth={2.5} />} label="Total jobs" value={jobs.length} />
         <Metric icon={<CircleDot size={20} strokeWidth={2.5} />} label="Open jobs" value={openJobs} />
         <Metric icon={<Sprout size={20} strokeWidth={2.5} />} label="Farmer requests to review" value={pendingFarmerRequests} />

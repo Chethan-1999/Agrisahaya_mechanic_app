@@ -204,12 +204,9 @@ export default function AdminApp() {
     });
   }
 
-  const activeMechanics = mechanics.filter((mechanic) => mechanic.status === 'active').length;
   const pendingMechanics = mechanics.filter((mechanic) => mechanic.status === 'pending').length;
   const pendingFarmerRequests = farmerSubscriptions.filter((request) => request.status === 'pending').length;
-  const inactiveMechanics = mechanics.filter(
-    (mechanic) => mechanic.status === 'inactive' || mechanic.status === 'rejected',
-  ).length;
+  const approvedFarmerSubscriptions = farmerSubscriptions.filter((request) => request.status === 'approved').length;
 
   if (bootstrapping) {
     return (
@@ -253,7 +250,7 @@ export default function AdminApp() {
       {session && page.startsWith('admin') && page !== 'adminLogin' && (
         <AdminShell activePage={page} onLogout={logout} onNavigate={setPage}>
           {page === 'adminDashboard' && (
-            <AdminDashboard active={activeMechanics} inactive={inactiveMechanics} jobs={visibleJobs(jobs)} mechanics={mechanics} pending={pendingMechanics} pendingFarmerRequests={pendingFarmerRequests} total={mechanics.length} />
+            <AdminDashboard approvedFarmerSubscriptions={approvedFarmerSubscriptions} jobs={visibleJobs(jobs)} mechanics={mechanics} pending={pendingMechanics} pendingFarmerRequests={pendingFarmerRequests} total={mechanics.length} />
           )}
           {page === 'adminMechanics' && (
             <MechanicsTable
