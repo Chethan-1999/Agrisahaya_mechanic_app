@@ -311,7 +311,13 @@ th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border)
 th { color: var(--muted); font-size: 12px; font-weight: 950; text-transform: uppercase; }
 .jobs-table { min-width: 1180px; }
 .jobs-table th:last-child, .jobs-table td:last-child { width: 160px; }
-.assign-table { min-width: 1540px; }
+.assign-table { min-width: 1460px; }
+.assign-table th:nth-child(6), .assign-table td:nth-child(6) { text-align: center; }
+.assign-table .assignment-status { justify-items: center; text-align: center; }
+.assign-table .not-assigned { text-align: center; }
+.assign-table th:nth-child(7), .assign-table td:nth-child(7) { width: 220px; padding-right: 6px; }
+.assign-table th:nth-child(8), .assign-table td:nth-child(8) { width: 150px; padding-left: 6px; }
+.assign-table td:nth-child(7) select { width: 190px; max-width: 100%; }
 .assign-table th:last-child, .assign-table td:last-child { width: 180px; text-align: center; }
 .assign-actions { display: grid; grid-template-columns: 76px 76px; gap: 8px; justify-content: center; align-items: center; }
 .assign-actions button { min-height: 38px; width: 100%; padding: 0 8px; border-radius: 12px; background: transparent; color: var(--primary); font-weight: 850; }

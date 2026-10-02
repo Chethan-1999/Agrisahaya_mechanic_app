@@ -69,7 +69,7 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onJobSaved, onRef
       </div>
       <div className="table-wrap assign-table-wrap">
         <table className="assign-table">
-          <thead><tr><th>Job ID</th><th>Customer</th><th>Phone number</th><th>Equipment</th><th>Issue</th><th>District</th><th>Current mechanic</th><th>Assign mechanic</th><th>Job completed</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Job ID</th><th>Customer</th><th>Equipment</th><th>Issue</th><th>District</th><th>Current mechanic</th><th>Assign mechanic</th><th>Job completed</th><th>Actions</th></tr></thead>
           <tbody>
             {board.map((job) => {
               const meta = jobStatusMeta(job.status);
@@ -89,7 +89,6 @@ export function AdminAssignJobs({ askConfirm, jobs, mechanics, onJobSaved, onRef
                 <tr className={job.needsReassignment && job.status === 'open' ? 'needs-reassign' : undefined} key={job.id}>
                   <td>{job.jobCode || '-'}</td>
                   <td>{job.farmerName || '-'}</td>
-                  <td>{job.farmerPhone || '-'}</td>
                   <td>{job.equipment || job.description}</td>
                   <td>{job.issue || '-'}</td>
                   <td>{job.district || '-'}</td>
