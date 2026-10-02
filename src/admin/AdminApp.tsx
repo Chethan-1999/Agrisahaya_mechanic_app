@@ -25,6 +25,7 @@ import { AdminShell } from './screens/AdminShell';
 import { DetailPage } from './screens/DetailPage';
 import { EditMechanic } from './screens/EditMechanic';
 import { MechanicsTable } from './screens/MechanicsTable';
+import { smsFallbackDialog } from './smsOutcome';
 
 export type AdminPage =
   | 'adminLogin'
@@ -257,8 +258,9 @@ export default function AdminApp() {
               mechanics={mechanics}
               onApprove={(mechanic) => {
                 void withLoading(async () => {
-                  await reviewSignup(mechanic.id, 'approve');
+                  const sms = await reviewSignup(mechanic.id, 'approve');
                   setToast({ kind: 'success', text: `${mechanic.fullName} approved.` });
+                  setConfirmDialog(smsFallbackDialog(sms, mechanic.fullName));
                   setMechanics(await listMechanics());
                 });
               }}

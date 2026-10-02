@@ -2,7 +2,7 @@ import { collection, doc, getDoc, getDocs, orderBy, query, where } from 'firebas
 import { httpsCallable } from 'firebase/functions';
 
 import { db, functions } from '../firebase';
-import type { Mechanic, MechanicForm, MechanicStatus, ProfileEdit } from '../types';
+import type { Mechanic, MechanicForm, MechanicStatus, ProfileEdit, SmsOutcome } from '../types';
 
 const collectionName = 'technicians';
 
@@ -30,6 +30,7 @@ const toMechanic = (id: string, data: Record<string, unknown>): Mechanic => {
       cancelled: Number(jobStats.cancelled ?? 0),
       deleted: Number(jobStats.deleted ?? 0),
     },
+    walletPoints: Number(data.walletPoints ?? 0),
     profileVersion: Number(data.profileVersion ?? 1),
     createdAt: String(data.createdAt ?? ''),
     updatedAt: String(data.updatedAt ?? ''),
@@ -82,7 +83,7 @@ export async function updateOwnProfile(profile: ProfileUpdate) {
 
 const reviewSignupFn = httpsCallable<
   { technicianId: string; decision: 'approve' | 'reject'; paymentVerified?: boolean; reason?: string },
-  { status: 'ok' }
+  { status: 'ok'; sms: SmsOutcome | null }
 >(functions, 'reviewSignup');
 
 const setTechnicianStatusFn = httpsCallable<
@@ -90,8 +91,9 @@ const setTechnicianStatusFn = httpsCallable<
   { status: 'ok' }
 >(functions, 'setTechnicianStatus');
 
+/** Returns how the approval SMS went (null when rejecting). */
 export async function reviewSignup(technicianId: string, decision: 'approve' | 'reject', paymentVerified?: boolean, reason?: string) {
-  await reviewSignupFn({ technicianId, decision, paymentVerified, reason });
+  return (await reviewSignupFn({ technicianId, decision, paymentVerified, reason })).data.sms;
 }
 
 export async function setTechnicianStatus(technicianId: string, status: 'active' | 'inactive') {

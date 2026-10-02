@@ -415,8 +415,20 @@ Point the functions at it:
   you deploy, even while `SMS_PROVIDER=none`.
 
 SMS is best-effort, like push notifications. A failed send is logged and never
-fails the approval. A failed farmer confirmation also shows on its card with
-**Resend SMS**. The gateway phone has to stay on, online and running the app,
+fails the approval. Nothing is retried automatically. After sending, the
+function waits up to about 8 seconds for the gateway phone to pick the message
+up. The result is a short problem statement, such as "SMS Gateway phone is
+offline." or "SMS Gateway login failed.", and the details go to the function
+logs.
+
+For a farmer confirmation, the request records how the SMS went, whether it
+went through the gateway or the admin's own phone, and which admin sent it and
+when. If it didn't go out, every admin gets a push. The card stays highlighted
+and shows the problem until the SMS is sent. Its **Send SMS from my phone**
+button opens Messages with the text filled in, then asks the admin to confirm it
+was sent. A technician-approval SMS that fails shows the same problem in a
+dialog with **Open Messages**. If the gateway phone was only offline, the relay
+still holds the message and sends it when the phone reconnects. The gateway phone has to stay on, online and running the app,
 and the SIM plan's SMS allowance limits how many can go out (many Indian
 prepaid plans allow about 100 a day). Message text passes through the public
 relay. To keep it off that relay, the app can self-host the relay; point

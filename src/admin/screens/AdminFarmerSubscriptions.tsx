@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { farmerMachineryLabel } from '../../../functions/src/shared/farmerMachinery';
 import { PullToRefresh } from '../../components/PullToRefresh';
 import { farmerStatusMeta, formatDate, type ConfirmDialog, type Toast } from '../../components/ui';
-import { resendFarmerSubscriptionSms, reviewFarmerSubscription } from '../../services/farmerSubscriptions';
-import type { FarmerSmsStatus, FarmerSubscription, FarmerSubscriptionStatus } from '../../types';
+import { recordFarmerSmsSentFromPhone, resendFarmerSubscriptionSms, reviewFarmerSubscription } from '../../services/farmerSubscriptions';
+import type { FarmerSubscription, FarmerSubscriptionStatus } from '../../types';
+import { smsLink } from '../smsOutcome';
 
 type Filter = FarmerSubscriptionStatus | 'all';
 
@@ -16,11 +17,19 @@ const filters: Array<{ value: Filter; label: string }> = [
   { value: 'all', label: 'All' },
 ];
 
-const smsStatusText: Record<FarmerSmsStatus, string> = {
-  'not-configured': 'SMS service not connected yet',
-  sent: 'Confirmation SMS sent',
-  failed: 'SMS failed — try resending',
-};
+/** An approved request whose confirmation SMS hasn't gone out yet — its card stays highlighted until it has. */
+const smsPending = (request: FarmerSubscription) => request.status === 'approved' && request.smsStatus !== 'sent';
+
+/** "Sent via SMS Gateway by Ravi · 2 Oct 2026", or the problem when it didn't go out. */
+function smsStatusText(request: FarmerSubscription) {
+  const by = [request.smsByName && `by ${request.smsByName}`, request.smsAt && formatDate(request.smsAt)].filter(Boolean).join(' · ');
+
+  if (request.smsStatus === 'sent') {
+    return `SMS sent ${request.smsVia === 'admin-phone' ? 'from admin phone' : 'via SMS Gateway'}${by ? ` ${by}` : ''}`;
+  }
+  if (!request.smsStatus) return 'SMS not sent yet';
+  return `SMS not sent: ${request.smsError ?? 'unknown problem.'}${by ? ` (tried ${by})` : ''}`;
+}
 
 const machineryText = (request: FarmerSubscription) =>
   request.machinery
@@ -66,10 +75,9 @@ export function AdminFarmerSubscriptions({ askConfirm, onRefresh, onUpdated, req
           const updated = await reviewFarmerSubscription(request.id, 'approve');
           onUpdated(updated);
           setExpandedIds((current) => (current.includes(updated.id) ? current : [...current, updated.id]));
-          setToast({
-            kind: 'success',
-            text: updated.smsStatus === 'sent' ? `${request.fullName} subscribed. SMS sent.` : `${request.fullName} subscribed. SMS could not be sent; try Resend SMS.`,
-          });
+          setToast(updated.smsStatus === 'sent'
+            ? { kind: 'success', text: `${request.fullName} subscribed. SMS sent.` }
+            : { kind: 'error', text: `${request.fullName} subscribed. SMS not sent: ${updated.smsError ?? 'unknown problem.'}` });
         });
       },
     });
@@ -103,7 +111,27 @@ export function AdminFarmerSubscriptions({ askConfirm, onRefresh, onUpdated, req
           onUpdated(updated);
           setToast(updated.smsStatus === 'sent'
             ? { kind: 'success', text: 'SMS sent.' }
-            : { kind: 'error', text: updated.smsStatus === 'failed' ? `SMS failed: ${updated.smsError ?? 'unknown error'}` : 'SMS service not connected yet.' });
+            : { kind: 'error', text: `SMS not sent: ${updated.smsError ?? 'unknown problem.'}` });
+        });
+      },
+    });
+  }
+
+  /**
+   * "Send SMS" opens this phone's Messages app with the text filled in (the link's own navigation); when the admin
+   * comes back, they confirm it went so it's recorded as sent by them.
+   */
+  function confirmSentFromPhone(request: FarmerSubscription) {
+    askConfirm({
+      title: 'Did the SMS go out?',
+      message: `Confirm only after you sent the SMS to ${request.fullName} (${request.phoneNumber}) from your phone.`,
+      confirmLabel: 'Yes, SMS sent',
+      cancelLabel: 'Not sent',
+      kind: 'primary',
+      onConfirm: () => {
+        void withLoading(async () => {
+          onUpdated(await recordFarmerSmsSentFromPhone(request.id));
+          setToast({ kind: 'success', text: 'SMS recorded as sent from your phone.' });
         });
       },
     });
@@ -125,7 +153,7 @@ export function AdminFarmerSubscriptions({ askConfirm, onRefresh, onUpdated, req
             const isExpanded = expandedIds.includes(request.id);
 
             return (
-              <article className="admin-job-card" key={request.id}>
+              <article className={smsPending(request) ? 'admin-job-card needs-reassign-card' : 'admin-job-card'} key={request.id}>
                 <div className="job-card-topline"><span className={`pill ${meta.pillClass}`}>{meta.label}</span><time>{formatDate(request.createdAt)}</time></div>
                 <div className="job-card-summary">
                   <div>
@@ -163,9 +191,12 @@ export function AdminFarmerSubscriptions({ askConfirm, onRefresh, onUpdated, req
                 )}
                 {request.status === 'approved' && request.smsMessage && (
                   <div className="farmer-sms-panel">
-                    <p className={`farmer-sms-status ${request.smsStatus ?? 'not-configured'}`}>{smsStatusText[request.smsStatus ?? 'not-configured']}</p>
+                    <p className={`farmer-sms-status ${request.smsStatus === 'sent' ? 'sent' : 'failed'}`}>{smsStatusText(request)}</p>
                     <div className="button-row farmer-card-actions">
                       <button className="secondary resend-sms-button" onClick={() => resendSms(request)} type="button">Resend SMS</button>
+                      {smsPending(request) && (
+                        <a className="primary" href={smsLink({ phoneNumber: request.phoneNumber, message: request.smsMessage })} onClick={() => confirmSentFromPhone(request)}>Send SMS from my phone</a>
+                      )}
                     </div>
                   </div>
                 )}

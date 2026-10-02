@@ -39,6 +39,8 @@ export type Mechanic = MechanicForm & {
   paymentVerified: boolean;
   rejectionReason: string | null;
   jobStats: JobStats;
+  /** Earned by referring farmers; only ever incremented server-side (reviewFarmerSubscription). */
+  walletPoints: number;
   profileVersion: number;
   createdAt: string;
   updatedAt: string;
@@ -156,8 +158,11 @@ export const emptyFarmerSubscriptionForm: FarmerSubscriptionForm = {
 /** pending → approved (plan starts, confirmation SMS) | rejected. See functions/src/farmerSubscriptionFunctions.ts. */
 export type FarmerSubscriptionStatus = 'pending' | 'approved' | 'rejected';
 
-/** How the farmer's confirmation SMS went — `not-configured` until an SMS provider is plugged in (functions/src/lib/sms.ts). */
-export type FarmerSmsStatus = 'not-configured' | 'sent' | 'failed';
+/** How a server SMS went — see `SmsStatus` in functions/src/lib/sms.ts. `queued` = the gateway phone is offline. */
+export type SmsStatus = 'not-configured' | 'sent' | 'queued' | 'failed';
+
+/** A technician-approval SMS's outcome as `reviewSignup` returns it; `error` states the problem in a few words. */
+export type SmsOutcome = { status: SmsStatus; error?: string; phoneNumber: string; message: string };
 
 /** A doc in `farmerSubscriptions`. */
 export type FarmerSubscription = FarmerSubscriptionForm & {
@@ -173,7 +178,10 @@ export type FarmerSubscription = FarmerSubscriptionForm & {
   planStartDate: string | null;
   planEndDate: string | null;
   smsMessage: string | null;
-  smsStatus: FarmerSmsStatus | null;
-  smsSentAt: string | null;
+  /** The confirmation SMS's last send — null until approval. See farmerSubscriptionFunctions.ts. */
+  smsStatus: SmsStatus | null;
   smsError: string | null;
+  smsVia: 'gateway' | 'admin-phone' | null;
+  smsByName: string | null;
+  smsAt: string | null;
 };

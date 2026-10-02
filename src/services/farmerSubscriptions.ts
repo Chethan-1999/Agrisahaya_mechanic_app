@@ -2,7 +2,7 @@ import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 
 import { db, functions } from '../firebase';
-import type { FarmerSmsStatus, FarmerSubscription, FarmerSubscriptionForm, FarmerSubscriptionStatus } from '../types';
+import type { FarmerSubscription, FarmerSubscriptionForm, FarmerSubscriptionStatus, SmsStatus } from '../types';
 
 const collectionName = 'farmerSubscriptions';
 
@@ -29,9 +29,11 @@ const toFarmerSubscription = (id: string, data: Record<string, unknown>): Farmer
   planStartDate: nullableString(data.planStartDate),
   planEndDate: nullableString(data.planEndDate),
   smsMessage: nullableString(data.smsMessage),
-  smsStatus: nullableString(data.smsStatus) as FarmerSmsStatus | null,
-  smsSentAt: nullableString(data.smsSentAt),
+  smsStatus: nullableString(data.smsStatus) as SmsStatus | null,
   smsError: nullableString(data.smsError),
+  smsVia: nullableString(data.smsVia) as FarmerSubscription['smsVia'],
+  smsByName: nullableString(data.smsByName),
+  smsAt: nullableString(data.smsAt),
 });
 
 /** The farmers a mechanic has referred, newest first. */
@@ -58,6 +60,7 @@ const reviewFn = httpsCallable<{ requestId: string; decision: 'approve' | 'rejec
   'reviewFarmerSubscription',
 );
 const resendSmsFn = httpsCallable<{ requestId: string }, SubscriptionResult>(functions, 'resendFarmerSubscriptionSms');
+const recordSmsSentFromPhoneFn = httpsCallable<{ requestId: string }, SubscriptionResult>(functions, 'recordFarmerSmsSentFromPhone');
 
 export async function submitFarmerSubscription(farmer: FarmerSubscriptionForm) {
   return resultRequest(await submitFn({ farmer }));
@@ -69,6 +72,11 @@ export async function reviewFarmerSubscription(requestId: string, decision: 'app
 
 export async function resendFarmerSubscriptionSms(requestId: string) {
   return resultRequest(await resendSmsFn({ requestId }));
+}
+
+/** Admin: records that they sent the confirmation SMS from their own phone. */
+export async function recordFarmerSmsSentFromPhone(requestId: string) {
+  return resultRequest(await recordSmsSentFromPhoneFn({ requestId }));
 }
 
 /** Swaps an updated request into a list, keeping its position. */

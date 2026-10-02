@@ -47,6 +47,8 @@ service cloud.firestore {
     // farmerSubscriptionFunctions.ts.
     match /farmerSubscriptions/{id} {
       allow read: if isAdmin() || (isSignedIn() && resource.data.technicianId == request.auth.uid);
+      // No client writes at all, including the SMS tracking fields (smsStatus, smsBy, ...): those are written only by
+      // the admin-only callables in farmerSubscriptionFunctions.ts (each starts with requireAdmin).
       allow write: if false;
     }
 

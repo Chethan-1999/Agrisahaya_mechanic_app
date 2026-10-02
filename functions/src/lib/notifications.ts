@@ -104,6 +104,12 @@ export const signupResent = (technicianId: string, fullName: string): PushPayloa
   data: { type: 'admin-signup', technicianId },
 });
 
+export const farmerSmsNotSent = (requestId: string, farmer: { fullName: string; phoneNumber: string }, error: string): PushPayload => ({
+  title: '⚠️ Farmer SMS not sent',
+  body: `${farmer.fullName} · ${farmer.phoneNumber} — ${error}`,
+  data: { type: 'admin-farmer-request', requestId },
+});
+
 export const newFarmerRequest = (requestId: string, farmer: { fullName: string; village: string }, technicianName: string): PushPayload => ({
   title: '🌾 New farmer subscription request',
   body: `${farmer.fullName} · ${farmer.village} — referred by ${technicianName}. Tap to review`,

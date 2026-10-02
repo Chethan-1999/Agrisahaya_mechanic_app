@@ -52,14 +52,15 @@ export const reviewSignup = onCall(async (request) => {
     updatedAt: now,
   });
 
-  if (approved) {
-    await pushToTechnician(technicianId, notify.accountActivated());
-    // Best-effort like the push: a failed SMS is logged by sendSms and never undoes the approval.
-    const { supportPhoneNumber } = await getSettings();
-    await sendSms(String(snap.data()?.phoneNumber), notify.accountActivatedSms(String(snap.data()?.fullName ?? ''), supportPhoneNumber));
-  }
+  if (!approved) return { status: 'ok', sms: null };
 
-  return { status: 'ok' };
+  await pushToTechnician(technicianId, notify.accountActivated());
+  // Best-effort like the push: a failed SMS never undoes the approval. Its outcome goes back to the admin, who can
+  // restart the gateway or send it from their own phone.
+  const { supportPhoneNumber } = await getSettings();
+  const sms = await sendSms(String(snap.data()?.phoneNumber), notify.accountActivatedSms(String(snap.data()?.fullName ?? ''), supportPhoneNumber));
+
+  return { status: 'ok', sms };
 }, { secrets: SMS_SECRETS });
 
 /** Admin toggles an already-reviewed technician between active and inactive. */

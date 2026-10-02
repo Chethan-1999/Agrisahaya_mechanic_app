@@ -49,6 +49,7 @@ export const completeSignup = onCall(async (request) => {
       paymentVerified: false,
       fcmToken: null,
       jobStats: EMPTY_JOB_STATS,
+      walletPoints: 0,
       profileVersion,
       createdAt: now,
       updatedAt: now,

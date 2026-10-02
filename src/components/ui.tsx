@@ -13,6 +13,8 @@ export type ConfirmDialog = {
   kind?: 'danger' | 'primary';
   /** When set, the modal shows a text box (e.g. a rejection reason) and hands its trimmed value to onConfirm. */
   inputLabel?: string;
+  /** Defaults to "Cancel". */
+  cancelLabel?: string;
   onConfirm: (value?: string) => void;
 } | null;
 
@@ -106,7 +108,7 @@ export function ConfirmModal({ dialog, onCancel, onConfirm }: { dialog: NonNulla
         <p>{dialog.message}</p>
         {dialog.inputLabel && <Textarea label={dialog.inputLabel} onChange={setValue} value={value} />}
         <div className="modal-actions">
-          <button className="secondary" onClick={onCancel} type="button">Cancel</button>
+          <button className="secondary" onClick={onCancel} type="button">{dialog.cancelLabel ?? 'Cancel'}</button>
           <button className={dialog.kind === 'danger' ? 'danger' : 'primary'} onClick={() => onConfirm(value.trim() || undefined)} type="button">{dialog.confirmLabel}</button>
         </div>
       </section>
