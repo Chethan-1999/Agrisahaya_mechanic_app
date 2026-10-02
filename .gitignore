@@ -5,6 +5,8 @@ node_modules/
 
 # Build output
 dist/
+# Play Store bundles (make prod-aabs)
+release/
 
 # Native
 .kotlin/

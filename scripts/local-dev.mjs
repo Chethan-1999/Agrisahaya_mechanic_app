@@ -11,6 +11,10 @@
 //                                      # two phone APKs (mechanic + admin) against PRODUCTION
 //                                      # Firebase (the project in .env) — no AVD, no emulators;
 //                                      # the script exits once both APKs are in dist/
+//   npm run dev:local -- --aab         # PRODUCTION Play Store bundles: release-signed .aab for BOTH
+//                                      # apps into release/ (newest pair also in release/latest/)
+//   npm run dev:local -- --create-upload-key
+//                                      # one-time: create keys/upload-keystore.jks, the key --aab signs with
 //
 // What it does, in order:
 //   1. Detects this laptop's LAN IPv4 address, and checks whether adb already
@@ -43,7 +47,8 @@
 // bash-only syntax, so nothing here depends on WSL, Git Bash, or GNU Make.
 
 import { spawnSync, spawn } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
@@ -69,6 +74,7 @@ const APPS = {
     capEnv: {},
     apkPrefix: 'agrisahaya-local',
     prodApkPrefix: 'agrisahaya-prod',
+    aabPrefix: 'agrisahaya-mechanic',
   },
   admin: {
     label: 'Admin',
@@ -77,6 +83,7 @@ const APPS = {
     capEnv: { CAP_APP: 'admin' },
     apkPrefix: 'agrisahaya-admin-local',
     prodApkPrefix: 'agrisahaya-admin-prod',
+    aabPrefix: 'agrisahaya-admin',
   },
 };
 const appArgIndex = process.argv.indexOf('--app');
@@ -458,7 +465,164 @@ function requireAndroidProject(targetApp) {
   }
 }
 
+// --- Play Store bundles (--aab) ------------------------------------------------------------------
+
+// `--aab`: release-signed Android App Bundles (.aab) of BOTH apps against production Firebase, for
+// uploading to Google Play. Kept out of dist/ (the mechanic vite build empties it) — each run
+// writes release/agrisahaya[-admin]-<stamp>-v<versionCode>.aab and replaces release/latest/ with
+// just that pair. No adb, AVD, or emulators involved.
+const AAB = process.argv.includes('--aab');
+const CREATE_UPLOAD_KEY = process.argv.includes('--create-upload-key');
+
+const releaseDir = path.join(repoRoot, 'release');
+const keysDir = path.join(repoRoot, 'keys'); // gitignored, like every *.jks
+const uploadKeyProps = path.join(keysDir, 'upload-keystore.properties');
+
+function readProperties(file) {
+  return Object.fromEntries(
+    readFileSync(file, 'utf8')
+      .split(/\r?\n/)
+      .map((line) => line.match(/^\s*([\w.]+)\s*=\s*(.*?)\s*$/))
+      .filter(Boolean)
+      .map((m) => [m[1], m[2]]),
+  );
+}
+
+// The upload key is what Play checks each upload against (Play App Signing re-signs with Google's
+// app-signing key for users). One key signs both apps. Losing it isn't fatal — Play support can
+// reset an upload key — but back up keys/upload-keystore.jks + .properties somewhere safe.
+function createUploadKey() {
+  const storeFile = path.join(keysDir, 'upload-keystore.jks');
+  if (existsSync(storeFile) || existsSync(uploadKeyProps)) {
+    fail(`${path.relative(repoRoot, storeFile)} (or its .properties) already exists — refusing to overwrite the upload key.`);
+  }
+  const javaHome = resolveJavaHome();
+  const keytool = javaHome ? path.join(javaHome, 'bin', isWindows ? 'keytool.exe' : 'keytool') : 'keytool';
+  // PKCS12 keystores use one password for the store and the key.
+  const password = randomBytes(18).toString('base64url');
+  mkdirSync(keysDir, { recursive: true });
+  const result = runBin(keytool, [
+    '-genkeypair', '-v',
+    '-keystore', storeFile, '-storetype', 'PKCS12',
+    '-alias', 'upload', '-keyalg', 'RSA', '-keysize', '2048', '-validity', '10000',
+    '-storepass', password, '-keypass', password,
+    '-dname', 'CN=AgriSahaya, O=AgriSahaya, C=IN',
+  ]);
+  if (result.status !== 0) fail('keytool failed. See output above.');
+  writeFileSync(
+    uploadKeyProps,
+    `# Upload key for Google Play (made by \`make upload-key\`). Gitignored — back this file and\n` +
+      `# upload-keystore.jks up together; the .aab builds (\`make prod-aabs\`) sign with them.\n` +
+      `storeFile=upload-keystore.jks\nstorePassword=${password}\nkeyAlias=upload\nkeyPassword=${password}\n`,
+  );
+  log(`Upload key created: ${path.relative(repoRoot, storeFile)} (password in ${path.relative(repoRoot, uploadKeyProps)}).`);
+  log('Back BOTH files up outside this laptop. Its SHA-1/SHA-256 (for Firebase) are printed by:');
+  console.log(`  "${keytool}" -list -v -keystore "${storeFile}" -alias upload -storepass <storePassword>`);
+}
+
+// Signing goes in as Gradle's injected-signing properties (what Android Studio's "Generate Signed
+// Bundle" uses) instead of a signingConfig in app/build.gradle, which is gitignored/regenerated.
+function uploadSigningArgs() {
+  if (!existsSync(uploadKeyProps)) {
+    fail(`No upload key (${path.relative(repoRoot, uploadKeyProps)}). Create one once with \`make upload-key\`.`);
+  }
+  const props = readProperties(uploadKeyProps);
+  const missing = ['storeFile', 'storePassword', 'keyAlias', 'keyPassword'].filter((k) => !props[k]);
+  if (missing.length > 0) fail(`${path.relative(repoRoot, uploadKeyProps)} is missing: ${missing.join(', ')}.`);
+  const storeFile = path.resolve(keysDir, props.storeFile);
+  if (!existsSync(storeFile)) fail(`Upload keystore not found: ${storeFile}`);
+  return [
+    `-Pandroid.injected.signing.store.file=${storeFile}`,
+    `-Pandroid.injected.signing.store.password=${props.storePassword}`,
+    `-Pandroid.injected.signing.key.alias=${props.keyAlias}`,
+    `-Pandroid.injected.signing.key.password=${props.keyPassword}`,
+  ];
+}
+
+// Play rejects a versionCode it has already seen, so every bundle gets a new one: minutes since
+// 2026-01-01 UTC — always increasing, no file to remember to bump. VERSION_CODE / VERSION_NAME
+// override; versionName defaults to package.json's version. Written into the (gitignored)
+// app/build.gradle, so later debug APKs carry it too.
+function releaseVersion() {
+  const versionCode = process.env.VERSION_CODE
+    ? Number(process.env.VERSION_CODE)
+    : Math.floor((Date.now() - Date.UTC(2026, 0, 1)) / 60_000);
+  if (!Number.isInteger(versionCode) || versionCode < 1 || versionCode > 2_100_000_000) {
+    fail(`Invalid VERSION_CODE "${process.env.VERSION_CODE}" — must be a whole number from 1 to 2100000000.`);
+  }
+  const versionName = process.env.VERSION_NAME || JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8')).version;
+  return { versionCode, versionName };
+}
+
+function setAppVersion(targetApp, { versionCode, versionName }) {
+  const gradleFile = path.join(targetApp.androidDir, 'app', 'build.gradle');
+  const original = readFileSync(gradleFile, 'utf8');
+  if (!/versionCode\s+\d+/.test(original) || !/versionName\s+"[^"]*"/.test(original)) {
+    fail(`Couldn't find versionCode/versionName in ${gradleFile}.`);
+  }
+  writeFileSync(
+    gradleFile,
+    original.replace(/versionCode\s+\d+/, `versionCode ${versionCode}`).replace(/versionName\s+"[^"]*"/, `versionName "${versionName}"`),
+  );
+}
+
+function buildReleaseBundles() {
+  log('Building Play Store bundles (.aab) for both apps against PRODUCTION Firebase.');
+  requireFirebaseConfig();
+  const targets = [APPS.mechanic, APPS.admin];
+  targets.forEach(requireAndroidProject);
+  const signingArgs = uploadSigningArgs();
+  const version = releaseVersion();
+  log(`versionCode ${version.versionCode}, versionName "${version.versionName}".`);
+
+  run('npx', ['tsc', '--noEmit']);
+
+  const javaHome = resolveJavaHome();
+  const gradleEnv = javaHome ? { JAVA_HOME: javaHome } : {};
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..*/, '').replace('T', '-');
+  const latestDir = path.join(releaseDir, 'latest');
+  const outputs = [];
+
+  for (const targetApp of targets) {
+    buildAndSync(targetApp, null);
+    setAppVersion(targetApp, version);
+    log(`Building the ${targetApp.label} release bundle (signed with the upload key)...`);
+    const gradlew = path.join(targetApp.androidDir, isWindows ? 'gradlew.bat' : 'gradlew');
+    const result = runBin(gradlew, ['bundleRelease', ...signingArgs], { cwd: targetApp.androidDir, env: gradleEnv });
+    if (result.status !== 0) fail('Gradle bundleRelease failed. See output above.');
+    outputs.push({
+      targetApp,
+      source: path.join(targetApp.androidDir, 'app', 'build', 'outputs', 'bundle', 'release', 'app-release.aab'),
+      out: path.join(releaseDir, `${targetApp.aabPrefix}-${stamp}-v${version.versionCode}.aab`),
+      latest: path.join(latestDir, `${targetApp.aabPrefix}.aab`),
+    });
+  }
+
+  // Copied only once both builds succeeded, so release/latest/ is never a half-updated pair.
+  mkdirSync(releaseDir, { recursive: true });
+  rmSync(latestDir, { recursive: true, force: true });
+  mkdirSync(latestDir, { recursive: true });
+  for (const { targetApp, source, out, latest } of outputs) {
+    copyFileSync(source, out);
+    copyFileSync(source, latest);
+    log(`${targetApp.label} (${targetApp.appId}): ${path.relative(repoRoot, out)}`);
+  }
+  writeFileSync(
+    path.join(latestDir, 'VERSION.txt'),
+    `versionCode ${version.versionCode}\nversionName ${version.versionName}\nbuilt ${stamp}\n` +
+      outputs.map(({ targetApp, out }) => `${targetApp.appId}: ${path.basename(out)}\n`).join(''),
+  );
+  log(`Latest pair also in ${path.relative(repoRoot, latestDir)}/ — upload those to Play Console.`);
+  process.exit(0);
+}
+
 async function main() {
+  if (CREATE_UPLOAD_KEY) {
+    createUploadKey();
+    process.exit(0);
+  }
+  if (AAB) buildReleaseBundles();
+
   // --prod never talks to this laptop, so it doesn't need (or require) a LAN IP.
   const lanIp = PROD ? null : detectLanIp();
 

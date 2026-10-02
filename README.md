@@ -258,6 +258,18 @@ emulators started. It doesn't deploy; `make deploy-prod` deploys Cloud
 Functions + Firestore rules/indexes. The mechanic APK uses real SMS OTP, so the
 debug keystore's SHA fingerprints must be registered on the Firebase Android app.
 
+`make prod-aabs` builds the Google Play bundles of both apps against production:
+release builds signed with the upload key in `keys/` (create it once with
+`make upload-key`, then back up `keys/upload-keystore.jks` and
+`keys/upload-keystore.properties`; both are gitignored). Each run writes
+timestamped `release/agrisahaya-mechanic-*.aab` and `release/agrisahaya-admin-*.aab` and
+replaces `release/latest/` with only that pair and a `VERSION.txt`. The `versionCode` goes up
+on every run (minutes since 2026-01-01), so Play never sees the same one twice. Override it
+with `VERSION_CODE=`/`VERSION_NAME=`; `versionName` defaults to `package.json`'s version.
+Phone OTP in a Play-installed build needs the SHA-1/SHA-256 of Play's **app-signing key**
+(Play Console → Test and release → App integrity), plus the upload key's SHA-1/SHA-256,
+on the Firebase Android app.
+
 The emulator always boots with `-no-snapshot`: the AVD's own snapshot cache has
 been the single biggest source of a "boots fine once, then silently dies on the
 next launch" failure, and this pilot's dev workflow never needs a snapshot's

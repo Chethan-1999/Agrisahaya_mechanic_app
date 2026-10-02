@@ -1,4 +1,4 @@
-.PHONY: web sync icons icons-admin apk local-phone local-apks prod-apks deploy-prod admin admin-prod emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean \
+.PHONY: web sync icons icons-admin apk local-phone local-apks prod-apks prod-aabs upload-key deploy-prod admin admin-prod emulator emulator-reset wait-emulator doctor install launch run local stop-emulator logs clean \
 	sync-admin apk-admin install-admin launch-admin run-admin logs-admin clean-admin local-phone-admin local-admin \
 	settings-show settings-set settings-seed settings-pull call sms-test \
 	backend-up backend-down backend-restart backend-reset logs-functions logs-functions-prod
@@ -193,6 +193,19 @@ local-apks:
 ## Requires google-services.json in both android/app/ and android-admin/app/.
 prod-apks:
 	npm run dev:local -- --apk --phone-apk admin --prod
+
+## PRODUCTION: build Google Play bundles of both apps — release-signed with the upload key — against the
+## Firebase project in .env. Each run writes release/agrisahaya-mechanic-<stamp>-v<code>.aab and
+## release/agrisahaya-admin-<stamp>-v<code>.aab, and replaces release/latest/ with just that pair (+ VERSION.txt).
+## versionCode goes up automatically every run; override with VERSION_CODE=... / VERSION_NAME=...
+## Needs `make upload-key` once. Does NOT deploy — see deploy-prod.
+prod-aabs:
+	npm run dev:local -- --aab
+
+## One-time: create the Play upload key (keys/upload-keystore.jks + keys/upload-keystore.properties,
+## both gitignored) that prod-aabs signs with. Refuses to overwrite an existing key. Back both files up.
+upload-key:
+	npm run dev:local -- --create-upload-key
 
 ## PRODUCTION: deploy Cloud Functions + Firestore rules/indexes to the project in .env
 ## (VITE_FIREBASE_PROJECT_ID). Requires `firebase login`.
