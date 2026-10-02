@@ -30,6 +30,7 @@ const toMechanic = (id: string, data: Record<string, unknown>): Mechanic => {
       cancelled: Number(jobStats.cancelled ?? 0),
       deleted: Number(jobStats.deleted ?? 0),
     },
+    walletPoints: Number(data.walletPoints ?? 0),
     profileVersion: Number(data.profileVersion ?? 1),
     createdAt: String(data.createdAt ?? ''),
     updatedAt: String(data.updatedAt ?? ''),

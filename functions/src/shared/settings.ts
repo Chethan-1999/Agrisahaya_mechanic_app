@@ -45,6 +45,10 @@ export const SETTINGS = {
     kind: 'int', default: 12, min: 1, max: 60,
     description: 'How long a farmer subscription (AgriSahaya Annual Service Plan) runs from the day an admin approves it.',
   },
+  farmerReferralPoints: {
+    kind: 'int', default: 100, min: 0, max: 100000,
+    description: 'Wallet points a mechanic earns when an admin approves a farmer subscription they referred.',
+  },
 } satisfies Record<string, IntSetting | TextSetting>;
 
 export type SettingKey = keyof typeof SETTINGS;

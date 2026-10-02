@@ -1,4 +1,4 @@
-import type { DocumentReference } from 'firebase-admin/firestore';
+import { FieldValue, type DocumentReference } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 
 import { requireAdmin, requireUid } from './lib/authz';
@@ -112,7 +112,9 @@ async function sendConfirmationSms(ref: DocumentReference, phoneNumber: string, 
 
 /**
  * Admin confirms a request is genuine ("Approve Subscription") or rejects it. Approving starts the plan today (India
- * time) for `subscriptionPlanMonths`, stores the confirmation SMS text, and sends it through lib/sms.ts.
+ * time) for `subscriptionPlanMonths`, stores the confirmation SMS text, and sends it through lib/sms.ts. Approving also
+ * credits the referring mechanic `farmerReferralPoints` wallet points — an atomic increment of
+ * `technicians/{id}.walletPoints`, in the same transaction, so it happens exactly once per request.
  */
 export const reviewFarmerSubscription = onCall(async (request) => {
   const adminUid = await requireAdmin(request);
@@ -135,6 +137,9 @@ export const reviewFarmerSubscription = onCall(async (request) => {
     if (data.status !== 'pending') {
       throw new HttpsError('failed-precondition', 'This subscription request has already been reviewed.');
     }
+
+    // Read before any write (a transaction rule); a referrer whose record is gone simply earns nothing.
+    const referrer = approved ? await tx.get(technicianRef(String(data.technicianId))) : null;
 
     const now = new Date();
     const review = { reviewedBy: adminUid, reviewedAt: now.toISOString(), updatedAt: now.toISOString() };
@@ -161,7 +166,12 @@ export const reviewFarmerSubscription = onCall(async (request) => {
       planStartDate: startDate,
       planEndDate: endDate,
       smsMessage,
+      walletPointsAwarded: referrer?.exists ? settings.farmerReferralPoints : 0,
     });
+
+    if (referrer?.exists && settings.farmerReferralPoints > 0) {
+      tx.update(referrer.ref, { walletPoints: FieldValue.increment(settings.farmerReferralPoints) });
+    }
 
     return { data, smsMessage };
   });

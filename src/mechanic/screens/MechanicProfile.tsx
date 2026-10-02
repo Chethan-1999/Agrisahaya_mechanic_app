@@ -59,7 +59,7 @@ export function MechanicProfile({ mechanic, onLogout, onRefresh, setToast, withL
             <span><WalletCards size={20} strokeWidth={2.6} /></span>
             <div>
               <small>Wallet</small>
-              <strong>100 points</strong>
+              <strong>{mechanic.walletPoints} points</strong>
             </div>
           </div>
         </div>

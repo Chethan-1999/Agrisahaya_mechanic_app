@@ -39,6 +39,8 @@ export type Mechanic = MechanicForm & {
   paymentVerified: boolean;
   rejectionReason: string | null;
   jobStats: JobStats;
+  /** Earned by referring farmers; only ever incremented server-side (reviewFarmerSubscription). */
+  walletPoints: number;
   profileVersion: number;
   createdAt: string;
   updatedAt: string;
