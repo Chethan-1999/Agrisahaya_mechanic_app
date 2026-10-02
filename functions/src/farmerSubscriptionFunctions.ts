@@ -1,4 +1,4 @@
-import { FieldValue, type DocumentReference } from 'firebase-admin/firestore';
+import { FieldValue, type DocumentData, type DocumentReference } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 
 import { requireAdmin, requireUid } from './lib/authz';
@@ -11,7 +11,7 @@ import { onCall } from './lib/onCall';
 import { pushToAdmins, pushToTechnician } from './lib/push';
 import { optionalTrimmed, requireString } from './lib/request';
 import { getSettings } from './lib/settings';
-import { SMS_SECRETS, sendSms } from './lib/sms';
+import { SMS_SECRETS, sendSms, type SmsResult } from './lib/sms';
 import { assertActiveTechnician, technicianName, technicianRef } from './lib/technicians';
 
 /**
@@ -19,6 +19,11 @@ import { assertActiveTechnician, technicianName, technicianRef } from './lib/tec
  * an admin checks the request is genuine and approves or rejects it (`reviewFarmerSubscription`). Approving starts the
  * farmer's plan and sends them a confirmation SMS. Status: `pending → approved | rejected`, one step, never back.
  * Payment is collected outside the app, after verification — nothing here records it.
+ *
+ * The confirmation SMS is tracked on the request — `smsStatus` (`sent` | `queued` | `failed` | `not-configured`),
+ * `smsError`, `smsVia` (`gateway` | `admin-phone`), and who did it and when (`smsBy`, `smsByName`, `smsAt`) — written
+ * only by these admin callables (firestore.rules denies every client write). Until it is `sent`, the admin app
+ * highlights the card and offers to send the text from the admin's own phone.
  */
 
 const farmerSubscriptionRef = (id: string) => db.collection('farmerSubscriptions').doc(id);
@@ -28,6 +33,34 @@ async function subscriptionResult(ref: DocumentReference) {
   const snap = await ref.get();
   return { status: 'ok' as const, request: { id: ref.id, ...snap.data() } };
 }
+
+/** Records an SMS attempt (or an admin's own send) on the request: how it went, how it was sent, and by which admin. */
+async function recordSms(ref: DocumentReference, adminUid: string, via: 'gateway' | 'admin-phone', result: SmsResult) {
+  const admin = await db.collection('admins').doc(adminUid).get();
+  const now = new Date().toISOString();
+
+  await ref.update({
+    smsStatus: result.status,
+    smsError: result.error ?? null,
+    smsVia: via,
+    smsBy: adminUid,
+    smsByName: String(admin.data()?.name ?? ''),
+    smsAt: now,
+    updatedAt: now,
+  });
+}
+
+/** Sends the confirmation through the SMS provider, records it, and tells every admin when it didn't go out. */
+async function sendConfirmationSms(ref: DocumentReference, adminUid: string, farmer: { fullName: string; phoneNumber: string }, message: string) {
+  const result = await sendSms(farmer.phoneNumber, message);
+  await recordSms(ref, adminUid, 'gateway', result);
+
+  if (result.status !== 'sent') {
+    await pushToAdmins(notify.farmerSmsNotSent(ref.id, farmer, result.error ?? 'SMS not sent.'));
+  }
+}
+
+const farmerContact = (data: DocumentData) => ({ fullName: String(data.fullName ?? ''), phoneNumber: String(data.phoneNumber ?? '') });
 
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
@@ -85,8 +118,11 @@ export const submitFarmerSubscription = onCall(async (request) => {
       planEndDate: null,
       smsMessage: null,
       smsStatus: null,
-      smsSentAt: null,
       smsError: null,
+      smsVia: null,
+      smsBy: null,
+      smsByName: null,
+      smsAt: null,
     });
 
     return technicianName(technician);
@@ -96,19 +132,6 @@ export const submitFarmerSubscription = onCall(async (request) => {
 
   return subscriptionResult(ref);
 });
-
-/** Records an SMS attempt on the request. `sentAt` is kept from an earlier success when this attempt didn't send. */
-async function sendConfirmationSms(ref: DocumentReference, phoneNumber: string, message: string) {
-  const result = await sendSms(phoneNumber, message);
-  const now = new Date().toISOString();
-
-  await ref.update({
-    smsStatus: result.status,
-    smsError: result.error ?? null,
-    ...(result.status === 'sent' ? { smsSentAt: now } : {}),
-    updatedAt: now,
-  });
-}
 
 /**
  * Admin confirms a request is genuine ("Approve Subscription") or rejects it. Approving starts the plan today (India
@@ -177,7 +200,7 @@ export const reviewFarmerSubscription = onCall(async (request) => {
   });
 
   if (reviewed.smsMessage) {
-    await sendConfirmationSms(ref, String(reviewed.data.phoneNumber), reviewed.smsMessage);
+    await sendConfirmationSms(ref, adminUid, farmerContact(reviewed.data), reviewed.smsMessage);
   }
 
   await pushToTechnician(
@@ -194,7 +217,7 @@ export const reviewFarmerSubscription = onCall(async (request) => {
  * so a request approved before a wording change goes out with the new wording.
  */
 export const resendFarmerSubscriptionSms = onCall(async (request) => {
-  await requireAdmin(request);
+  const adminUid = await requireAdmin(request);
   const requestId = requireString(request.data, 'requestId');
   const ref = farmerSubscriptionRef(requestId);
   const data = (await requireDoc(ref, 'Subscription request not found.')).data() ?? {};
@@ -212,7 +235,26 @@ export const resendFarmerSubscriptionSms = onCall(async (request) => {
   });
 
   await ref.update({ smsMessage });
-  await sendConfirmationSms(ref, String(data.phoneNumber), smsMessage);
+  await sendConfirmationSms(ref, adminUid, farmerContact(data), smsMessage);
 
   return subscriptionResult(ref);
 }, { secrets: SMS_SECRETS });
+
+/**
+ * Admin confirms they sent the confirmation SMS from their own phone (the app's "Send SMS" opens their Messages app
+ * with the stored text) — recorded as sent, by them, via `admin-phone`.
+ */
+export const recordFarmerSmsSentFromPhone = onCall(async (request) => {
+  const adminUid = await requireAdmin(request);
+  const requestId = requireString(request.data, 'requestId');
+  const ref = farmerSubscriptionRef(requestId);
+  const data = (await requireDoc(ref, 'Subscription request not found.')).data() ?? {};
+
+  if (data.status !== 'approved' || !data.smsMessage) {
+    throw new HttpsError('failed-precondition', 'Only an approved subscription has a confirmation SMS to send.');
+  }
+
+  await recordSms(ref, adminUid, 'admin-phone', { status: 'sent' });
+
+  return subscriptionResult(ref);
+});
