@@ -13,6 +13,8 @@
 //                                      # the script exits once both APKs are in dist/
 //   npm run dev:local -- --aab         # PRODUCTION Play Store bundles: release-signed .aab for BOTH
 //                                      # apps into release/ (newest pair also in release/latest/)
+//   npm run dev:local -- --aab --app mechanic
+//                                      # the same, for just one app
 //   npm run dev:local -- --create-upload-key
 //                                      # one-time: create keys/upload-keystore.jks, the key --aab signs with
 //
@@ -47,7 +49,7 @@
 // bash-only syntax, so nothing here depends on WSL, Git Bash, or GNU Make.
 
 import { spawnSync, spawn } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import net from 'node:net';
 import os from 'node:os';
@@ -467,10 +469,10 @@ function requireAndroidProject(targetApp) {
 
 // --- Play Store bundles (--aab) ------------------------------------------------------------------
 
-// `--aab`: release-signed Android App Bundles (.aab) of BOTH apps against production Firebase, for
-// uploading to Google Play. Kept out of dist/ (the mechanic vite build empties it) — each run
-// writes release/agrisahaya[-admin]-<stamp>-v<versionCode>.aab and replaces release/latest/ with
-// just that pair. No adb, AVD, or emulators involved.
+// `--aab`: release-signed Android App Bundles (.aab) of BOTH apps (or just `--app <app>`) against
+// production Firebase, for uploading to Google Play. Kept out of dist/ (the mechanic vite build empties
+// it) — each run writes release/agrisahaya-<app>-<stamp>-v<versionCode>.aab and replaces that app's
+// files in release/latest/. No adb, AVD, or emulators involved.
 const AAB = process.argv.includes('--aab');
 const CREATE_UPLOAD_KEY = process.argv.includes('--create-upload-key');
 
@@ -566,10 +568,53 @@ function setAppVersion(targetApp, { versionCode, versionName }) {
   );
 }
 
+// R8 for release builds (what Play's "DEX code optimization" / "obfuscation" / "R8 configuration"
+// checks ask for): shrink, optimize and obfuscate the Java/Kotlin code and drop unused resources.
+// `npx cap add android` generates `minifyEnabled false`, and app/ is gitignored, so this is
+// re-applied every run, like the version. Capacitor (plugin classes, kept whole), Firebase and
+// AndroidX ship their own consumer keep rules, and proguard-android-optimize.txt keeps the WebView's
+// @JavascriptInterface bridge — the app's own logic is JS in the WebView, which R8 never sees.
+// Line numbers are kept so crash stacks (de-obfuscated with mapping.txt) point at real lines.
+const R8_RULES_MARKER = '# --- added by scripts/local-dev.mjs (make prod-aabs) ---';
+const R8_RULES = [
+  '-keepattributes SourceFile,LineNumberTable',
+  '-renamesourcefileattribute SourceFile',
+  // Capacitor reads plugin annotations at runtime (@CapacitorPlugin's permissions, @PluginMethod, ...).
+  // Its own consumer rules keep the plugin classes but not the annotations on them, which R8's full mode
+  // then strips — LocalNotifications.requestPermissions() hit a null @CapacitorPlugin right after sign-in
+  // and crashed the app. Keep the annotations, and Capacitor's (small) core whole.
+  '-keepattributes RuntimeVisibleAnnotations,RuntimeVisibleParameterAnnotations,AnnotationDefault,Signature,InnerClasses,EnclosingMethod',
+  '-keep class com.getcapacitor.** { *; }',
+  '-keep @interface com.getcapacitor.** { *; }',
+  // @capacitor-firebase/authentication compiles in a Facebook sign-in handler against the Facebook
+  // SDK as compileOnly. Phone OTP never loads it and the SDK isn't bundled, so R8 may skip those refs.
+  '-dontwarn com.facebook.**',
+].join('\n') + '\n';
+
+function enableReleaseShrinking(targetApp) {
+  const gradleFile = path.join(targetApp.androidDir, 'app', 'build.gradle');
+  const gradle = readFileSync(gradleFile, 'utf8');
+  const release = gradle.match(/release\s*\{[^}]*\}/);
+  if (!release || !/minifyEnabled\s+(true|false)/.test(release[0])) {
+    fail(`Couldn't find the release { minifyEnabled ... } block in ${gradleFile}.`);
+  }
+  const patched = release[0]
+    .replace(/minifyEnabled\s+(true|false)/, 'minifyEnabled true')
+    .replace(/\n(\s*)shrinkResources\s+(true|false)[^\n]*/, '')
+    .replace(/(\n(\s*)minifyEnabled true)/, '$1\n$2shrinkResources true')
+    .replace("'proguard-android.txt'", "'proguard-android-optimize.txt'");
+  writeFileSync(gradleFile, gradle.replace(release[0], patched));
+
+  // Everything after the marker is ours and rewritten each run, so editing R8_RULES takes effect.
+  const rulesFile = path.join(targetApp.androidDir, 'app', 'proguard-rules.pro');
+  const rules = existsSync(rulesFile) ? readFileSync(rulesFile, 'utf8').split(R8_RULES_MARKER)[0] : '';
+  writeFileSync(rulesFile, `${rules.trimEnd()}\n\n${R8_RULES_MARKER}\n${R8_RULES}`);
+}
+
 function buildReleaseBundles() {
-  log('Building Play Store bundles (.aab) for both apps against PRODUCTION Firebase.');
+  const targets = appArgIndex !== -1 ? [app] : [APPS.mechanic, APPS.admin];
+  log(`Building Play Store bundles (.aab) for ${targets.map((t) => t.label).join(' + ')} against PRODUCTION Firebase.`);
   requireFirebaseConfig();
-  const targets = [APPS.mechanic, APPS.admin];
   targets.forEach(requireAndroidProject);
   const signingArgs = uploadSigningArgs();
   const version = releaseVersion();
@@ -586,7 +631,8 @@ function buildReleaseBundles() {
   for (const targetApp of targets) {
     buildAndSync(targetApp, null);
     setAppVersion(targetApp, version);
-    log(`Building the ${targetApp.label} release bundle (signed with the upload key)...`);
+    enableReleaseShrinking(targetApp);
+    log(`Building the ${targetApp.label} release bundle (R8-optimized, signed with the upload key)...`);
     const gradlew = path.join(targetApp.androidDir, isWindows ? 'gradlew.bat' : 'gradlew');
     const result = runBin(gradlew, ['bundleRelease', ...signingArgs], { cwd: targetApp.androidDir, env: gradleEnv });
     if (result.status !== 0) fail('Gradle bundleRelease failed. See output above.');
@@ -595,24 +641,28 @@ function buildReleaseBundles() {
       source: path.join(targetApp.androidDir, 'app', 'build', 'outputs', 'bundle', 'release', 'app-release.aab'),
       out: path.join(releaseDir, `${targetApp.aabPrefix}-${stamp}-v${version.versionCode}.aab`),
       latest: path.join(latestDir, `${targetApp.aabPrefix}.aab`),
+      // R8's obfuscation map. Play reads the copy embedded in the .aab; this one is for reading
+      // a stack trace by hand (retrace) — keep it with the bundle it came from.
+      mapping: path.join(targetApp.androidDir, 'app', 'build', 'outputs', 'mapping', 'release', 'mapping.txt'),
     });
   }
 
-  // Copied only once both builds succeeded, so release/latest/ is never a half-updated pair.
-  mkdirSync(releaseDir, { recursive: true });
-  rmSync(latestDir, { recursive: true, force: true });
+  // Copied only once every build succeeded, so release/latest/ is never half-updated.
   mkdirSync(latestDir, { recursive: true });
-  for (const { targetApp, source, out, latest } of outputs) {
+  for (const { targetApp, source, out, latest, mapping } of outputs) {
     copyFileSync(source, out);
     copyFileSync(source, latest);
+    copyFileSync(mapping, out.replace(/\.aab$/, '-mapping.txt'));
+    copyFileSync(mapping, latest.replace(/\.aab$/, '-mapping.txt'));
     log(`${targetApp.label} (${targetApp.appId}): ${path.relative(repoRoot, out)}`);
   }
-  writeFileSync(
-    path.join(latestDir, 'VERSION.txt'),
-    `versionCode ${version.versionCode}\nversionName ${version.versionName}\nbuilt ${stamp}\n` +
-      outputs.map(({ targetApp, out }) => `${targetApp.appId}: ${path.basename(out)}\n`).join(''),
-  );
-  log(`Latest pair also in ${path.relative(repoRoot, latestDir)}/ — upload those to Play Console.`);
+  for (const { targetApp, out, latest } of outputs) {
+    writeFileSync(
+      latest.replace(/\.aab$/, '-VERSION.txt'),
+      `${targetApp.appId}\nversionCode ${version.versionCode}\nversionName ${version.versionName}\nbuilt ${stamp}\n${path.basename(out)}\n`,
+    );
+  }
+  log(`Latest also in ${path.relative(repoRoot, latestDir)}/ — upload from there to Play Console.`);
   process.exit(0);
 }
 

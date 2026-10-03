@@ -196,11 +196,12 @@ prod-apks:
 
 ## PRODUCTION: build Google Play bundles of both apps — release-signed with the upload key — against the
 ## Firebase project in .env. Each run writes release/agrisahaya-mechanic-<stamp>-v<code>.aab and
-## release/agrisahaya-admin-<stamp>-v<code>.aab, and replaces release/latest/ with just that pair (+ VERSION.txt).
+## release/agrisahaya-admin-<stamp>-v<code>.aab, and replaces that app's files in release/latest/ (.aab, -mapping.txt, -VERSION.txt).
 ## versionCode goes up automatically every run; override with VERSION_CODE=... / VERSION_NAME=...
 ## Needs `make upload-key` once. Does NOT deploy — see deploy-prod.
+## AAB_APP=mechanic (or admin) builds just that app's bundle.
 prod-aabs:
-	npm run dev:local -- --aab
+	npm run dev:local -- --aab $(if $(AAB_APP),--app $(AAB_APP))
 
 ## One-time: create the Play upload key (keys/upload-keystore.jks + keys/upload-keystore.properties,
 ## both gitignored) that prod-aabs signs with. Refuses to overwrite an existing key. Back both files up.

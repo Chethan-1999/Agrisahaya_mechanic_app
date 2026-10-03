@@ -263,9 +263,14 @@ release builds signed with the upload key in `keys/` (create it once with
 `make upload-key`, then back up `keys/upload-keystore.jks` and
 `keys/upload-keystore.properties`; both are gitignored). Each run writes
 timestamped `release/agrisahaya-mechanic-*.aab` and `release/agrisahaya-admin-*.aab` and
-replaces `release/latest/` with only that pair and a `VERSION.txt`. The `versionCode` goes up
+replaces each app's files in `release/latest/` (`.aab`, `-mapping.txt`, `-VERSION.txt`);
+`make prod-aabs AAB_APP=mechanic` builds just one app. The `versionCode` goes up
 on every run (minutes since 2026-01-01), so Play never sees the same one twice. Override it
 with `VERSION_CODE=`/`VERSION_NAME=`; `versionName` defaults to `package.json`'s version.
+The release bundles are shrunk, optimized and obfuscated by R8 (`minifyEnabled` + `shrinkResources`, set by
+the script since `android*/app/build.gradle` is regenerated; its extra keep rules are `R8_RULES` in
+`scripts/local-dev.mjs`). Play reads the de-obfuscation map embedded in each `.aab`; a copy is saved next to it
+as `*-mapping.txt` for reading a stack trace by hand.
 Phone OTP in a Play-installed build needs the SHA-1/SHA-256 of Play's **app-signing key**
 (Play Console → Test and release → App integrity), plus the upload key's SHA-1/SHA-256,
 on the Firebase Android app.
